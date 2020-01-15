@@ -133,3 +133,16 @@ resource "aws_route_table" "maz_intRt" {
 		Name = "${var.maz_name}-intRt"
 	}
 }
+
+
+# Assign route table to internal subnet
+resource "aws_route_table_association" "maz_int1" {
+	subnet_id = "${aws_subnet.maz_int1.id}"
+	route_table_id = "${aws_route_table.maz_intRt.id}"
+}
+
+# Assign route table to internal subnet
+resource "aws_route_table_association" "maz_int2" {
+	subnet_id = "${aws_subnet.maz_int2.id}"
+	route_table_id = "${aws_route_table.maz_intRt.id}"
+}
