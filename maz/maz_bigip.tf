@@ -6,7 +6,7 @@ resource "aws_cloudformation_stack" "bigip" {
 		Vpc = "${aws_vpc.maz.id}"
 		ntpServer = "${var.ntp_server}"
 		bigIpModules = "${var.maz_f5provisioning}"
-		provisionPublicIP = "No"
+		provisionPublicIP = "Yes"
 		#declarationUrl = ""
 		managementSubnetAz1 = "${aws_subnet.maz_mgmt1.id}"
 		managementSubnetAz2 = "${aws_subnet.maz_mgmt2.id}"
