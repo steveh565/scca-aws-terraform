@@ -220,3 +220,13 @@ resource "null_resource" "install_ano_rpms" {
         EOF
     }    
 }
+
+
+
+provisioner "remote-exec" {
+    when = "destroy"
+    inline = [
+      "tmsh revoke /sys license"
+    ]
+    on_failure = "continue"
+  }
