@@ -4,3 +4,5 @@ setAwsCreds.sh
 .terraform
 maz/.terraform
 tenant/.terraform
+terraform.tfstate
+terraform.tfstate.backup

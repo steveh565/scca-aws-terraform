@@ -103,7 +103,7 @@ variable "maz_bigip_lic1" {
 
 variable "maz_bigip_lic2" {
 	description = "BIG-IP2 Registration Key"
-	default = "SRHVD-ACAJX-NFZJU-WITIQ-WWLMMNN"
+	default = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK"
 }
 # Platform settings variables
 variable uname			{ default = "admin" }

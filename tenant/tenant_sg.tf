@@ -51,15 +51,3 @@ resource "aws_security_group" "tenant_int" {
         Tenant = "${var.tenant_name}"
 	}
 }
-
-# Assign route table to internal subnet
-resource "aws_route_table_association" "tenant_int1" {
-	subnet_id = "${aws_subnet.tenant_int1.id}"
-	route_table_id = "${aws_route_table.tenant.id}"
-}
-
-# Assign route table to internal subnet
-resource "aws_route_table_association" "tenant_int2" {
-	subnet_id = "${aws_subnet.tenant_int2.id}"
-	route_table_id = "${aws_route_table.tenant.id}"
-}

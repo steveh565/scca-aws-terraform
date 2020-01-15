@@ -2,6 +2,16 @@ provider "aws" {
 	region = "${var.aws_region}"
 }
 
+#terraform {
+#  backend "s3" {
+#    bucket         = "shsca5-tfsharedstate"
+#    key            = "global/s3/terraform.tfstate"
+#    region         = "ca-central-1"
+#    dynamodb_table = "shsca5-tflocks"
+#    encrypt        = true
+#  }
+#}
+
 # EC2 key pair
 resource "aws_key_pair" "tenant" {
 	key_name = "kp${var.tenant_name}"

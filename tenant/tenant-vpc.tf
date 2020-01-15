@@ -133,4 +133,17 @@ resource "aws_route_table" "tenant_intRt" {
 		Name = "${var.tenant_name}-intRt"
 	}
 }
+
+# Assign route table to internal subnet
+resource "aws_route_table_association" "tenant_int1" {
+	subnet_id = "${aws_subnet.tenant_int1.id}"
+	route_table_id = "${aws_route_table.tenant_intRt.id}"
+}
+
+# Assign route table to internal subnet
+resource "aws_route_table_association" "tenant_int2" {
+	subnet_id = "${aws_subnet.tenant_int2.id}"
+	route_table_id = "${aws_route_table.tenant_intRt.id}"
+}
+
 output "Hub_Transit_Gateway_ID" { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
