@@ -1,3 +1,7 @@
+# TF Vars
+variable tfstate_s3Bucket { default = "tfSharedState" }
+variable tfstate_dynamoLocksDb { default = "tfLocks" }
+
 # REST API Settings
 variable rest_do_uri { default	= "/mgmt/shared/declarative-onboarding" }
 variable rest_as3_uri { default = "/mgmt/shared/appsvcs/declare" }
@@ -28,7 +32,7 @@ variable "aws_region" {
 
 variable "tag_name" {
 	description = "VPC Name tag"
-	default = "SHSCA4"
+	default = "SHSCA5"
 }
 
 
@@ -49,32 +53,32 @@ variable "bigip_cft" {
 
 variable "bigip_lic1" {
 	description = "BIG-IP1 Registration Key"
-	default = "XETSI-UBNVF-STXZY-RPTWD-PZRNBOV"
+	default = "KTNMQ-JGDUE-YGPMF-FFBFB-QPQRPEY"
 }
 
 variable "bigip_lic2" {
 	description = "BIG-IP2 Registration Key"
-	default = "SADAE-ZHKXL-LWJOT-OAQQO-IBBFBDU"
+	default = "SIDHT-JZZDS-XSAVY-EWBNS-OLPTMFK"
 }
 
 variable "bigip_lic3" {
 	description = "BIG-IP3 Registration Key"
-	default = "GJBZC-AHZRQ-MKVEX-ARMCO-CRHDGSU"
+	default = "GOSWC-XYFEU-XJFXC-WHPOI-XFVGPGY"
 }
 
 variable "bigip_lic4" {
 	description = "BIG-IP4 Registration Key"
-	default = "SXEUA-HIRQV-ECCLP-ZSDOI-FDRKQTA"
+	default = "HSXXU-EJHAT-YCZUG-YASDQ-BORTWDS"
 }
 
 variable "firewall_lic1" {
 	description = "BIG-IP Firewall-1 Registration Key"
-	default = "MCVOP-KVAXB-ZFFMP-UTTWC-NQAAUVL"
+	default = "VWQLU-IVKYK-LJKST-YHICZ-JIEILYN"
 }
 
 variable "firewall_lic2" {
 	description = "BIG-IP Firewall-2 Registration Key"
-	default = "PSJKU-NECQY-KQJJF-TBNAS-PYTHXGW"
+	default = "CCCKM-GYBEQ-CNKCZ-UJKAO-OJKMUXW"
 }
 
 variable "tenant_name" {
@@ -84,22 +88,22 @@ variable "tenant_name" {
 
 variable "tenant_bigip_lic1" {
 	description = "BIG-IP1 Registration Key"
-	default = "ZIJSR-HNGXO-LHXYO-RAEHF-TTXEOYA"
+	default = "KZBIP-ABHUK-GKAJX-FLQEJ-SACARSD"
 }
 
 variable "tenant_bigip_lic2" {
 	description = "BIG-IP2 Registration Key"
-	default = "USTZM-NVPUD-GGGLJ-QQFUX-ZZSQANO"
+	default = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII"
 }
 
 variable "maz_bigip_lic1" {
 	description = "BIG-IP1 Registration Key"
-	default = "GOPMN-OQKWA-FEDVR-BIAGK-CFNYSJB"
+	default = "SRHVD-ACAJX-NFZJU-WITIQ-WWLMMNN"
 }
 
 variable "maz_bigip_lic2" {
 	description = "BIG-IP2 Registration Key"
-	default = "LZCUR-GOXTK-UHPAI-OUEET-MYGSNNJ"
+	default = "SRHVD-ACAJX-NFZJU-WITIQ-WWLMMNN"
 }
 # Platform settings variables
 variable uname			{ default = "admin" }
@@ -177,6 +181,7 @@ variable tenant_ext1_cidr	{ default = "10.70.2.0/24" }
 variable tenant_ext2_cidr	{ default = "10.70.102.0/24" }
 variable tenant_int1_cidr	{ default = "10.70.3.0/24" }
 variable tenant_int2_cidr	{ default = "10.70.103.0/24" }
+
 
 
 

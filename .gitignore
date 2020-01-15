@@ -1,6 +1,6 @@
 maz/vars.tf
 tenant/vars.tf
 setAwsCreds.sh
-.terraform/plugins/linux_amd64/terraform-provider-aws_v2.44.0_x4
-maz/.terraform/plugins/linux_amd64/terraform-provider-aws_v2.44.0_x4
-tenant/.terraform/plugins/linux_amd64/terraform-provider-aws_v2.44.0_x4
+.terraform
+maz/.terraform
+tenant/.terraform
