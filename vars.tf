@@ -105,13 +105,17 @@ variable "maz_bigip_lic2" {
 	description = "BIG-IP2 Registration Key"
 	default = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK"
 }
+
+
 # Platform settings variables
+
 variable uname			{ default = "admin" }
 variable upassword		{ default = "Canada12345" }
 variable dns_server     { default = "8.8.8.8" }
 variable ntp_server     { default = "0.us.pool.ntp.org" }
 variable timezone       { default = "UTC" }
 variable libs_dir	    { default = "/config/cloud/aws/node_modules" }
+variable onboard_script	{ default = "onboard.sh" }
 variable onboard_log	{ default = "/var/log/startup-script.log" }
 variable paz_f5provisioning { default = "ltm:nominal,asm:nominal,avr:nominal,ilx:nominal"}
 variable dmz_f5provisioning { default = "ltm:nominal,afm:nominal,avr:nominal,ilx:nominal"}

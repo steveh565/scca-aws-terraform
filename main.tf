@@ -302,6 +302,33 @@ resource "aws_route_table_association" "trustedInt2" {
 	route_table_id = "${aws_route_table.TrustedIntRt.id}"
 }
 
+
+
+# Setup Onboarding scripts
+data "template_file" "vm_onboard" {
+  template = "${file("${path.module}/onboard.tpl")}"
+
+  vars = {
+    uname        	  = "${var.uname}"
+    upassword        	  = "${var.upassword}"
+    DO_onboard_URL        = "${var.DO_onboard_URL}"
+    AS3_URL		  = "${var.AS3_URL}"
+    TS_URL		  = "${var.TS_URL}"
+    CF_URL		  = "${var.CF_URL}"
+    libs_dir		  = "${var.libs_dir}"
+    onboard_log		  = "${var.onboard_log}"
+  }
+}
+
+resource "local_file" "onboard_file" {
+  content     = "${data.template_file.vm_onboard.rendered}"
+  filename    = "${path.module}/${var.onboard_script}"
+}
+
+
+
+
+
 output "Hub_Transit_Gateway_ID" { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
 
 output "MAZ_Portal_Local_VIP" { value = "NULL" }
