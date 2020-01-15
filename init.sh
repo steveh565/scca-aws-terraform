@@ -9,6 +9,7 @@ read input junk
 for i in $dirString ; do (
 	cd $i;
 	terraform init;
+	ln -s ../vars.tf .
 	cd ../
 ) done;
 
