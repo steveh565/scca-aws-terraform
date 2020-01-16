@@ -7,7 +7,9 @@ If a copy of the MPL was not distributed with this file, You can obtain one at h
 /*
 ########## depenencies, required variables/parameters:
  bigip_mgmt_public_ip   (the value of this variable should be passed from calling module as a parameter)
+ bigip2_mgmt_public_ip   (the value of this variable should be passed from calling module as a parameter)
  bigip_vip_private_ip   (the value of this variable should be passed from calling module as a parameter)
+ bigip2_vip_private_ip   (the value of this variable should be passed from calling module as a parameter)
  upassword              (the value of this variable should be passed from calling module as a parameter)
  uname                  (the value of this variable should be passed from calling module as a parameter)
  create_tf_admin_user.txt       (json data to create tf_admin user via REST API)
@@ -21,9 +23,18 @@ variable uname { default = "admin" }
 variable upassword { default = "Canada12345" }
 variable bigip_mgmt_public_ip { default = "52.60.108.133" }
 variable bigip_vip_private_ip { default = "10.10.2.133" }
+variable bigip2_mgmt_public_ip { default = "15.222.196.46" }
+variable bigip2_vip_private_ip { default = "10.10.102.55" }
 
 provider "bigip" {
   address  = var.bigip_mgmt_public_ip
+  username = var.uname
+  password = var.upassword
+}
+
+provider "bigip" {
+  alias    = "bigip2"
+  address  = var.bigip2_mgmt_public_ip
   username = var.uname
   password = var.upassword
 }
@@ -41,7 +52,7 @@ resource "null_resource" "bigip_create_tf_admin_user" {
   }
 }
 
-// Using  provisioner to upload iLX NodeJS tar file and create iLX workspace and iLX plugin on bigip
+// Using  provisioner to upload iLX NodeJS tar file and create iLX workspace and iLX plugin on bigip1 (auto-synch takes care of bigip2)
 resource "null_resource" "bigip_create_ilx_plugin" {
   depends_on = [null_resource.bigip_create_tf_admin_user]
 
@@ -73,15 +84,25 @@ resource "null_resource" "bigip_create_ilx_plugin" {
   }
 }
 
-// publish Zero Trust Secure Remote Access (ZT_SRA) AS3 declaration to BIGIP
+// publish Zero Trust Secure Remote Access (ZT_SRA) AS3 declaration to BIGIP1 (auto-synch takes care of bigip2)
 // config_name is used to set the identity of as3 resource which is unique for resource.
+// Assuming iLX rules and APM objects are automatically synched across the HA cluster members,
+// ... each bigip device in the HA cluster has its own unique VIP address,
+// therefore different AS3 declarations are required
 resource "bigip_as3" "bigip_zt_sra" {
   depends_on  = [null_resource.bigip_create_ilx_plugin]
   as3_json    = templatefile("bigip_zt_sra.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, WebAppName = "ZT_SRA" })
   config_name = "zt_sra"
 }
+resource "bigip_as3" "bigip2_zt_sra" {
+  depends_on = [bigip_as3.bigip_zt_sra]
+  #override default bigip provider just for this resource, just to configure the vip with a different IP on bigip2...
+  provider    = bigip.bigip2
+  as3_json    = templatefile("bigip_zt_sra.json", { Bigip1VipPrivateIp = var.bigip2_vip_private_ip, WebAppName = "ZT_SRA" })
+  config_name = "zt_sra"
+}
 
-// Using  provisioner to upload and attach APM policies to above bigip_zt_sra virtual server
+// Using  provisioner to upload and attach APM policies to above bigip_zt_sra virtual server on bigip1 (auto-synch takes care of bigip2)
 resource "null_resource" "bigip_upload_apm_policies" {
   depends_on = [bigip_as3.bigip_zt_sra]
 
@@ -128,7 +149,7 @@ resource "null_resource" "bigip_upload_apm_policies" {
   }
 }
 
-// Using  provisioner to delete temporary tf_admin user account with bash terminal access on bigip
+// Using  provisioner to delete temporary tf_admin user account with bash terminal access on bigip1 (auto-synch takes care of bigip2)
 resource "null_resource" "bigip_delete_tf_admin_user" {
   depends_on = [null_resource.bigip_upload_apm_policies]
 
