@@ -21,10 +21,10 @@ If a copy of the MPL was not distributed with this file, You can obtain one at h
 
 variable uname { default = "admin" }
 variable upassword { default = "Canada12345" }
-variable bigip_mgmt_public_ip { default = "52.60.108.133" }
-variable bigip_vip_private_ip { default = "10.10.2.133" }
-variable bigip2_mgmt_public_ip { default = "15.222.196.46" }
-variable bigip2_vip_private_ip { default = "10.10.102.55" }
+variable bigip_mgmt_public_ip { default = "15.222.47.31" }
+variable bigip_vip_private_ip { default = "10.10.2.233" }
+variable bigip2_mgmt_public_ip { default = "15.222.169.158" }
+variable bigip2_vip_private_ip { default = "10.10.102.129" }
 
 provider "bigip" {
   address  = var.bigip_mgmt_public_ip
