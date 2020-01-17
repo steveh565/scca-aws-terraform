@@ -9,17 +9,17 @@
     "id": "123abc",
     "label": "Tenant 1",
     "remark": "HTTPS with predictive-node pool",
-    "Sample_01": {
+    "MAZ_Portal": {
       "class": "Tenant",
-      "A1": {
+      "Portal1": {
         "class": "Application",
         "template": "https",
         "serviceMain": {
           "class": "Service_HTTPS",
           "virtualPort": 443,
           "virtualAddresses": [
-	      "0.0.0.0"
-	  ],
+	          "0.0.0.0"
+	        ],
           "securityLogProfiles": [
               {
                 "bigip": "/Common/Log all requests"
@@ -40,22 +40,22 @@
         },
         "My_ASM_Policy": {
           "class": "WAF_Policy",
-          "url": "${asm_policy_url}",
+          "url": "https://raw.githubusercontent.com/steveh565/f5tools/master/asm-policies/asm-policy-linux-medium.xml",
           "ignoreChanges": true
         },
         "web_pool": {
           "class": "Pool",
-	  "monitors": [
+	        "monitors": [
             "tcp"
           ],
           "members": [
-	    {
-              "servicePort": 80,
-	      "serverAddresses": [
-	          "${backendvm_ip}"
-	      ]
-	    }
-	  ]
+	          {
+              "servicePort": 443,
+	            "serverAddresses": [
+	              "10.10.1.200"
+	            ]
+	          }
+	        ]
         },
         "telemetry": {
           "class": "Pool",

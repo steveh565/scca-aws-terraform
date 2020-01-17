@@ -9,14 +9,14 @@
     "id": "123abc",
     "label": "Tenant 1",
     "remark": "HTTPS with predictive-node pool",
-    "Sample_01": {
+    "Tenant1_App1": {
       "class": "Tenant",
-      "A1": {
+      "App1": {
         "class": "Application",
         "template": "https",
         "serviceMain": {
           "class": "Service_HTTPS",
-          "virtualPort": 443,
+          "virtualPort": 8443,
           "virtualAddresses": [
 	      "0.0.0.0"
 	  ],
@@ -40,7 +40,7 @@
         },
         "My_ASM_Policy": {
           "class": "WAF_Policy",
-          "url": "${asm_policy_url}",
+          "url": "https://raw.githubusercontent.com/steveh565/f5tools/master/asm-policies/asm-policy-linux-medium.xml",
           "ignoreChanges": true
         },
         "web_pool": {
@@ -52,7 +52,7 @@
 	    {
               "servicePort": 80,
 	      "serverAddresses": [
-	          "${backendvm_ip}"
+	          "10.200.2.131"
 	      ]
 	    }
 	  ]

@@ -16,11 +16,11 @@ variable rest_fwvm_as3_file {default = "fwvm_as3_data.json" }
 variable rest_vm_ts_file { default = "ts.json" }
 variable rest_vm_as3_file { default = "bigip_as3.json" }
 ## Please check and update the latest DO URL from https://github.com/F5Networks/f5-declarative-onboarding/releases
-variable DO_onboard_URL	      { default = "https://github.com/garyluf5/f5tools/raw/master/f5-declarative-onboarding-1.7.0-3.noarch.rpm" }
+variable DO_onboard_URL	      { default = "https://github.com/steveh565/f5tools/raw/master/f5-declarative-onboarding-1.7.0-3.noarch.rpm" }
 ## Please check and update the latest AS3 URL from https://github.com/F5Networks/f5-appsvcs-extension/releases/latest 
-variable AS3_URL	      { default = "https://github.com/garyluf5/f5tools/raw/master/f5-appsvcs-3.14.0-4.noarch.rpm" }
+variable AS3_URL	      { default = "https://github.com/steveh565/f5tools/raw/master/f5-appsvcs-3.14.0-4.noarch.rpm" }
 ## Please check and update the latest Telemetry Streaming from https://github.com/F5Networks/f5-telemetry-streaming/tree/master/dist
-variable TS_URL	      	      { default = "https://github.com/garyluf5/f5tools/raw/master/f5-telemetry-1.5.0-1.noarch.rpm" }
+variable TS_URL	      	      { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.5.0-1.noarch.rpm" }
 ## Please check and update the latest Cloud Failover from https://github.com/f5devcentral/f5-cloud-failover-extension
 variable CF_URL	      	      { default = "https://github.com/f5devcentral/f5-cloud-failover-extension/releases/download/v0.9.1/f5-cloud-failover-0.9.1-1.noarch.rpm" }
 
@@ -98,7 +98,7 @@ variable "tenant_bigip_lic2" {
 
 variable "maz_bigip_lic1" {
 	description = "BIG-IP1 Registration Key"
-	default = "SRHVD-ACAJX-NFZJU-WITIQ-WWLMMNN"
+	default = "FFQMY-FYNUT-FFZID-QVZOQ-LBSAWOW"
 }
 
 variable "maz_bigip_lic2" {
@@ -188,4 +188,9 @@ variable tenant_int2_cidr	{ default = "10.70.103.0/24" }
 
 
 
-
+# AS3 Vars
+variable asm_policy_url		{ default = "https://raw.githubusercontent.com/steveh565/f5tools/master/asm-policies/asm-policy-linux-medium.xml" }
+variable tenant1_paz_as3_json { default = "tenant1_pas.as3.json" }
+variable maz_paz_as3_json { default = "maz_pas.as3.json" }
+variable dmz_as3_json { default = "dmz.as3.json" }
+variable trusted_as3_json { default = "trusted.as3.json" }

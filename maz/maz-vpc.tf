@@ -134,28 +134,29 @@ resource "aws_route_table_association" "maz_ext2" {
 	route_table_id = "${aws_route_table.maz_TransitRt.id}"
 }
 
-# Assign route table to internal subnet
-resource "aws_route_table_association" "maz_mgmt1" {
-	subnet_id = "${aws_subnet.maz_mgmt1.id}"
-	route_table_id = "${aws_route_table.maz_TransitRt.id}"
-}
-
-# Assign route table to internal subnet
-resource "aws_route_table_association" "maz_mgmt2" {
-	subnet_id = "${aws_subnet.maz_mgmt2.id}"
-	route_table_id = "${aws_route_table.maz_TransitRt.id}"
-}
-
 
 resource "aws_route_table" "maz_MgmtRt" {
 	vpc_id = "${aws_vpc.maz.id}"
 	route {
 		cidr_block = "0.0.0.0/0"
-		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+		gateway_id = "${aws_internet_gateway.mazGw.id}"
 	}
 	tags = {
 		Name = "${var.maz_name}-MgmtRt"
 	}
+}
+
+
+# Assign route table to internal subnet
+resource "aws_route_table_association" "maz_mgmt1" {
+	subnet_id = "${aws_subnet.maz_mgmt1.id}"
+	route_table_id = "${aws_route_table.maz_MgmtRt.id}"
+}
+
+# Assign route table to internal subnet
+resource "aws_route_table_association" "maz_mgmt2" {
+	subnet_id = "${aws_subnet.maz_mgmt2.id}"
+	route_table_id = "${aws_route_table.maz_MgmtRt.id}"
 }
 
 resource "aws_route_table" "maz_intRt" {

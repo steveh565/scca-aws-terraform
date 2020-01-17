@@ -23,25 +23,14 @@
           "securityLogProfiles": [
               {
                 "bigip": "/Common/Log all requests"
-              },
-              {
-                "use": "telemetry_security_log_profile"
               }
           ],
           "snat": "auto",
           "pool": "web_pool",
-          "policyWAF": {
-            "use": "My_ASM_Policy"
-          },
           "serverTLS": "webtls",
           "profileTrafficLog": {
           "use": "telemetry_traffic_log_profile"
           }
-        },
-        "My_ASM_Policy": {
-          "class": "WAF_Policy",
-          "url": "${asm_policy_url}",
-          "ignoreChanges": true
         },
         "web_pool": {
           "class": "Pool",
@@ -52,7 +41,7 @@
 	    {
               "servicePort": 80,
 	      "serverAddresses": [
-	          "${backendvm_ip}"
+	          "10.10.1.200"
 	      ]
 	    }
 	  ]
@@ -136,23 +125,6 @@
             	"use": "telemetry_local_pool"
             },
             "requestTemplate": "event_source=\"request_logging\",hostname=\"$BIGIP_HOSTNAME\",client_ip=\"$CLIENT_IP\",server_ip=\"$SERVER_IP\",http_method=\"$HTTP_METHOD\",http_uri=\"$HTTP_URI\",virtual_name=\"$VIRTUAL_NAME\",event_timestamp=\"$DATE_HTTP\""
-          }
-        },
-        "telemetry_security_log_profile": {
-          "class": "Security_Log_Profile",
-          "application": {
-            "localStorage": false,
-            "remoteStorage": "splunk",
-            "protocol": "tcp",
-            "servers": [
-              {
-                "address": "255.255.255.254",
-                "port": "6514"
-              }
-            ],
-            "storageFilter": {
-            "requestType": "all"
-            }
           }
         },
         "webtls": {

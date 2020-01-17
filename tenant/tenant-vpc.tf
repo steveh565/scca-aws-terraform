@@ -76,6 +76,14 @@ resource "aws_subnet" "tenant_int2" {
 	}
 }
 
+# Internet gateway
+resource "aws_internet_gateway" "TenantGw" {
+	vpc_id = "${aws_vpc.tenant.id}"
+	tags = {
+		Name = "igw${var.tenant_name}"
+	}
+}
+
 # Hub Transit Gateway
 resource "aws_ec2_transit_gateway" "hubtgw" {
 	auto_accept_shared_attachments = "enable"
@@ -112,15 +120,40 @@ resource "aws_route_table" "tenant_TransitRt" {
 	}
 }
 
+# Assign route table to external subnet
+resource "aws_route_table_association" "tenant_ext1" {
+	subnet_id = "${aws_subnet.tenant_ext1.id}"
+	route_table_id = "${aws_route_table.tenant_TransitRt.id}"
+}
+
+# Assign route table to external subnet
+resource "aws_route_table_association" "tenant_ext2" {
+	subnet_id = "${aws_subnet.tenant_ext2.id}"
+	route_table_id = "${aws_route_table.tenant_TransitRt.id}"
+}
+
+# Mgmt Route Table
 resource "aws_route_table" "tenant_MgmtRt" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	route {
 		cidr_block = "0.0.0.0/0"
-		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+		gateway_id = "${aws_internet_gateway.TenantGw.id}"
 	}
 	tags = {
 		Name = "${var.tenant_name}-MgmtRt"
 	}
+}
+
+# Assign route table to mgmt1 subnet
+resource "aws_route_table_association" "tenant_mgmt1" {
+	subnet_id = "${aws_subnet.tenant_mgmt1.id}"
+	route_table_id = "${aws_route_table.tenant_MgmtRt.id}"
+}
+
+# Assign route table to mgmt2 subnet
+resource "aws_route_table_association" "tenant_mgmt2" {
+	subnet_id = "${aws_subnet.tenant_mgmt2.id}"
+	route_table_id = "${aws_route_table.tenant_MgmtRt.id}"
 }
 
 resource "aws_route_table" "tenant_intRt" {

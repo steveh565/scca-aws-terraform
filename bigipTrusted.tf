@@ -6,7 +6,7 @@ resource "aws_cloudformation_stack" "bigipTrusted" {
 		Vpc = "${aws_vpc.main.id}"
 		ntpServer = "${var.ntp_server}"
 		bigIpModules = "${var.trusted_f5provisioning}"
-		provisionPublicIP = "No"
+		provisionPublicIP = "Yes"
 		#declarationUrl = ""
 		managementSubnetAz1 = "${aws_subnet.mgmt1.id}"
 		managementSubnetAz2 = "${aws_subnet.mgmt2.id}"

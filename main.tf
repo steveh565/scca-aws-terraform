@@ -226,6 +226,14 @@ resource "aws_route_table" "TrustedIntRt" {
 		cidr_block = "0.0.0.0/0"
 		gateway_id = "${aws_internet_gateway.gw.id}"
 	}
+	route {
+		cidr_block = "${var.tenant_vpc_cidr}"
+		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+	}
+	route {
+		cidr_block = "${var.maz_vpc_cidr}"
+		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+	}
 	tags = {
 		Name = "TrustedIntRT"
 	}
@@ -320,13 +328,65 @@ data "template_file" "vm_onboard" {
   }
 }
 
+# Render Onboarding script
 resource "local_file" "onboard_file" {
   content     = "${data.template_file.vm_onboard.rendered}"
   filename    = "${path.module}/${var.onboard_script}"
 }
 
 
+# PAZ F5 AS3 Declaration
+data "template_file" "paz_as3_json" {
+  template = "${file("${path.module}/paz_as3.tpl.json")}"
 
+  vars = {
+    backendvm_ip    = "10.10.1.200"
+	asm_policy_url  = "${var.asm_policy_url}"
+  }
+}
+
+# Render PAZ AS3 declaration
+resource "local_file" "tenant1_paz_as3_file" {
+  content     = "${data.template_file.paz_as3_json.rendered}"
+  filename    = "${path.module}/${var.tenant1_paz_as3_json}"
+}
+
+# Render PAZ AS3 declaration
+resource "local_file" "maz_paz_as3_file" {
+  content     = "${data.template_file.paz_as3_json.rendered}"
+  filename    = "${path.module}/${var.maz_paz_as3_json}"
+}
+
+# DMZ F5 Firewall AS3 Declaration Template
+data "template_file" "dmz_as3_json" {
+  template = "${file("${path.module}/fw_as3.tpl.json")}"
+
+  vars = {
+    backendvm_ip    = "10.10.1.200"
+  }
+}
+
+# Render DMZ AS3 declaration
+resource "local_file" "dmz_as3_file" {
+  content     = "${data.template_file.dmz_as3_json.rendered}"
+  filename    = "${path.module}/${var.dmz_as3_json}"
+}
+
+
+# Trusted F5 AS3 Declaration
+data "template_file" "trusted_as3_json" {
+  template = "${file("${path.module}/trusted_as3.tpl.json")}"
+
+  vars = {
+    backendvm_ip    = "10.10.1.200"
+  }
+}
+
+# Render Trusted AS3 declaration
+resource "local_file" "trusted_as3_file" {
+  content     = "${data.template_file.trusted_as3_json.rendered}"
+  filename    = "${path.module}/${var.trusted_as3_json}"
+}
 
 
 output "Hub_Transit_Gateway_ID" { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
