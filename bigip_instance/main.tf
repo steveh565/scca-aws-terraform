@@ -1,4 +1,3 @@
-/*
 // provider, backend, storage and networking/vpc are handled in main/init module //
 provider "aws" {
   region  = var.aws_region
@@ -7,6 +6,7 @@ provider "aws" {
   #  secret_key = var.secret_key
 }
 
+/*
 terraform {
   backend "s3" {
     bucket = "dc-f5-terraforom-aws"
@@ -41,45 +41,30 @@ module "networking" {
 // INPUT VARIABLES: //
 */
 
-variable subnet_mgmt_id {}
-variable bigip_mgmt_priv_ip {}
-variable bigip_mgmt_sg {}
-variable subnet_ext_id {}
-variable bigip_ext_priv_self_ip {}
-variable bigip_ext_priv_vip1 {}
-variable bigip_ext_sg {}
-variable ext_gw {}
-variable subnet_int_id {}
-variable bigip_int_priv_self_ip {}
-variable bigip_int_priv_vip1 {}
-variable bigip_int_sg {}
-variable app1_net {}
-variable app1_net_gw {}
-variable rest_bigip_do_file { default = "bigip_do_data.json" } # path/filename to save DO declaration
-variable key_name {}
-variable public_key_path {}
-variable uname {}
-variable upassword {}
-variable DO_onboard_URL {}
-variable AS3_URL {}
-variable TS_URL {}
-variable CF_URL {}
-variable libs_dir {}
-variable onboard_log {}
-variable instance_type {}
+variable subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
+variable bigip_mgmt_priv_ip { default = "10.10.1.10" }
+variable bigip_mgmt_sg { default = "sg-0d240145dbf1a93a9" }
+variable subnet_ext_id { default = "subnet-0471ee7772cc91d63" }
+variable bigip_ext_priv_self_ip { default = "10.10.2.10" }
+variable bigip_ext_priv_vip1 { default = "10.10.2.133" }
+variable bigip_ext_sg { default = "sg-0d240145dbf1a93a9" }
+variable subnet_int_id { default = "subnet-05506b7d2258805fd" }
+variable bigip_int_priv_self_ip { default = "10.10.3.10" }
+variable bigip2_int_priv_self_ip { default = "10.10.103.10" }
+variable bigip_int_priv_vip1 { default = "10.10.3.133" }
+variable bigip_int_sg { default = "sg-0d240145dbf1a93a9" }
+variable key_name { default = "terraform-daniel-keypair" }
+variable public_key_path { default = "/Users/cayer/.ssh/id_rsa_aws_daniel.pub" }
+variable instance_type { default = "m5.xlarge" }
 variable associate_public_ip_address { default = true }
-variable availability_zone {}
-variable tag_name { default = "cfSHSCA5" }
+variable availability_zone { default = "ca-central-1a" }
 variable ve_name { default = "bigip" }
-variable license {}
+variable license { default = "XOKPF-HUNPO-RBUSV-BGJAU-LLEMNJL" }
 variable domain_name { default = "example.com" }
-variable host1_name {}
-variable host2_name {}
+variable host1_name { default = "bigip1" }
+variable host2_name { default = "bigip2" }
 variable advisory_text { default = "/Common/hostname" }
-variable advisory_color {}
-variable dns_server {}
-variable ntp_server {}
-variable timezone {}
+variable advisory_color { default = "green" }
 variable provision_ltm { default = "nominal" }
 variable provision_avr { default = "nominal" }
 variable provision_ilx { default = "nominal" }
@@ -134,6 +119,7 @@ resource "aws_network_interface" "FrSC" {
 }
 */
 
+/*
 // Create and associate public IP to bigip_ext_priv_vip1    //
 // (mgmt interface is handled by aws_instance module below) //
 resource "aws_eip" "eip_vip" {
@@ -141,6 +127,8 @@ resource "aws_eip" "eip_vip" {
   network_interface         = aws_network_interface.external.id
   associate_with_private_ip = var.bigip_ext_priv_vip1
 }
+*/
+
 
 // Create a new key pair for login access to this bigip instance                          //
 // alternatiely, this new key pair could be done in main module, and used for all bigip's //
@@ -174,20 +162,20 @@ resource "aws_instance" "bigip" {
   private_ip                  = var.bigip_mgmt_priv_ip
   availability_zone           = var.availability_zone
   subnet_id                   = var.subnet_mgmt_id
-  security_groups             = [var.bigip_mgmt_sg]
-  vpc_security_group_ids      = [var.bigip_mgmt_sg]
-  user_data                   = data.template_file.ve_onboard.rendered
-  key_name                    = var.key_name
+  #  security_groups             = [var.bigip_mgmt_sg]
+  vpc_security_group_ids = [var.bigip_mgmt_sg]
+  user_data              = data.template_file.ve_onboard.rendered
+  key_name               = var.key_name
   root_block_device {
     delete_on_termination = true
   }
 
   provisioner "remote-exec" {
-    when = "destroy"
+    when = destroy
     inline = [
-      "tmsh revoke /sys license"
+      "echo y | tmsh revoke sys license"
     ]
-    on_failure = "continue"
+    on_failure = continue
   }
 
   tags = {
@@ -206,31 +194,38 @@ data "template_file" "bigip_do_json" {
     host1                  = "${var.host1_name}"
     host2                  = "${var.host2_name}"
     local_host             = "${var.host1_name}"
+    admin_user             = var.uname
+    localPassword          = var.upassword
+    admin_password         = var.upassword
+    remote_selfip          = var.bigip2_int_priv_self_ip
+    domain_name            = var.domain_name
+    advisory_color         = var.advisory_color
+    advisory_text          = var.advisory_text
     provision_ltm          = var.provision_ltm
     provision_avr          = var.provision_avr
     provision_ilx          = var.provision_ilx
     provision_asm          = var.provision_asm
-    provision_ltm          = var.provision_ltm
+    provision_apm          = var.provision_apm
     bigip_ext_priv_self_ip = var.bigip_ext_priv_self_ip
     bigip_int_priv_self_ip = var.bigip_int_priv_self_ip
-    gateway                = "${local.ext_gw}"
+    gateway                = cidrhost(var.maz_ext1_cidr, 1)
     dns_server             = "${var.dns_server}"
     ntp_server             = "${var.ntp_server}"
     timezone               = "${var.timezone}"
-    app1_net               = "${local.app1_net}"
-    app1_net_gw            = "${local.app1_net_gw}"
+    app1_net               = var.tenant_vpc_cidr
+    app1_net_gw            = cidrhost(var.maz_ext1_cidr, 1)
   }
 }
 
 # save bigip DO to local file
-resource "local_file" "f5vm01_do_file" {
+resource "local_file" "bigip_do_file" {
   content  = data.template_file.bigip_do_json.rendered
   filename = "${path.module}/${var.rest_bigip_do_file}"
 }
 
 # push DO declaration onto bigip
-resource "null_resource" "f5vm01_DO" {
-  depends_on = ["aws_instance.bigip"]
+resource "null_resource" "bigip_DO" {
+  depends_on = [aws_instance.bigip]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -261,7 +256,7 @@ resource "null_resource" "f5vm01_DO" {
 #}
 
 #resource "null_resource" "f5vm01_TS" {
-#  depends_on = [null_resource.f5vm01_DO]
+#  depends_on = [null_resource.bigip_DO]
 #  # Running CF REST API
 #  provisioner "local-exec" {
 #    command = <<-EOF
@@ -286,8 +281,8 @@ resource "null_resource" "f5vm01_DO" {
 
 #output "sg_id" { value = "${azurerm_network_security_group.main.id}" }
 #output "sg_name" { value = "${azurerm_network_security_group.main.name}" }
-output "mgmt_subnet_gw" { value = "${local.mgmt_gw}" }
-output "ext_subnet_gw" { value = "${local.ext_gw}" }
+output "mgmt_subnet_gw" { value = cidrhost(var.maz_mgmt1_cidr, 1) }
+output "ext_subnet_gw" { value = cidrhost(var.maz_ext1_cidr, 1) }
 #output "ALB_app1_pip" { value = "${data.azurerm_public_ip.lbpip.ip_address}" }
 
 #output "f5vm01_id" { value = "${azurerm_virtual_machine.f5vm01.id}" }
