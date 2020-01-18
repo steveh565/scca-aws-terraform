@@ -1,12 +1,64 @@
-// provider, backend, storage and networking/vpc are handled in main/init module //
+// provider, backend, storage and networking/vpc should be moved/handled in the root main/init calling module //
 provider "aws" {
   region  = var.aws_region
   profile = "default"
-  #  access_key = var.access_key
-  #  secret_key = var.secret_key
+  // access_key and secret_key values should come from environment variables, don't store in here to keep them safe //
 }
 
+//   Deploy S3 Storage Resource //
+# Create a random id
+resource "random_id" "terraform_bucket_id" {
+  byte_length = 2
+}
+
+# Create the bucket
+resource "aws_s3_bucket" "terraform_code" {
+  bucket        = "terraform-${random_id.terraform_bucket_id.dec}"
+  acl           = "private"
+  force_destroy = true
+
+  tags = {
+    Name = "terraform_${var.tag_name}_bucket"
+  }
+}
+
+// for CF, AWS IAM role with specific privileges must be assigned to each bigip EC2 instance //
+// In AWS, go to IAM > Roles and create a policy with the following permissions:
+//    - EC2 Read/Write
+//    - S3 Read/Write
+//    - STS Assume Role
+
+resource "aws_iam_role" "bigip-Failover-Extension-IAM-role" {
+  name = "bigip-Failover-Extension-IAM-role"
+
+  assume_role_policy = file("${path.module}/bigip-Failover-Extension-IAM-role-Assume-Role.json")
+
+  tags = {
+    tag-key = "tag-value"
+  }
+}
+
+resource "aws_iam_policy" "bigip-Failover-Extension-IAM-policy" {
+  name        = "bigip-Failover-Extension-IAM-policy"
+  description = "for bigip cloud failover extension"
+  policy      = file("bigip-Failover-Extension-IAM-policy.json")
+}
+
+resource "aws_iam_policy_attachment" "bigip-Failover-Extension-IAM-policy-attach" {
+  name       = "bigip-Failover-Extension-IAM-policy-attach"
+  roles      = [aws_iam_role.bigip-Failover-Extension-IAM-role.name]
+  policy_arn = aws_iam_policy.bigip-Failover-Extension-IAM-policy.arn
+}
+
+
+resource "aws_iam_instance_profile" "bigip-Failover-Extension-IAM-instance-profile" {
+  name = "bigip-Failover-Extension-IAM-instance-profile"
+  role = aws_iam_role.bigip-Failover-Extension-IAM-role.name
+}
+
+
 /*
+// set the backend to store the terraform state file in S3, for collaboration  //
 terraform {
   backend "s3" {
     bucket = "dc-f5-terraforom-aws"
@@ -15,32 +67,11 @@ terraform {
     region = "ca-central-1"
   }
 }
-
-# Deploy Storage Resource
-module "storage" {
-  source       = "./storage"
-  project_name = var.project_name
-}
-
-# Deploy Networking Resources
-
-module "networking" {
-  source            = "./networking"
-  vpc_cidr          = var.vpc_cidr
-  project_name      = var.project_name
-  mgmt_cidr         = var.mgmt_cidr
-  ext_cidr          = var.ext_cidr
-  int_cidr          = var.int_cidr
-  tosc_cidr         = var.subnets.subnet3
-  frsc_cidr         = var.subnets.subnet4
-  availability_zone = var.availability_zone
-}
 */
 
 /*
 // INPUT VARIABLES: //
 */
-
 variable subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
 variable bigip_mgmt_priv_ip { default = "10.10.1.10" }
 variable bigip_mgmt_sg { default = "sg-0d240145dbf1a93a9" }
@@ -77,7 +108,7 @@ variable provision_apm { default = "nominal" }
 // Create and attach bigip tmm network interfaces           //
 // (mgmt interface is handled by aws_instance module below) //
 resource "aws_network_interface" "external" {
-  depends_on      = ["aws_instance.bigip"]
+  depends_on      = [aws_instance.bigip]
   subnet_id       = var.subnet_ext_id
   private_ips     = [var.bigip_ext_priv_self_ip, var.bigip_ext_priv_vip1]
   security_groups = [var.bigip_ext_sg]
@@ -88,7 +119,7 @@ resource "aws_network_interface" "external" {
 }
 
 resource "aws_network_interface" "internal" {
-  depends_on      = ["aws_instance.bigip"]
+  depends_on      = [aws_instance.bigip]
   subnet_id       = var.subnet_int_id
   private_ips     = [var.bigip_int_priv_self_ip, var.bigip_int_priv_vip1]
   security_groups = [var.bigip_int_sg]
@@ -99,7 +130,7 @@ resource "aws_network_interface" "internal" {
 }
 
 /*
-// uncomment and adjust for additional interfaces... and don't forget to adjust cluster.json do template accordingly! //
+// uncomment and adjust for additional interfaces... and don't forget to adjust device_index and cluster.json do template accordingly! //
 resource "aws_network_interface" "ToSC" {
   depends_on      = ["aws_instance.bigip"]
   subnet_id       = module.networking.tosc_subnet_id
@@ -110,22 +141,13 @@ resource "aws_network_interface" "ToSC" {
     device_index = 3
   }
 }
-
-resource "aws_network_interface" "FrSC" {
-  depends_on      = ["aws_instance.bigip"]
-  subnet_id       = module.networking.frsc_subnet_id
-  private_ips     = [var.f5vm01FrSC, var.f5vm01FrSC_sec]
-  security_groups = [module.networking.sg_allow_all]
-  attachment {
-    instance     = aws_instance.bigip.id
-    device_index = 4
-  }
-}
 */
 
 /*
+//           Uncomment to assign a public IP (EIP)          //
 // Create and associate public IP to bigip_ext_priv_vip1    //
 // (mgmt interface is handled by aws_instance module below) //
+//
 resource "aws_eip" "eip_vip" {
   vpc                       = true
   network_interface         = aws_network_interface.external.id
@@ -145,7 +167,6 @@ resource "aws_key_pair" "auth" {
 # Setup initial Onboarding script
 data "template_file" "ve_onboard" {
   template = "${file("${path.module}/onboard.tpl")}"
-
   vars = {
     uname          = "${var.uname}"
     upassword      = "${var.upassword}"
@@ -166,10 +187,10 @@ resource "aws_instance" "bigip" {
   private_ip                  = var.bigip_mgmt_priv_ip
   availability_zone           = var.availability_zone
   subnet_id                   = var.subnet_mgmt_id
-  #  security_groups             = [var.bigip_mgmt_sg]
-  vpc_security_group_ids = [var.bigip_mgmt_sg]
-  user_data              = data.template_file.ve_onboard.rendered
-  key_name               = var.key_name
+  vpc_security_group_ids      = [var.bigip_mgmt_sg]
+  user_data                   = data.template_file.ve_onboard.rendered
+  key_name                    = var.key_name
+  iam_instance_profile        = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
   root_block_device {
     delete_on_termination = true
   }
@@ -193,8 +214,7 @@ data "template_file" "bigip_do_json" {
 
   vars = {
     #Uncomment the following line for BYOL
-    regkey = "${var.license}"
-
+    regkey                 = "${var.license}"
     host1                  = "${var.host1_name}"
     host2                  = "${var.host2_name}"
     local_host             = "${var.host1_name}"

@@ -8,6 +8,7 @@ variable rest_as3_uri { default = "/mgmt/shared/appsvcs/declare" }
 variable rest_ts_uri { default = "/mgmt/shared/telemetry/declare" }
 variable rest_do_method { default = "POST" }
 variable rest_as3_method { default = "POST" }
+variable rest_cf_uri { default = "/mgmt/shared/cloud-failover/declare" }
 variable rest_bigip_do_file { default = "bigip_do_data.json" }
 variable rest_f5vm01_do_file { default = "f5vm01_do_data.json" }
 variable rest_f5vm02_do_file { default = "f5vm02_do_data.json" }
@@ -37,23 +38,23 @@ variable "tag_name" {
 }
 
 #SSH public key path
-variable "key_path" {  default     = "~/.ssh/id_rsa.pub" }
+variable "key_path" { default = "~/.ssh/id_rsa.pub" }
 
 #Source IPv4 CIDR block(s) allowed to access management
-variable "mgmt_asrc" {  default     = ["0.0.0.0/0"] }
+variable "mgmt_asrc" { default = ["0.0.0.0/0"] }
 
 #BIG-IP1 Registration Key
-variable "bigip_lic1" {  default     = "KTNMQ-JGDUE-YGPMF-FFBFB-QPQRPEY" }
-variable "bigip_lic2" { default     = "SIDHT-JZZDS-XSAVY-EWBNS-OLPTMFK" }
-variable "bigip_lic3" { default     = "GOSWC-XYFEU-XJFXC-WHPOI-XFVGPGY" }
-variable "bigip_lic4" { default     = "HSXXU-EJHAT-YCZUG-YASDQ-BORTWDS" }
-variable "firewall_lic1" { default     = "VWQLU-IVKYK-LJKST-YHICZ-JIEILYN" }
-variable "firewall_lic2" { default     = "CCCKM-GYBEQ-CNKCZ-UJKAO-OJKMUXW" }
-variable "tenant_name" { default     = "Tenant1" }
-variable "tenant_bigip_lic1" { default     = "KZBIP-ABHUK-GKAJX-FLQEJ-SACARSD" }
-variable "tenant_bigip_lic2" { default     = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII" }
-variable "maz_bigip_lic1" { default     = "FFQMY-FYNUT-FFZID-QVZOQ-LBSAWOW" }
-variable "maz_bigip_lic2" { default     = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK" }
+variable "bigip_lic1" { default = "KTNMQ-JGDUE-YGPMF-FFBFB-QPQRPEY" }
+variable "bigip_lic2" { default = "SIDHT-JZZDS-XSAVY-EWBNS-OLPTMFK" }
+variable "bigip_lic3" { default = "GOSWC-XYFEU-XJFXC-WHPOI-XFVGPGY" }
+variable "bigip_lic4" { default = "HSXXU-EJHAT-YCZUG-YASDQ-BORTWDS" }
+variable "firewall_lic1" { default = "VWQLU-IVKYK-LJKST-YHICZ-JIEILYN" }
+variable "firewall_lic2" { default = "CCCKM-GYBEQ-CNKCZ-UJKAO-OJKMUXW" }
+variable "tenant_name" { default = "Tenant1" }
+variable "tenant_bigip_lic1" { default = "KZBIP-ABHUK-GKAJX-FLQEJ-SACARSD" }
+variable "tenant_bigip_lic2" { default = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII" }
+variable "maz_bigip_lic1" { default = "FFQMY-FYNUT-FFZID-QVZOQ-LBSAWOW" }
+variable "maz_bigip_lic2" { default = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK" }
 
 
 # Platform settings variables
