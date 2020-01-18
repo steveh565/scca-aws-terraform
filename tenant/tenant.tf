@@ -33,11 +33,11 @@ data "aws_ami" "ubuntu" {
 }
 
 # Instance
-resource "aws_instance" "HttpsWorkload" {
+resource "aws_instance" "az1_HttpsWorkload" {
 	ami = "${data.aws_ami.ubuntu.id}"
 	instance_type = "t2.micro"
 	key_name = "${aws_key_pair.tenant.id}"
-	subnet_id = "${aws_subnet.tenant_int1.id}"
+	subnet_id = "${aws_subnet.az1_tenant_int.id}"
 	vpc_security_group_ids = ["${aws_security_group.tenant_int.id}"]
 	associate_public_ip_address = true
 	source_dest_check = false
@@ -48,5 +48,5 @@ resource "aws_instance" "HttpsWorkload" {
 		f5rg = "${var.tag_name}"
 		tenant = "${var.tenant_name} "
 	}
-	count = 2
+	count = 1
 }

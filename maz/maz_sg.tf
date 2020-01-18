@@ -18,25 +18,25 @@ resource "aws_security_group" "maz_int" {
 		protocol = "tcp"
 		from_port = 80
 		to_port = 80
-		cidr_blocks = ["${var.maz_vpc_cidr}"]
+		cidr_blocks = ["${var.ztsra_vpc_cidr}"]
 	}
 	ingress {
 		protocol = "tcp"
 		from_port = 443
 		to_port = 443
-		cidr_blocks = ["${var.maz_vpc_cidr}"]
+		cidr_blocks = ["${var.ztsra_vpc_cidr}"]
 	}
 	ingress {
 		protocol = "tcp"
 		from_port = 4433
 		to_port = 4433
-		cidr_blocks = ["${var.maz_vpc_cidr}"]
+		cidr_blocks = ["${var.ztsra_vpc_cidr}"]
 	}
 	ingress {
 		protocol = "icmp"
 		from_port = -1
 		to_port = -1
-		cidr_blocks = ["${var.maz_vpc_cidr}"]
+		cidr_blocks = ["${var.ztsra_vpc_cidr}"]
 	}
 	egress {
 		protocol = -1
