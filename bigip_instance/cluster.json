@@ -68,7 +68,7 @@
             "mtu": 1500,
             "interfaces": [
                 {
-                    "name": "1.4",
+                    "name": "1.2",
                     "tagged": false
                 }
             ]
@@ -91,6 +91,36 @@
             "gw": "${app1_net_gw}",
             "network": "${app1_net}",
             "mtu": 1500
+        },
+        "configsync": {
+            "class": "ConfigSync",
+            "configsyncIp": "/Common/external-self/address"
+        },
+        "failoverAddress": {
+            "class": "FailoverUnicast",
+            "address": "/Common/external-self/address"
+        },
+        "failoverGroup": {
+            "class": "DeviceGroup",
+            "type": "sync-failover",
+            "members": [
+                "${host1}.example.com",
+                "${host2}.example.com"
+            ],
+            "owner": "/Common/failoverGroup/members/0",
+            "autoSync": true,
+            "saveOnAutoSync": false,
+            "networkFailover": true,
+            "fullLoadOnSync": false,
+            "asmSync": false
+        },
+        "trust": {
+            "class": "DeviceTrust",
+            "localUsername": "${admin_user}",
+            "localPassword": "${admin_password}",
+            "remoteHost": "${remote_selfip}",
+            "remoteUsername": "${admin_user}",
+            "remotePassword": "${admin_password}"
         }
     }
 }

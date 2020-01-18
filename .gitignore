@@ -8,3 +8,4 @@ terraform.tfstate
 terraform.tfstate.backup
 onboard.sh
 dmz.as3.json
+bigip_instance/bigip_do_data.json
