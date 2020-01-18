@@ -2,69 +2,73 @@
 variable tfstate_s3Bucket { default = "tfSharedState" }
 variable tfstate_dynamoLocksDb { default = "tfLocks" }
 
-# REST API Settings
-variable rest_do_uri { default = "/mgmt/shared/declarative-onboarding" }
-variable rest_as3_uri { default = "/mgmt/shared/appsvcs/declare" }
-variable rest_ts_uri { default = "/mgmt/shared/telemetry/declare" }
-variable rest_do_method { default = "POST" }
-variable rest_as3_method { default = "POST" }
-variable rest_bigip_do_file { default = "bigip_do_data.json" }
-variable rest_f5vm01_do_file { default = "f5vm01_do_data.json" }
-variable rest_f5vm02_do_file { default = "f5vm02_do_data.json" }
-variable rest_fwvm01_do_file { default = "fwvm01_do_data.json" }
-variable rest_fwvm02_do_file { default = "fwvm02_do_data.json" }
-variable rest_fwvm_as3_file { default = "fwvm_as3_data.json" }
-variable rest_vm_ts_file { default = "ts.json" }
-variable rest_vm_as3_file { default = "bigip_as3.json" }
-## Please check and update the latest DO URL from https://github.com/F5Networks/f5-declarative-onboarding/releases
-variable DO_onboard_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-declarative-onboarding-1.7.0-3.noarch.rpm" }
-## Please check and update the latest AS3 URL from https://github.com/F5Networks/f5-appsvcs-extension/releases/latest 
-variable AS3_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-appsvcs-3.14.0-4.noarch.rpm" }
-## Please check and update the latest Telemetry Streaming from https://github.com/F5Networks/f5-telemetry-streaming/tree/master/dist
-variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.5.0-1.noarch.rpm" }
-## Please check and update the latest Cloud Failover from https://github.com/f5devcentral/f5-cloud-failover-extension
-variable CF_URL { default = "https://github.com/f5devcentral/f5-cloud-failover-extension/releases/download/v0.9.1/f5-cloud-failover-0.9.1-1.noarch.rpm" }
+# AWS Creds
+variable "SP" {
+  type = "map"
+  default = {
+    access_key = "AKIAQL5QPPJL3CZT4CHM"
+    secret_key = "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"
+  }
+}
 
 # Input Variables
-variable "aws_region" {
-  description = "AWS region"
-  default     = "ca-central-1"
-}
+variable aws_region { default = "ca-central-1" }
 
-variable "tag_name" {
-  description = "VPC Name tag"
-  default     = "SHSCA5"
-}
+# Prefixes
+variable prefix	{   default = "SHSCA7" }
+variable tag_name { default = "SHSCA7" }
+variable tenant_name { default = "CSD" }
+variable maz_name { default = "MAZ" }
+
 
 #SSH public key path
-variable "key_path" {  default     = "~/.ssh/id_rsa.pub" }
+variable key_path {  default     = "~/.ssh/id_rsa.pub" }
 
 #Source IPv4 CIDR block(s) allowed to access management
-variable "mgmt_asrc" {  default     = ["0.0.0.0/0"] }
+variable mgmt_asrc {  default     = ["0.0.0.0/0"] }
 
-#BIG-IP1 Registration Key
-variable "bigip_lic1" {  default     = "KTNMQ-JGDUE-YGPMF-FFBFB-QPQRPEY" }
-variable "bigip_lic2" { default     = "SIDHT-JZZDS-XSAVY-EWBNS-OLPTMFK" }
-variable "bigip_lic3" { default     = "GOSWC-XYFEU-XJFXC-WHPOI-XFVGPGY" }
-variable "bigip_lic4" { default     = "HSXXU-EJHAT-YCZUG-YASDQ-BORTWDS" }
-variable "firewall_lic1" { default     = "VWQLU-IVKYK-LJKST-YHICZ-JIEILYN" }
-variable "firewall_lic2" { default     = "CCCKM-GYBEQ-CNKCZ-UJKAO-OJKMUXW" }
-variable "tenant_name" { default     = "Tenant1" }
-variable "tenant_bigip_lic1" { default     = "KZBIP-ABHUK-GKAJX-FLQEJ-SACARSD" }
-variable "tenant_bigip_lic2" { default     = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII" }
-variable "maz_bigip_lic1" { default     = "FFQMY-FYNUT-FFZID-QVZOQ-LBSAWOW" }
-variable "maz_bigip_lic2" { default     = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK" }
+#Big-IP License Keys (BEST)
+variable paz_lic1          { default = "KTNMQ-JGDUE-YGPMF-FFBFB-QPQRPEY" }
+variable paz_lic2          { default = "SIDHT-JZZDS-XSAVY-EWBNS-OLPTMFK" }
+variable transit_lic1      { default = "CWLGN-NDGRI-JWQED-QBOYO-EWHAZJR" }
+variable transit_lic2      { default = "DKMVY-INBUX-RFVEW-LFLVG-KQAKIZV" }
+variable dmz_lic1          { default = "OWONS-UKJQP-HCWZR-XLIJD-TBQTABU" }
+variable dmz_lic2          { default = "RSJVH-LDYXL-SUJFT-XVDOE-SCYNSIQ" }
+variable tenant_bigip_lic1 { default = "KZBIP-ABHUK-GKAJX-FLQEJ-SACARSD" }
+variable tenant_bigip_lic2 { default = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII" }
+variable maz_bigip_lic1    { default = "FFQMY-FYNUT-FFZID-QVZOQ-LBSAWOW" }
+variable maz_bigip_lic2    { default = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK" }
 
 
 # Platform settings variables
-variable uname { default = "admin" }
-variable upassword { default = "Canada12345" }
+variable ami_f5image_name  { default = "ami-038e6394d715e5eac" }
+variable ami_f5image_type  { default = "AllTwoBootLocations" }
+variable ami_image_version { default = "latest" }
+
+variable ami_f5instance_type         { default = "m5.xlarge" }
+variable ami_paz_f5instance_type     { default = "m5.xlarge" }
+variable ami_dmz_f5instance_type     { default = "m5.xlarge" }
+variable ami_transit_f5instance_type { default = "m5.xlarge" }
+variable ami_ztsra_f5iinstance_type  { default = "m5.xlarge"}
+
+
+variable uname      { default = "awsops" }
+variable upassword  { default = "Canada12345" }
 variable dns_server { default = "8.8.8.8" }
 variable ntp_server { default = "0.us.pool.ntp.org" }
-variable timezone { default = "UTC" }
-variable libs_dir { default = "/config/cloud/aws/node_modules" }
+variable timezone   { default = "UTC" }
+variable libs_dir   { default = "/config/cloud/aws/node_modules" }
 variable onboard_script { default = "onboard.sh" }
 variable onboard_log { default = "/var/log/startup-script.log" }
+
+# Platform Provisioning
+variable provision_ltm { default = "nominal" }
+variable provision_avr { default = "nominal" }
+variable provision_ilx { default = "nominal" }
+variable provision_asm { default = "nominal" }
+variable provision_afm { default = "nominal" }
+variable provision_apm { default = "nominal" }
+
 variable paz_f5provisioning { default = "ltm:nominal,asm:nominal,avr:nominal,ilx:nominal" }
 variable dmz_f5provisioning { default = "ltm:nominal,afm:nominal,avr:nominal,ilx:nominal" }
 variable trusted_f5provisioning { default = "ltm:nominal,afm:nominal,avr:nominal:ilx:nominal" }
@@ -72,73 +76,241 @@ variable tenant_f5provisioning { default = "ltm:nominal,afm:nominal,apm:nominal,
 variable maz_f5provisioning { default = "ltm:nominal,apm:nominal,avr:nominal,ilx:nominal" }
 
 
+# AWS Network Environment
 variable vpc_tgw_name { default = "hubTGW" }
 
-variable "vpc_cidr" {
-  description = "VPC IPv4 CIDR block"
-  default     = "10.200.0.0/16"
+# security VPC Network
+variable sgExternal { default = "sgExternal" }
+variable sgExtMgmt { default = "sgExtMgmt" }
+variable sgInternal { default = "sgInternal" }
+
+variable security_vpc_cidr { default = "10.1.0.0/16" }
+variable az1_security_subnets {
+    type = "map"
+    default = {
+        "mgmt"    = "10.1.0.0/24"
+        "paz_ext" = "10.1.1.0/24"
+        "dmz_ext" = "10.1.2.0/24"
+        "dmz_int" = "10.1.3.0/24"
+        "transit" = "10.1.4.0/24"
+    }
 }
 
-variable "mgmt1_cidr" {
-  description = "Management subnet IPv4 CIDR block in AZ1"
-  default     = "10.200.113.0/24"
+variable az1_pazF5 {
+    type = "map"
+    default = {
+        "hostname" = "pazF5vm01"
+        "mgmt"     = "10.1.0.11"
+        "paz_ext_self" = "10.1.1.11"
+        "paz_ext_vip"  = "10.1.1.111"        
+        "dmz_ext_self" = "10.1.2.11"
+        "dmz_ext_vip"  = "10.1.2.111"
+    }
 }
 
-variable "mgmt2_cidr" {
-  description = "Management subnet IPv4 CIDR block in AZ2"
-  default     = "10.200.123.0/24"
+variable az1_dmzF5 {
+    type = "map"
+    default = {
+        "hostname" = "dmzF5vm01"
+        "mgmt"     = "10.1.0.12"
+        "dmz_ext_self" = "10.1.2.12"
+        "dmz_ext_vip"  = "10.1.2.112"        
+        "dmz_int_self" = "10.1.3.12"
+        "dmz_int_vip"  = "10.1.3.112"
+    }
 }
 
-variable "ext1_cidr" {
-  description = "External subnet IPv4 CIDR block in AZ1"
-  default     = "10.200.115.0/24"
+variable az1_transitF5 {
+    type = "map"
+    default = {
+        "hostname" = "transitF5vm01"
+        "mgmt"     = "10.1.0.13"
+        "dmz_int_self"     = "10.1.3.13"
+        "dmz_int_vip"      = "10.1.3.113"
+        "transit_self" = "10.1.4.13"
+        "transit_vip"  = "10.1.4.113"
+    }
 }
 
-variable "ext2_cidr" {
-  description = "External subnet IPv4 CIDR block in AZ2"
-  default     = "10.200.125.0/24"
+variable az2_security_subnets {
+    type = "map"
+    default = {
+        "mgmt"    = "10.1.10.0/24"
+        "paz_ext" = "10.1.11.0/24"
+        "dmz_ext" = "10.1.12.0/24"
+        "dmz_int" = "10.1.13.0/24"
+        "transit" = "10.1.14.0/24"
+    }
 }
 
-# DMZ Subnet CIDR blocks
-variable dmzMgmt1_cidr { default = "10.200.1.0/24" }
-variable dmzMgmt2_cidr { default = "10.200.11.0/24" }
-variable dmzExt1_cidr { default = "10.200.2.0/24" }
-variable dmzExt2_cidr { default = "10.200.21.0/24" }
-variable dmzInt1_cidr { default = "10.200.3.0/24" }
-variable dmzInt2_cidr { default = "10.200.31.0/24" }
+variable az2_pazF5 {
+    type = "map"
+    default = {
+        "hostname" = "pazF5vm02"
+        "mgmt"     = "10.1.0.11"
+        "paz_ext_self" = "10.1.11.11"
+        "paz_ext_vip"  = "10.1.11.111"        
+        "dmz_ext_self" = "10.1.12.11"
+        "dmz_ext_vip"  = "10.1.12.111"
+    }
+}
 
-# Trusted Subnet CIDR Blocks
-variable trustedMgmt1_cidr { default = "10.200.21.0/24" }
-variable trustedMgmt2_cidr { default = "10.200.201.0/24" }
-variable trustedExt1_cidr { default = "10.200.22.0/24" }
-variable trustedExt2_cidr { default = "10.200.202.0/24" }
-variable trustedInt1_cidr { default = "10.200.23.0/24" }
-variable trustedInt2_cidr { default = "10.200.203.0/24" }
+variable az2_dmzF5 {
+    type = "map"
+    default = {
+        "hostname" = "dmzF5vm02"
+        "mgmt"     = "10.1.0.12"
+        "dmz_ext_self" = "10.1.12.12"
+        "dmz_ext_vip"  = "10.1.12.112"        
+        "dmz_int_self" = "10.1.13.12"
+        "dmz_int_vip"  = "10.1.13.112"
+    }
+}
 
-# MAZ VPC and Subnet CIDR blocks
-variable maz_vpc_cidr { default = "10.10.0.0/16" }
-variable maz_mgmt1_cidr { default = "10.10.1.0/24" }
-variable maz_mgmt2_cidr { default = "10.10.101.0/24" }
-variable maz_ext1_cidr { default = "10.10.2.0/24" }
-variable maz_ext2_cidr { default = "10.10.102.0/24" }
-variable maz_int1_cidr { default = "10.10.3.0/24" }
-variable maz_int2_cidr { default = "10.10.103.0/24" }
-variable maz_name { default = "MAZ" }
-
-# Tenant VPC and Subnet CIDR blocks
-variable tenant_vpc_cidr { default = "10.70.0.0/16" }
-variable tenant_mgmt1_cidr { default = "10.70.1.0/24" }
-variable tenant_mgmt2_cidr { default = "10.70.101.0/24" }
-variable tenant_ext1_cidr { default = "10.70.2.0/24" }
-variable tenant_ext2_cidr { default = "10.70.102.0/24" }
-variable tenant_int1_cidr { default = "10.70.3.0/24" }
-variable tenant_int2_cidr { default = "10.70.103.0/24" }
+variable az2_transitF5 {
+    type = "map"
+    default = {
+        "hostname" = "transitF5vm02"
+        "mgmt"     = "10.1.0.13"
+        "dmz_int_self"     = "10.1.13.13"
+        "dmz_int_vip"      = "10.1.13.113"
+        "transit_self" = "10.1.14.13"
+        "transit_vip"  = "10.1.14.113"
+    }
+}
 
 
+# remote mgmt VPC Network
+variable ztsra_vpc_cidr    { default = "10.11.0.0/16" }
+variable az1_ztsra_subnets {
+    type = "map"
+    default = {
+        "mgmt"    = "10.11.0.0/24"
+        "transit" = "10.11.1.0/24"
+        "internal" = "10.11.2.0/24"
+    }
+}
 
-# AS3 Vars
+variable az1_ztsra_transitF5 {
+    type = "map"
+    default = {
+        "hostname" = "mazF5vm01"
+        "mgmt"     = "10.11.0.11"
+        "transit_self"  = "10.11.1.11"
+        "transit_vip"   = "10.11.1.111"
+        "internal_self" = "10.11.2.11"
+        "internal_vip"  = "10.11.2.111"
+    }
+}
+
+variable az2_ztsra_subnets {
+    type = "map"
+    default = {
+        "mgmt"    = "10.11.10.0/24"
+        "transit" = "10.11.11.0/24"
+        "internal" = "10.11.12.0/24"
+    }
+}
+
+variable az2_ztsra_transitF5 {
+    type = "map"
+    default = {
+        "hostname" = "mazF5vm02"
+        "mgmt"     = "10.11.10.11"
+        "transit_self"  = "10.11.11.11"
+        "transit_vip"   = "10.11.11.111"
+        "internal_self" = "10.11.12.11"
+        "internal_vip"  = "10.11.12.111"
+    }
+}
+
+# Tenant 1 VPC Network
+variable tenant_vpc_cidr    { default = "10.21.0.0/16" }
+variable az1_tenant_subnets {
+    type = "map"
+    default = {
+        "mgmt"    = "10.21.0.0/24"
+        "transit" = "10.21.1.0/24"
+        "internal" = "10.21.2.0/24"
+    }
+}
+
+variable az1_tenant_transitF5 {
+    type = "map"
+    default = {
+        "hostname" = "edgeF5vm01"
+        "mgmt"     = "10.21.0.11"
+        "transit_self"  = "10.21.1.11"
+        "transit_vip"   = "10.21.1.111"
+        "internal_self" = "10.21.2.11"
+        "internal_vip"  = "10.21.2.111"
+    }
+}
+
+variable az2_tenant_subnets {
+    type = "map"
+    default = {
+        "mgmt"    = "10.21.10.0/24"
+        "transit" = "10.21.11.0/24"
+        "internal" = "10.21.12.0/24"
+    }
+}
+
+variable az2_tenant_transitF5 {
+    type = "map"
+    default = {
+        "hostname" = "edgeF5vm02"
+        "mgmt"     = "10.21.10.11"
+        "transit_self"  = "10.21.11.11"
+        "transit_vip"   = "10.21.11.111"
+        "internal_self" = "10.21.12.11"
+        "internal_vip"  = "10.21.12.111"
+    }
+}
+
+
+
+# F5 AnO Toolchain API Configuration
+## Please check and update the latest DO URL from https://github.com/F5Networks/f5-declarative-onboarding/releases
+variable DO_onboard_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-declarative-onboarding-1.7.0-3.noarch.rpm" }
+## Please check and update the latest Telemetry Streaming from https://github.com/F5Networks/f5-telemetry-streaming/tree/master/dist
+variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.5.0-1.noarch.rpm" }
+## Please check and update the latest Cloud Failover from https://github.com/f5devcentral/f5-cloud-failover-extension
+variable CF_URL { default = "https://github.com/f5devcentral/f5-cloud-failover-extension/releases/download/v0.9.1/f5-cloud-failover-0.9.1-1.noarch.rpm" }
+## Please check and update the latest AS3 URL from https://github.com/F5Networks/f5-appsvcs-extension/releases/latest 
+variable AS3_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-appsvcs-3.14.0-4.noarch.rpm" }
+
+
+# Declarative-Onboarding extension Vars
+variable az1_paz_do_json { default = "pazF5vm01.do.json" }
+variable az2_paz_do_json { default = "pazF5vm02.do.json" }
+variable az1_dmz_do_json { default = "dmzF5vm01.do.json" }
+variable az2_dmz_do_json { default = "dmzF5vm02.do.json" }
+variable az1_transit_do_json { default = "transitF5vm01.do.json" }
+variable az2_transit_do_json { default = "transitF5vm02.do.json" }
+variable az1_maz_do_json { default = "mazF5vm01.do.json" }
+variable az2_maz_do_json { default = "mazF5vm02.do.json" }
+variable az1_tenant_do_json { default = "edgeF5vm01.do.json" }
+variable az2_tenant_do_json { default = "edgeF5vm02.do.json" }
+
+# Telemetry Streaming externsion Vars
+variable paz_ts_json { default = "tsCloudwatch_ts.json" }
+variable paz_logs_as3_json { default = "tsLogCollection_as3.json"}
+
+# Cloud-failover extension Vars
+
+# AS3 extension Vars
 variable asm_policy_url { default = "https://raw.githubusercontent.com/steveh565/f5tools/master/asm-policies/asm-policy-linux-medium.xml" }
 variable tenant1_paz_as3_json { default = "tenant1_pas.as3.json" }
 variable maz_paz_as3_json { default = "maz_pas.as3.json" }
 variable dmz_as3_json { default = "dmz.as3.json" }
-variable trusted_as3_json { default = "trusted.as3.json" }
+variable transit_as3_json { default = "transit.as3.json" }
+
+# F5 AnO REST API Settings
+variable rest_do_uri { default = "/mgmt/shared/declarative-onboarding" }
+variable rest_as3_uri { default = "/mgmt/shared/appsvcs/declare" }
+variable rest_ts_uri { default = "/mgmt/shared/telemetry/declare" }
+variable rest_do_method { default = "POST" }
+variable rest_as3_method { default = "POST" }
+
+
