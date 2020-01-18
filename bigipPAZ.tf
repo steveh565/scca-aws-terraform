@@ -55,7 +55,7 @@ resource "aws_instance" "az1_bigip" {
   provisioner "remote-exec" {
     when = "destroy"
     inline = [
-      "tmsh revoke /sys license"
+      "echo y | tmsh revoke sys license"
     ]
     on_failure = "continue"
   }
