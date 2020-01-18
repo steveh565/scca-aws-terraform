@@ -7,3 +7,4 @@ tenant/.terraform
 terraform.tfstate
 terraform.tfstate.backup
 onboard.sh
+bigip_instance/bigip_do_data.json
