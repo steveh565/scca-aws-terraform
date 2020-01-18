@@ -1,9 +1,9 @@
 #terraform {
 #  backend "s3" {
-#    bucket         = "shsca5-tfsharedstate"
+#    bucket         = "shsca7-tfsharedstate"
 #    key            = "global/s3/terraform.tfstate"
 #    region         = "ca-central-1"
-#    dynamodb_table = "shsca5-tflocks"
+#    dynamodb_table = "shsca7-tflocks"
 #    encrypt        = true
 #  }
 #}
@@ -14,8 +14,8 @@ provider "aws" {
 	
 	#uncomment if you set these variables in vars.tf
 	#Comment out if you wish to use ENV variables for auth tokens
-	#access_key = var.SP.access_key
-	#secret_key = var.SP.secret_key
+	access_key = var.SP.access_key
+	secret_key = var.SP.secret_key
 }
 
 # Setup Onboarding scripts
@@ -49,14 +49,18 @@ resource "local_file" "vm_onboarding_file" {
 }
 
 
+output "az1_pazF5_Mgmt_Addr"     { value = "${aws_instance.az1_bigip.public_ip}" }
+output "az2_pazF5_Mgmt_Addr"     { value = "${aws_instance.az2_bigip.public_ip}" }
+
+output "PAZ_Ingress_Public_IP"   { value = "${aws_eip.eip_vip.public_ip}" }
+output "az1_pazF5_secondary_VIP" { value = "${var.az1_pazF5.paz_ext_vip}"}
+output "az2_pazF5_secondary_VIP" { value = "${var.az2_pazF5.paz_ext_vip}"}
+
+#output "az1_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az1_dmzBigip.public_ip}" }
+#output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmzBigip.public_ip}" }
+
+#output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
+#output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
 
 
-
-
-output "Hub_Transit_Gateway_ID" { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
-
-output "MAZ_Portal_Local_VIP" { value = "NULL" }
-output "MAZ_Portal_EIP" { value = "NULL" }
-
-output "Tenant-1_Workload_Local_VIP" { value = "NULL" }
-output "Tenant-1_Workload_EIP" { value = "NULL" }
+output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
