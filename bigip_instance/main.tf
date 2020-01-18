@@ -92,6 +92,7 @@ variable provision_apm { default = "nominal" }
 // Create and attach bigip tmm network interfaces           //
 // (mgmt interface is handled by aws_instance module below) //
 resource "aws_network_interface" "external" {
+  depends_on      = ["aws_instance.bigip"]
   subnet_id       = var.subnet_ext_id
   private_ips     = [var.bigip_ext_priv_self_ip, var.bigip_ext_priv_vip1]
   security_groups = [var.bigip_ext_sg]
@@ -102,6 +103,7 @@ resource "aws_network_interface" "external" {
 }
 
 resource "aws_network_interface" "internal" {
+  depends_on      = ["aws_instance.bigip"]
   subnet_id       = var.subnet_int_id
   private_ips     = [var.bigip_int_priv_self_ip, var.bigip_int_priv_vip1]
   security_groups = [var.bigip_int_sg]
@@ -114,6 +116,7 @@ resource "aws_network_interface" "internal" {
 /*
 // uncomment and adjust for additional interfaces... and don't forget to adjust cluster.json do template accordingly! //
 resource "aws_network_interface" "ToSC" {
+  depends_on      = ["aws_instance.bigip"]
   subnet_id       = module.networking.tosc_subnet_id
   private_ips     = [var.f5vm01ToSC, var.f5vm01ToSC_sec]
   security_groups = [module.networking.sg_allow_all]
@@ -124,6 +127,7 @@ resource "aws_network_interface" "ToSC" {
 }
 
 resource "aws_network_interface" "FrSC" {
+  depends_on      = ["aws_instance.bigip"]
   subnet_id       = module.networking.frsc_subnet_id
   private_ips     = [var.f5vm01FrSC, var.f5vm01FrSC_sec]
   security_groups = [module.networking.sg_allow_all]
