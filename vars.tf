@@ -36,80 +36,27 @@ variable "tag_name" {
   default     = "SHSCA5"
 }
 
+#SSH public key path
+variable "key_path" {  default     = "~/.ssh/id_rsa.pub" }
 
-variable "key_path" {
-  description = "SSH public key path"
-  default     = "/home/steveh/.ssh/id_rsa.pub"
-}
+#Source IPv4 CIDR block(s) allowed to access management
+variable "mgmt_asrc" {  default     = ["0.0.0.0/0"] }
 
-variable "mgmt_asrc" {
-  description = "Source IPv4 CIDR block(s) allowed to access management"
-  default     = ["0.0.0.0/0"]
-}
-
-variable "bigip_cft" {
-  description = "BIG-IP CloudFormation template"
-  default     = "https://s3.amazonaws.com/f5-cft/f5-existing-stack-across-az-cluster-byol-3nic-bigip.template"
-}
-
-variable "bigip_lic1" {
-  description = "BIG-IP1 Registration Key"
-  default     = "KTNMQ-JGDUE-YGPMF-FFBFB-QPQRPEY"
-}
-
-variable "bigip_lic2" {
-  description = "BIG-IP2 Registration Key"
-  default     = "SIDHT-JZZDS-XSAVY-EWBNS-OLPTMFK"
-}
-
-variable "bigip_lic3" {
-  description = "BIG-IP3 Registration Key"
-  default     = "GOSWC-XYFEU-XJFXC-WHPOI-XFVGPGY"
-}
-
-variable "bigip_lic4" {
-  description = "BIG-IP4 Registration Key"
-  default     = "HSXXU-EJHAT-YCZUG-YASDQ-BORTWDS"
-}
-
-variable "firewall_lic1" {
-  description = "BIG-IP Firewall-1 Registration Key"
-  default     = "VWQLU-IVKYK-LJKST-YHICZ-JIEILYN"
-}
-
-variable "firewall_lic2" {
-  description = "BIG-IP Firewall-2 Registration Key"
-  default     = "CCCKM-GYBEQ-CNKCZ-UJKAO-OJKMUXW"
-}
-
-variable "tenant_name" {
-  description = "Default Tenant Name"
-  default     = "Tenant1"
-}
-
-variable "tenant_bigip_lic1" {
-  description = "BIG-IP1 Registration Key"
-  default     = "KZBIP-ABHUK-GKAJX-FLQEJ-SACARSD"
-}
-
-variable "tenant_bigip_lic2" {
-  description = "BIG-IP2 Registration Key"
-  default     = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII"
-}
-
-variable "maz_bigip_lic1" {
-  description = "BIG-IP1 Registration Key"
-  default     = "FFQMY-FYNUT-FFZID-QVZOQ-LBSAWOW"
-}
-
-variable "maz_bigip_lic2" {
-  description = "BIG-IP2 Registration Key"
-  default     = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK"
-}
+#BIG-IP1 Registration Key
+variable "bigip_lic1" {  default     = "KTNMQ-JGDUE-YGPMF-FFBFB-QPQRPEY" }
+variable "bigip_lic2" { default     = "SIDHT-JZZDS-XSAVY-EWBNS-OLPTMFK" }
+variable "bigip_lic3" { default     = "GOSWC-XYFEU-XJFXC-WHPOI-XFVGPGY" }
+variable "bigip_lic4" { default     = "HSXXU-EJHAT-YCZUG-YASDQ-BORTWDS" }
+variable "firewall_lic1" { default     = "VWQLU-IVKYK-LJKST-YHICZ-JIEILYN" }
+variable "firewall_lic2" { default     = "CCCKM-GYBEQ-CNKCZ-UJKAO-OJKMUXW" }
+variable "tenant_name" { default     = "Tenant1" }
+variable "tenant_bigip_lic1" { default     = "KZBIP-ABHUK-GKAJX-FLQEJ-SACARSD" }
+variable "tenant_bigip_lic2" { default     = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII" }
+variable "maz_bigip_lic1" { default     = "FFQMY-FYNUT-FFZID-QVZOQ-LBSAWOW" }
+variable "maz_bigip_lic2" { default     = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK" }
 
 
 # Platform settings variables
-
 variable uname { default = "admin" }
 variable upassword { default = "Canada12345" }
 variable dns_server { default = "8.8.8.8" }
