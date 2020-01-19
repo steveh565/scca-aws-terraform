@@ -1,3 +1,4 @@
+/*
 # https://github.com/F5Networks/f5-aws-cloudformation/tree/master/supported/failover/across-net/via-api/3nic/existing-stack/byol/
 resource "aws_cloudformation_stack" "bigipTrusted" {
 	name = "cf${var.tag_name}-Trusted"
@@ -26,3 +27,4 @@ resource "aws_cloudformation_stack" "bigipTrusted" {
 	}
 	capabilities = ["CAPABILITY_IAM"]
 }
+*/

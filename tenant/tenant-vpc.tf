@@ -11,10 +11,10 @@ resource "aws_vpc" "tenant" {
 }
 
 # Management subnet in AZ1
-resource "aws_subnet" "tenant_mgmt1" {
+resource "aws_subnet" "az1_tenant_mgmt" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	availability_zone = "${var.aws_region}a"
-	cidr_block = "${var.tenant_mgmt1_cidr}"
+	cidr_block = var.az1_tenant_subnets.mgmt
 	tags = {
 		Name = "${var.tenant_name}-snetMgmt1"
 		Tenant = "${var.tenant_name}"
@@ -22,10 +22,10 @@ resource "aws_subnet" "tenant_mgmt1" {
 }
 
 # Management subnet in AZ2
-resource "aws_subnet" "tenant_mgmt2" {
+resource "aws_subnet" "az2_tenant_mgmt" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	availability_zone = "${var.aws_region}b"
-	cidr_block = "${var.tenant_mgmt2_cidr}"
+	cidr_block = var.az2_tenant_subnets.mgmt
 	tags = {
 		Name = "${var.tenant_name}-snetMgmt2"
 		Tenant = "${var.tenant_name}"
@@ -33,10 +33,10 @@ resource "aws_subnet" "tenant_mgmt2" {
 }
 
 # External subnet in AZ1
-resource "aws_subnet" "tenant_ext1" {
+resource "aws_subnet" "az1_tenant_ext" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	availability_zone = "${var.aws_region}a"
-	cidr_block = "${var.tenant_ext1_cidr}"
+	cidr_block = var.az1_tenant_subnets.transit
 	tags = {
 		Name = "${var.tenant_name}-snetExternal1"
 		Tenant = "${var.tenant_name}"
@@ -44,10 +44,10 @@ resource "aws_subnet" "tenant_ext1" {
 }
 
 # External subnet in AZ2
-resource "aws_subnet" "tenant_ext2" {
+resource "aws_subnet" "az2_tenant_ext" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	availability_zone = "${var.aws_region}b"
-	cidr_block = "${var.tenant_ext2_cidr}"
+	cidr_block = var.az2_tenant_subnets.transit
 	tags = {
 		Name = "${var.tenant_name}-snetExternal2"
 		Tenant = "${var.tenant_name}"
@@ -55,10 +55,10 @@ resource "aws_subnet" "tenant_ext2" {
 }
 
 # Internal subnet in AZ1
-resource "aws_subnet" "tenant_int1" {
+resource "aws_subnet" "az1_tenant_int" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	availability_zone = "${var.aws_region}a"
-	cidr_block = "${var.tenant_int1_cidr}"
+	cidr_block = var.az1_tenant_subnets.internal
 	tags = {
 		Name = "${var.tenant_name}-snetInternal1"
 		Tenant = "${var.tenant_name}"
@@ -66,10 +66,10 @@ resource "aws_subnet" "tenant_int1" {
 }
 
 # Internal subnet in AZ2
-resource "aws_subnet" "tenant_int2" {
-	vpc_id = "${aws_vpc.tenant.id}"
+resource "aws_subnet" "az2_tenant_int" {
+	vpc_id = aws_vpc.tenant.id
 	availability_zone = "${var.aws_region}b"
-	cidr_block = "${var.tenant_int2_cidr}"
+	cidr_block = var.az2_tenant_subnets.internal
 	tags = {
 		Name = "${var.tenant_name}-snetInternal2"
 		Tenant = "${var.tenant_name}"
@@ -98,7 +98,7 @@ resource "aws_ec2_transit_gateway" "hubtgw" {
 
 # Transit Gateway Attach
 resource "aws_ec2_transit_gateway_vpc_attachment" "tenantTgwAttach" {
-  	subnet_ids         = ["${aws_subnet.tenant_ext1.id}", "${aws_subnet.tenant_ext2.id}"]
+  	subnet_ids         = ["${aws_subnet.az1_tenant_ext.id}", "${aws_subnet.az2_tenant_ext.id}"]
   	transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
   	vpc_id             = "${aws_vpc.tenant.id}"
 
@@ -121,14 +121,14 @@ resource "aws_route_table" "tenant_TransitRt" {
 }
 
 # Assign route table to external subnet
-resource "aws_route_table_association" "tenant_ext1" {
-	subnet_id = "${aws_subnet.tenant_ext1.id}"
+resource "aws_route_table_association" "az1_tenant_ext" {
+	subnet_id = "${aws_subnet.az1_tenant_ext.id}"
 	route_table_id = "${aws_route_table.tenant_TransitRt.id}"
 }
 
 # Assign route table to external subnet
-resource "aws_route_table_association" "tenant_ext2" {
-	subnet_id = "${aws_subnet.tenant_ext2.id}"
+resource "aws_route_table_association" "az2_tenant_ext" {
+	subnet_id = "${aws_subnet.az2_tenant_ext.id}"
 	route_table_id = "${aws_route_table.tenant_TransitRt.id}"
 }
 
@@ -145,14 +145,14 @@ resource "aws_route_table" "tenant_MgmtRt" {
 }
 
 # Assign route table to mgmt1 subnet
-resource "aws_route_table_association" "tenant_mgmt1" {
-	subnet_id = "${aws_subnet.tenant_mgmt1.id}"
+resource "aws_route_table_association" "az1_tenant_mgmt" {
+	subnet_id = "${aws_subnet.az1_tenant_mgmt.id}"
 	route_table_id = "${aws_route_table.tenant_MgmtRt.id}"
 }
 
 # Assign route table to mgmt2 subnet
-resource "aws_route_table_association" "tenant_mgmt2" {
-	subnet_id = "${aws_subnet.tenant_mgmt2.id}"
+resource "aws_route_table_association" "az2_tenant_mgmt" {
+	subnet_id = "${aws_subnet.az2_tenant_mgmt.id}"
 	route_table_id = "${aws_route_table.tenant_MgmtRt.id}"
 }
 
@@ -168,14 +168,14 @@ resource "aws_route_table" "tenant_intRt" {
 }
 
 # Assign route table to internal subnet
-resource "aws_route_table_association" "tenant_int1" {
-	subnet_id = "${aws_subnet.tenant_int1.id}"
+resource "aws_route_table_association" "az1_tenant_int" {
+	subnet_id = "${aws_subnet.az1_tenant_int.id}"
 	route_table_id = "${aws_route_table.tenant_intRt.id}"
 }
 
 # Assign route table to internal subnet
-resource "aws_route_table_association" "tenant_int2" {
-	subnet_id = "${aws_subnet.tenant_int2.id}"
+resource "aws_route_table_association" "az2_tenant_int" {
+	subnet_id = "${aws_subnet.az2_tenant_int.id}"
 	route_table_id = "${aws_route_table.tenant_intRt.id}"
 }
 

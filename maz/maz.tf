@@ -34,10 +34,11 @@ data "aws_ami" "ubuntu" {
 
 # Instance
 resource "aws_instance" "bastionHost" {
+	depends_on = [aws_subnet.az1_maz_int]
 	ami = "${data.aws_ami.ubuntu.id}"
 	instance_type = "t2.micro"
 	key_name = "${aws_key_pair.maz.id}"
-	subnet_id = "${aws_subnet.maz_int1.id}"
+	subnet_id = aws_subnet.az1_maz_int.id
 	vpc_security_group_ids = ["${aws_security_group.maz_int.id}"]
 	associate_public_ip_address = true
 	source_dest_check = false

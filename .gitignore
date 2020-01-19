@@ -7,4 +7,10 @@ tenant/.terraform
 terraform.tfstate
 terraform.tfstate.backup
 onboard.sh
+dmz.as3.json
 bigip_instance/bigip_do_data.json
+pazF5vm01.do.json
+pazF5vm02.do.json
+tenant1_pas.as3.json
+tsLogCollection_as3.json
+tsCloudwatch_ts.json
