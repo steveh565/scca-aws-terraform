@@ -5,20 +5,12 @@ provider "aws" {
   // access_key and secret_key values should come from environment variables, don't store in here to keep them safe //
 }
 
-//   Deploy S3 Storage Resource //
-# Create a random id
-resource "random_id" "terraform_bucket_id" {
-  byte_length = 2
-}
-
-# Create the bucket
-resource "aws_s3_bucket" "terraform_code" {
-  bucket        = "terraform-${random_id.terraform_bucket_id.dec}"
-  acl           = "private"
-  force_destroy = true
-
-  tags = {
-    Name = "terraform_${var.tag_name}_bucket"
+// set the backend to store the terraform state file in S3, for collaboration  //
+terraform {
+  backend "s3" {
+    bucket = "terraform_state"
+    key    = "terraform/terraform.tfstate"
+    region = "ca-central-1"
   }
 }
 
@@ -55,19 +47,6 @@ resource "aws_iam_instance_profile" "bigip-Failover-Extension-IAM-instance-profi
   name = "bigip-Failover-Extension-IAM-instance-profile"
   role = aws_iam_role.bigip-Failover-Extension-IAM-role.name
 }
-
-
-/*
-// set the backend to store the terraform state file in S3, for collaboration  //
-terraform {
-  backend "s3" {
-    bucket = "dc-f5-terraforom-aws"
-    key    = "terraform/terraform.tfstate"
-    #can't reference variables here, because this occurs before the variables are set?
-    region = "ca-central-1"
-  }
-}
-*/
 
 /*
 // INPUT VARIABLES: //
