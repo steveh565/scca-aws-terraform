@@ -1,4 +1,5 @@
 {
+    "$schema": "https://raw.githubusercontent.com/F5Networks/f5-declarative-onboarding/master/src/schema/latest/base.schema.json",
     "schemaVersion": "1.0.0",
     "class": "Device",
     "async": true,
@@ -42,13 +43,7 @@
             "ltm": "nominal",
             "avr": "nominal",
             "asm": "nominal",
-            "ilx": "nominal"
-        },
-        "myManagementRoute": {
-            "class": "ManagementRoute",
-            "gw": "192.0.2.1",
-            "network": "169.254.169.254",
-            "mtu": 1500
+            "afm": "nominal"
         },
         "external": {
             "class": "VLAN",
@@ -65,7 +60,7 @@
             "class": "SelfIp",
             "address": "${local_selfip1}/24",
             "vlan": "external",
-            "allowService": "default",
+            "allowService": ["tcp:22", "tcp:53", "tcp:161", "tcp:443", "tcp:1029", "tcp:1043", "tcp:4353", "udp:53", "udp:161", "udp:520", "udp:1026", "udp:4353"],
             "trafficGroup": "traffic-group-local-only"
         },
         "internal": {
@@ -86,12 +81,6 @@
             "allowService": "default",
             "trafficGroup": "traffic-group-local-only"
         },        
-        "default": {
-            "class": "Route",
-            "gw": "${gateway}",
-            "network": "default",
-            "mtu": 1500
-        },
         "configsync": {
 	    "class": "ConfigSync",
     	    "configsyncIp": "/Common/external-self/address"

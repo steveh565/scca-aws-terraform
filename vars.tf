@@ -28,8 +28,8 @@ variable key_path {  default     = "~/.ssh/id_rsa.pub" }
 variable mgmt_asrc {  default     = ["0.0.0.0/0"] }
 
 #Big-IP License Keys (BEST)
-variable paz_lic1          { default = "KTNMQ-JGDUE-YGPMF-FFBFB-QPQRPEY" }
-variable paz_lic2          { default = "SIDHT-JZZDS-XSAVY-EWBNS-OLPTMFK" }
+variable paz_lic1          { default = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII" }
+variable paz_lic2          { default = "CWLGN-NDGRI-JWQED-QBOYO-EWHAZJR" }
 variable transit_lic1      { default = "CWLGN-NDGRI-JWQED-QBOYO-EWHAZJR" }
 variable transit_lic2      { default = "DKMVY-INBUX-RFVEW-LFLVG-KQAKIZV" }
 variable dmz_lic1          { default = "OWONS-UKJQP-HCWZR-XLIJD-TBQTABU" }
@@ -147,7 +147,7 @@ variable az2_pazF5 {
     type = "map"
     default = {
         "hostname" = "pazF5vm02"
-        "mgmt"     = "10.1.0.11"
+        "mgmt"     = "10.1.10.11"
         "paz_ext_self" = "10.1.11.11"
         "paz_ext_vip"  = "10.1.11.111"        
         "dmz_ext_self" = "10.1.12.11"
@@ -271,14 +271,16 @@ variable az2_tenant_transitF5 {
 
 
 # F5 AnO Toolchain API Configuration
+## Last updated: 1/19/2020
 ## Please check and update the latest DO URL from https://github.com/F5Networks/f5-declarative-onboarding/releases
-variable DO_onboard_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-declarative-onboarding-1.7.0-3.noarch.rpm" }
+variable DO_onboard_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-declarative-onboarding-1.9.0-1.noarch.rpm" }
 ## Please check and update the latest Telemetry Streaming from https://github.com/F5Networks/f5-telemetry-streaming/tree/master/dist
-variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.5.0-1.noarch.rpm" }
+variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.8.0-1.noarch.rpm" }
 ## Please check and update the latest Cloud Failover from https://github.com/f5devcentral/f5-cloud-failover-extension
 variable CF_URL { default = "https://github.com/f5devcentral/f5-cloud-failover-extension/releases/download/v0.9.1/f5-cloud-failover-0.9.1-1.noarch.rpm" }
 ## Please check and update the latest AS3 URL from https://github.com/F5Networks/f5-appsvcs-extension/releases/latest 
-variable AS3_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-appsvcs-3.14.0-4.noarch.rpm" }
+variable AS3_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-appsvcs-3.16.0-6.noarch.rpm" }
+
 
 
 # Declarative-Onboarding extension Vars
@@ -292,10 +294,16 @@ variable az1_maz_do_json { default = "mazF5vm01.do.json" }
 variable az2_maz_do_json { default = "mazF5vm02.do.json" }
 variable az1_tenant_do_json { default = "edgeF5vm01.do.json" }
 variable az2_tenant_do_json { default = "edgeF5vm02.do.json" }
+variable az1_local_only_tmsh_json { default = "az1_localOnly_tmsh.json" }
+variable az2_local_only_tmsh_json { default = "az2_localOnly_tmsh.json" }
+variable az1_dmz_local_only_tmsh_json { default = "az1_dmz_localOnly_tmsh.json" }
+variable az2_dmz_local_only_tmsh_json { default = "az2_dmz_localOnly_tmsh.json" }
 
 # Telemetry Streaming externsion Vars
 variable paz_ts_json { default = "tsCloudwatch_ts.json" }
 variable paz_logs_as3_json { default = "tsLogCollection_as3.json"}
+variable dmz_ts_json { default = "tsCloudwatch_ts.json" }
+variable dmz_logs_as3_json { default = "tsLogCollection_as3.json"}
 
 # Cloud-failover extension Vars
 
@@ -307,10 +315,15 @@ variable dmz_as3_json { default = "dmz.as3.json" }
 variable transit_as3_json { default = "transit.as3.json" }
 
 # F5 AnO REST API Settings
+variable rest_tmsh_uri { default = "/mgmt/tm/util/bash" }
 variable rest_do_uri { default = "/mgmt/shared/declarative-onboarding" }
 variable rest_as3_uri { default = "/mgmt/shared/appsvcs/declare" }
 variable rest_ts_uri { default = "/mgmt/shared/telemetry/declare" }
+variable rest_cf_uri { default = "/mgmt/shared/cloud-failover/declare" }
 variable rest_do_method { default = "POST" }
 variable rest_as3_method { default = "POST" }
+variable rest_ts_method { default = "POST" }
+variable rest_cf_method { default = "POST" }
+variable rest_util_method { default = "POST" }
 
 

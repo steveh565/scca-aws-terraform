@@ -40,6 +40,14 @@ locals {
     az2_mgmt_gw  = "${cidrhost(var.az2_security_subnets.mgmt, 1)}"
     az1_paz_gw   = "${cidrhost(var.az1_security_subnets.paz_ext, 1)}"
     az2_paz_gw   = "${cidrhost(var.az2_security_subnets.paz_ext, 1)}"
+
+    az1_dmz_mgmt_gw  = "${cidrhost(var.az1_security_subnets.mgmt, 1)}"
+    az2_dmz_mgmt_gw  = "${cidrhost(var.az2_security_subnets.mgmt, 1)}"
+    az1_dmz_ext_gw   = "${cidrhost(var.az1_security_subnets.dmz_ext, 1)}"
+    az2_dmz_ext_gw   = "${cidrhost(var.az2_security_subnets.dmz_ext, 1)}"
+    az1_dmz_int_gw   = "${cidrhost(var.az1_security_subnets.dmz_int, 1)}"
+    az2_dmz_int_gw   = "${cidrhost(var.az2_security_subnets.dmz_int, 1)}"
+
 }
 
 # Render Onboarding script

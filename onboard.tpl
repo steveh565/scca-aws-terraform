@@ -19,7 +19,7 @@ exec 1>$LOG_FILE 2>&1
 CNT=0
 while true
 do
-  STATUS=$(curl -s -k -I example.com | grep HTTP)
+  STATUS=$(curl -s -k -I https://github.com | grep HTTP)
   if [[ $STATUS == *"200"* ]]; then
     echo "Got 200! VE is Ready!"
     break
@@ -34,6 +34,10 @@ do
 done
 
 sleep 60
+
+### CREATE ADMIN USER ACCOUNT
+tmsh create /auth user ${uname} password ${upassword} shell bash partition-access replace-all-with { all-partitions { role admin } }
+#tmsh modify /auth user admin password ${upassword}
 
 ### DOWNLOAD ONBOARDING PKGS
 # Could be pre-packaged or hosted internally
@@ -55,12 +59,16 @@ CF_URL='${CF_URL}'
 CF_FN=$(basename "$CF_URL")
 
 mkdir -p ${libs_dir}
+mkdir -p /var/config/rest/downloads
 
 echo -e "\n"$(date) "Download TS Pkg"
 curl -L -o ${libs_dir}/$TS_FN $TS_URL
 
 echo -e "\n"$(date) "Download Declarative Onboarding Pkg"
 curl -L -o ${libs_dir}/$DO_FN $DO_URL
+
+echo -e "\n"$(date) "Download Cloud-Failover Pkg"
+curl -L -o ${libs_dir}/$CF_FN $CF_URL
 
 echo -e "\n"$(date) "Download AS3 Pkg"
 curl -L -o ${libs_dir}/$AS3_FN $AS3_URL
@@ -82,6 +90,13 @@ curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management
 
 sleep 10
 
+# Install Cloud-Failover Pkg
+DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$CF_FN\"}"
+echo -e "\n"$(date) "Install CF Pkg"
+curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
+
+sleep 10
+
 # Install AS3 Pkg
 DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$AS3_FN\"}"
 echo -e "\n"$(date) "Install AS3 Pkg"
@@ -99,6 +114,24 @@ do
     break
   elif [ $CNT -le 6 ]; then
     echo "Status code: $STATUS  DO Not done yet..."
+    CNT=$[$CNT+1]
+  else
+    echo "GIVE UP..."
+    break
+  fi
+  sleep 10
+done
+
+# Check CF Ready
+CNT=0
+while true
+do
+  STATUS=$(curl -u $CREDS -X GET -s -k -I https://localhost/mgmt/shared/cloud-failover/declare | grep HTTP)
+  if [[ $STATUS == *"200"* ]]; then
+    echo "Got 200! Cloud Failover is Ready!"
+    break
+  elif [ $CNT -le 6 ]; then
+    echo "Status code: $STATUS  CF Not done yet..."
     CNT=$[$CNT+1]
   else
     echo "GIVE UP..."

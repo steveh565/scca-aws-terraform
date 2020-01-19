@@ -134,7 +134,7 @@ resource "aws_ec2_transit_gateway" "hubtgw" {
 # Transit Gateway Attach
 resource "aws_ec2_transit_gateway_vpc_attachment" "hubTgwAttach" {
     depends_on         = [aws_ec2_transit_gateway.hubtgw]
-  	subnet_ids         = [var.az1_security_subnets.transit, var.az2_security_subnets.transit]
+  	subnet_ids         = [aws_subnet.az1_transit.id, aws_subnet.az2_transit.id]
   	transit_gateway_id = aws_ec2_transit_gateway.hubtgw.id
   	vpc_id             = aws_vpc.main.id
 
@@ -153,17 +153,6 @@ resource "aws_ec2_transit_gateway_route_table" "hubtgwRt" {
 }
 
 # Route tables
-resource "aws_route_table" "publicRt" {
-	vpc_id = "${aws_vpc.main.id}"
-	route {
-		cidr_block = "0.0.0.0/0"
-		gateway_id = "${aws_internet_gateway.gw.id}"
-	}
-	tags = {
-		Name = "rtPublic"
-	}
-}
-
 resource "aws_route_table" "PazRt" {
 	vpc_id = "${aws_vpc.main.id}"
 	route {
@@ -198,6 +187,7 @@ resource "aws_route_table" "DmzIntRt" {
 }
 
 resource "aws_route_table" "TransitRt" {
+	depends_on = [aws_ec2_transit_gateway.hubtgw, aws_internet_gateway.gw]
 	vpc_id = "${aws_vpc.main.id}"
 	route {
 		cidr_block = "0.0.0.0/0"

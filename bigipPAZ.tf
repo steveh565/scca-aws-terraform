@@ -29,30 +29,84 @@ resource "aws_cloudformation_stack" "bigipPAZ" {
 }
 */
 
+# Create and attach bigip tmm network interfaces
+resource "aws_network_interface" "az1_mgmt" {
+  depends_on      = [aws_security_group.sg_ext_mgmt]
+  subnet_id       = aws_subnet.az1_mgmt.id
+  private_ips     = [var.az1_pazF5.mgmt]
+  security_groups = [aws_security_group.sg_ext_mgmt.id]
+}
+
+resource "aws_network_interface" "az1_external" {
+  depends_on      = [aws_security_group.sg_external]
+  subnet_id       = aws_subnet.az1_ext.id
+  private_ips     = [var.az1_pazF5.paz_ext_self, var.az1_pazF5.paz_ext_vip]
+  security_groups = [aws_security_group.sg_external.id]
+}
+
+resource "aws_network_interface" "az1_internal" {
+  depends_on      = [aws_security_group.sg_internal]
+  subnet_id       = aws_subnet.az1_dmzExt.id
+  private_ips     = [var.az1_pazF5.dmz_ext_self, var.az1_pazF5.dmz_ext_vip]
+  security_groups = [aws_security_group.sg_internal.id]
+}
+
+# Create elastic IP and map to "VIP" on external paz nic
+resource "aws_eip" "eip_vip" {
+  depends_on                = [aws_network_interface.az1_external]
+  vpc                       = true
+  network_interface         = aws_network_interface.az1_external.id
+  associate_with_private_ip = var.az1_pazF5.paz_ext_vip
+}
+
+resource "aws_eip" "eip_az1_mgmt" {
+  depends_on                = [aws_network_interface.az1_mgmt]
+  vpc                       = true
+  network_interface         = aws_network_interface.az1_mgmt.id
+  associate_with_private_ip = var.az1_pazF5.mgmt
+}
+
 #Big-IP 1
 resource "aws_instance" "az1_bigip" {
-  depends_on                  = [aws_subnet.az1_mgmt, aws_security_group.sgExtMgmt]
+  depends_on                  = [aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_external, aws_network_interface.az1_internal, aws_network_interface.az1_mgmt]
   ami                         = var.ami_f5image_name
   instance_type               = var.ami_paz_f5instance_type
-  associate_public_ip_address = true
-  private_ip                  = var.az1_pazF5.mgmt
-  availability_zone           = "${var.aws_region}a"
-  subnet_id                   = aws_subnet.az1_mgmt.id
-  security_groups             = [var.sgExtMgmt]
-  vpc_security_group_ids      = [var.sgExtMgmt]
   user_data                   = data.template_file.vm_onboard.rendered
   key_name                    = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
   }
-
+  network_interface {
+    device_index = 0
+    network_interface_id = aws_network_interface.az1_mgmt.id
+  }
+  network_interface {
+    device_index = 1
+    network_interface_id = aws_network_interface.az1_external.id
+  }
+  network_interface {
+    device_index = 2
+    network_interface_id = aws_network_interface.az1_internal.id
+  }
   provisioner "remote-exec" {
+    connection {
+      host = "${aws_instance.az1_bigip.public_ip}"
+      type = "ssh"
+      user = "${var.uname}"
+      password = "${var.upassword}"
+    }
     when = "create"
     inline = [
-      "cloud-init status --wait"
+      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
   }
   provisioner "remote-exec" {
+    connection {
+      host = "${aws_instance.az1_bigip.public_ip}"
+      type = "ssh"
+      user = "${var.uname}"
+      password = "${var.upassword}"
+    }
     when = "destroy"
     inline = [
       "echo y | tmsh revoke sys license"
@@ -66,37 +120,6 @@ resource "aws_instance" "az1_bigip" {
 }
 
 
-# Create and attach bigip tmm network interfaces
-# mgmt interface is handled by aws_instance create
-resource "aws_network_interface" "az1_external" {
-  depends_on      = [aws_instance.az1_bigip, aws_security_group.sgExternal]
-  subnet_id       = var.az1_security_subnets.paz_ext
-  private_ips     = [var.az1_pazF5.paz_ext_self, var.az1_pazF5.paz_ext_vip]
-  security_groups = [var.sgExternal]
-  attachment {
-    instance     = aws_instance.az1_bigip.id
-    device_index = 1
-  }
-}
-
-resource "aws_network_interface" "az1_internal" {
-  depends_on      = [aws_instance.az1_bigip, aws_security_group.sgInternal]
-  subnet_id       = var.az1_security_subnets.dmz_ext
-  private_ips     = [var.az1_pazF5.dmz_ext_self, var.az1_pazF5.dmz_ext_vip]
-  security_groups = [var.sgInternal]
-  attachment {
-    instance     = aws_instance.az1_bigip.id
-    device_index = 2
-  }
-}
-
-# Create elastic IP and map to "VIP" on external paz nic
-resource "aws_eip" "eip_vip" {
-  depends_on                = [aws_network_interface.az1_external]
-  vpc                       = true
-  network_interface         = aws_network_interface.az1_external.id
-  associate_with_private_ip = var.az1_pazF5.paz_ext_vip
-}
 
 ## AZ1 DO Declaration
 data "template_file" "az1_paz_do_json" {
@@ -105,17 +128,17 @@ data "template_file" "az1_paz_do_json" {
     #Uncomment the following line for BYOL
     regkey	        = "${var.paz_lic1}"
     banner_color    = "red"
-    host1	        = "${var.az1_pazF5.hostname}"
-    host2	        = "${var.az2_pazF5.hostname}"
+    host1	          = "${var.az1_pazF5.hostname}"
+    host2	          = "${var.az2_pazF5.hostname}"
     local_host      = "${var.az1_pazF5.hostname}"
     local_selfip1   = "${var.az1_pazF5.paz_ext_self}"
     local_selfip2   = "${var.az1_pazF5.dmz_ext_self}"
-    remote_selfip   = "${var.az2_pazF5.dmz_ext_self}"
+    remote_selfip   = "${var.az2_pazF5.mgmt}"
     mgmt_gw         = "${local.az1_mgmt_gw}"
     gateway	        = "${local.az1_paz_gw}"
     dns_server	    = "${var.dns_server}"
     ntp_server	    = "${var.ntp_server}"
-    timezone	    = "${var.timezone}"
+    timezone	      = "${var.timezone}"
     admin_user      = "${var.uname}"
     admin_password  = "${var.upassword}"
 
@@ -130,34 +153,97 @@ resource "local_file" "az1_paz_do_file" {
 }
 
 
+# PAZ LOCAL_ONLY (HaAcrossAZs) Routing configuration
+data "template_file" "az1_local_only_tmsh_json" {
+  template = "${file("${path.module}/local_only_tmsh.tpl.json")}"
+  vars = {
+    mgmt_ip     = "${var.az1_pazF5.mgmt}"
+    mgmt_gw     = "${local.az1_mgmt_gw}"
+    gw	        = "${local.az1_paz_gw}"
+  }
+}
+# Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
+resource "local_file" "az1_local_only_tmsh_file" {
+  content     = "${data.template_file.az1_local_only_tmsh_json.rendered}"
+  filename    = "${path.module}/${var.az1_local_only_tmsh_json}"
+}
+
+
+# Create and attach bigip tmm network interfaces
+resource "aws_network_interface" "az2_mgmt" {
+  depends_on      = [aws_security_group.sg_ext_mgmt]
+  subnet_id       = aws_subnet.az2_mgmt.id
+  private_ips     = [var.az2_pazF5.mgmt]
+  security_groups = [aws_security_group.sg_ext_mgmt.id]
+}
+
+resource "aws_network_interface" "az2_external" {
+  depends_on      = [aws_security_group.sg_external]
+  subnet_id       = aws_subnet.az2_ext.id
+  private_ips     = [var.az2_pazF5.paz_ext_self, var.az2_pazF5.paz_ext_vip]
+  security_groups = [aws_security_group.sg_external.id]
+}
+
+resource "aws_network_interface" "az2_internal" {
+  depends_on      = [aws_security_group.sg_internal]
+  subnet_id       = aws_subnet.az2_dmzExt.id
+  private_ips     = [var.az2_pazF5.dmz_ext_self, var.az2_pazF5.dmz_ext_vip]
+  security_groups = [aws_security_group.sg_internal.id]
+}
+
+resource "aws_eip" "eip_az2_mgmt" {
+  depends_on                = [aws_network_interface.az2_mgmt]
+  vpc                       = true
+  network_interface         = aws_network_interface.az2_mgmt.id
+  associate_with_private_ip = var.az2_pazF5.mgmt
+}
+
 # BigIP 2
 resource "aws_instance" "az2_bigip" {
-  depends_on                  = [aws_subnet.az2_mgmt, aws_security_group.sgExtMgmt]
+  depends_on                  = [aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_external, aws_network_interface.az2_internal, aws_network_interface.az2_mgmt]
   ami                         = var.ami_f5image_name
   instance_type               = var.ami_paz_f5instance_type
-  associate_public_ip_address = true
-  private_ip                 = var.az2_pazF5.mgmt
   availability_zone           = "${var.aws_region}b"
-  subnet_id                   = aws_subnet.az2_mgmt.id
-  security_groups             = [var.sgExtMgmt]
-  vpc_security_group_ids      = [var.sgExtMgmt]
   user_data                   = data.template_file.vm_onboard.rendered
   key_name                    = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
   }
-
+  network_interface {
+    device_index = 0
+    network_interface_id = aws_network_interface.az2_mgmt.id
+  }
+  network_interface {
+    device_index = 1
+    network_interface_id = aws_network_interface.az2_external.id
+  }
+  network_interface {
+    device_index = 2
+    network_interface_id = aws_network_interface.az2_internal.id
+  }
   provisioner "remote-exec" {
+    connection {
+      host = "${aws_instance.az2_bigip.public_ip}"
+      type = "ssh"
+      user = "${var.uname}"
+      password = "${var.upassword}"
+    }
     when = "create"
     inline = [
-      "cloud-init status --wait"
+      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
   }
 
   provisioner "remote-exec" {
+    connection {
+      host = "${aws_instance.az2_bigip.public_ip}"
+      type = "ssh"
+      user = "${var.uname}"
+      password = "${var.upassword}"
+    }
     when = "destroy"
     inline = [
-      "tmsh revoke /sys license"
+      "echo y | tmsh revoke /sys license"
     ]
     on_failure = "continue"
   }
@@ -168,30 +254,6 @@ resource "aws_instance" "az2_bigip" {
 }
 
 
-# Create and attach bigip tmm network interfaces
-# mgmt interface is handled by aws_instance create
-resource "aws_network_interface" "az2_external" {
-  depends_on      = [aws_instance.az2_bigip]
-  subnet_id       = var.az2_security_subnets.paz_ext
-  private_ips     = [var.az2_pazF5.paz_ext_self, var.az2_pazF5.paz_ext_vip]
-  security_groups = [var.sgExternal]
-  attachment {
-    instance     = aws_instance.az2_bigip.id
-    device_index = 1
-  }
-}
-
-resource "aws_network_interface" "az2_internal" {
-  depends_on      = [aws_instance.az2_bigip]
-  subnet_id       = var.az2_security_subnets.dmz_ext
-  private_ips     = [var.az2_pazF5.dmz_ext_self, var.az2_pazF5.dmz_ext_vip]
-  security_groups = [var.sgInternal]
-  attachment {
-    instance     = aws_instance.az2_bigip.id
-    device_index = 2
-  }
-}
-
 ## AZ2 DO Declaration
 data "template_file" "az2_paz_do_json" {
   template = "${file("${path.module}/clusterAcrossAZs_do.tpl.json")}"
@@ -199,17 +261,17 @@ data "template_file" "az2_paz_do_json" {
     #Uncomment the following line for BYOL
     regkey	        = "${var.paz_lic2}"
     banner_color    = "red"
-    host1	        = "${var.az2_pazF5.hostname}"
-    host2	        = "${var.az1_pazF5.hostname}"
+    host1	          = "${var.az2_pazF5.hostname}"
+    host2	          = "${var.az1_pazF5.hostname}"
     local_host      = "${var.az2_pazF5.hostname}"
     local_selfip1   = "${var.az2_pazF5.paz_ext_self}"
     local_selfip2   = "${var.az2_pazF5.dmz_ext_self}"
-    remote_selfip   = "${var.az1_pazF5.dmz_ext_self}"
+    remote_selfip   = "${var.az1_pazF5.mgmt}"
     mgmt_gw         = "${local.az2_mgmt_gw}"
-    gateway	        = "${local.az1_paz_gw}"
+    gateway	        = "${local.az2_paz_gw}"
     dns_server	    = "${var.dns_server}"
     ntp_server	    = "${var.ntp_server}"
-    timezone	    = "${var.timezone}"
+    timezone	      = "${var.timezone}"
     admin_user      = "${var.uname}"
     admin_password  = "${var.upassword}"
 
@@ -223,6 +285,20 @@ resource "local_file" "az2_paz_do_file" {
   filename    = "${path.module}/${var.az2_paz_do_json}"
 }
 
+# PAZ LOCAL_ONLY (HaAcrossAZs) Routing configuration
+data "template_file" "az2_local_only_tmsh_json" {
+  template = "${file("${path.module}/local_only_tmsh.tpl.json")}"
+  vars = {
+    mgmt_ip     = "${var.az2_pazF5.mgmt}"
+    mgmt_gw     = "${local.az2_mgmt_gw}"
+    gw	        = "${local.az2_paz_gw}"
+  }
+}
+# Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
+resource "local_file" "az2_local_only_tmsh_file" {
+  content     = "${data.template_file.az2_local_only_tmsh_json.rendered}"
+  filename    = "${path.module}/${var.az2_local_only_tmsh_json}"
+}
 
 # PAZ TS Declaration
 data "template_file" "paz_ts_json" {
@@ -271,12 +347,11 @@ resource "local_file" "paz_as3_file" {
 
 
 resource "null_resource" "az1_pazF5_DO" {
-  #depends_on	= [""]
+  depends_on	= [aws_instance.az1_bigip]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      while [ $(curl -u $CREDS -X GET -s -k -I https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} | grep HTTP) != *"200"* ]; do echo "Instance az1_bigip not yet ready... "; sleep 60; done;
       curl -k -X ${var.rest_do_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_paz_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
@@ -284,13 +359,24 @@ resource "null_resource" "az1_pazF5_DO" {
   }
 }
 
+resource "null_resource" "az1_pazF5_LOCAL_ONLY_routing" {
+  depends_on    = ["null_resource.az1_pazF5_DO"]
+  # Running CF REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
+      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_local_only_tmsh_json}
+    EOF
+  }
+}
+
 resource "null_resource" "az2_pazF5_DO" {
-  #depends_on    = [""]
+  depends_on    = [aws_instance.az2_bigip]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      while [ $(curl -u $CREDS -X GET -s -k -I https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} | grep HTTP) != *"200"* ]; do echo "Instance az2_bigip not yet ready... "; sleep 60; done;
       curl -k -X ${var.rest_do_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_paz_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
@@ -298,8 +384,20 @@ resource "null_resource" "az2_pazF5_DO" {
   }
 }
 
+resource "null_resource" "az2_pazF5_LOCAL_ONLY_routing" {
+  depends_on    = ["null_resource.az2_pazF5_DO"]
+  # Running CF REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
+      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_local_only_tmsh_json}
+    EOF
+  }
+}
+
 resource "null_resource" "pazF5_TS" {
-  depends_on    = ["null_resource.az1_pazF5_DO"]
+  depends_on    = ["null_resource.az1_pazF5_LOCAL_ONLY_routing", "null_resource.az2_pazF5_LOCAL_ONLY_routing"]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -310,7 +408,7 @@ resource "null_resource" "pazF5_TS" {
 }
 
 resource "null_resource" "pazF5_TS_LogCollection" {
-  depends_on    = ["null_resource.az1_pazF5_DO"]
+  depends_on    = ["null_resource.pazF5_TS"]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF

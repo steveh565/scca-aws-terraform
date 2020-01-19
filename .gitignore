@@ -14,3 +14,5 @@ pazF5vm02.do.json
 tenant1_pas.as3.json
 tsLogCollection_as3.json
 tsCloudwatch_ts.json
+az1_localOnly_tmsh.json
+az2_localOnly_tmsh.json
