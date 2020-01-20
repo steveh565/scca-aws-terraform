@@ -16,3 +16,7 @@ tsLogCollection_as3.json
 tsCloudwatch_ts.json
 az1_localOnly_tmsh.json
 az2_localOnly_tmsh.json
+dmzF5vm01.do.json
+dmzF5vm02.do.json
+foo.json
+foo2.json
