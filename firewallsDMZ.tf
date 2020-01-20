@@ -86,7 +86,7 @@ resource "aws_instance" "az1_dmz_bigip" {
 
 ## AZ1 DO Declaration
 data "template_file" "az1_dmz_do_json" {
-  template = "${file("${path.module}/clusterAcrossAZs_do.tpl.json")}"
+  template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey	        = "${var.dmz_lic1}"
@@ -95,7 +95,7 @@ data "template_file" "az1_dmz_do_json" {
     host2	          = "${var.az2_dmzF5.hostname}"
     local_host      = "${var.az1_dmzF5.hostname}"
     local_selfip1   = "${var.az1_dmzF5.dmz_ext_self}"
-    local_selfip2   = "${var.az1_dmzF5.dmz_ext_self}"
+    local_selfip2   = "${var.az1_dmzF5.dmz_int_self}"
     remote_selfip   = "${var.az2_dmzF5.mgmt}"
     mgmt_gw         = "${local.az1_mgmt_gw}"
     gateway	        = "${local.az1_dmz_ext_gw}"
@@ -149,8 +149,8 @@ resource "aws_network_interface" "az2_dmz_external" {
 
 resource "aws_network_interface" "az2_dmz_internal" {
   depends_on      = [aws_security_group.sg_internal]
-  subnet_id       = aws_subnet.az2_dmzExt.id
-  private_ips     = [var.az2_dmzF5.dmz_ext_self, var.az2_dmzF5.dmz_ext_vip]
+  subnet_id       = aws_subnet.az2_dmzInt.id
+  private_ips     = [var.az2_dmzF5.dmz_int_self, var.az2_dmzF5.dmz_int_vip]
   security_groups = [aws_security_group.sg_internal.id]
 }
 
@@ -219,7 +219,7 @@ resource "aws_instance" "az2_dmz_bigip" {
 
 ## AZ2 DO Declaration
 data "template_file" "az2_dmz_do_json" {
-  template = "${file("${path.module}/clusterAcrossAZs_do.tpl.json")}"
+  template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey	        = "${var.dmz_lic2}"
@@ -228,7 +228,7 @@ data "template_file" "az2_dmz_do_json" {
     host2	          = "${var.az1_dmzF5.hostname}"
     local_host      = "${var.az2_dmzF5.hostname}"
     local_selfip1   = "${var.az2_dmzF5.dmz_ext_self}"
-    local_selfip2   = "${var.az2_dmzF5.dmz_ext_self}"
+    local_selfip2   = "${var.az2_dmzF5.dmz_int_self}"
     remote_selfip   = "${var.az1_dmzF5.mgmt}"
     mgmt_gw         = "${local.az2_mgmt_gw}"
     gateway	        = "${local.az2_dmz_ext_gw}"

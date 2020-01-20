@@ -28,16 +28,16 @@ variable key_path {  default     = "~/.ssh/id_rsa.pub" }
 variable mgmt_asrc {  default     = ["0.0.0.0/0"] }
 
 #Big-IP License Keys (BEST)
-variable paz_lic1          { default = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII" }
-variable paz_lic2          { default = "CWLGN-NDGRI-JWQED-QBOYO-EWHAZJR" }
-variable transit_lic1      { default = "CWLGN-NDGRI-JWQED-QBOYO-EWHAZJR" }
-variable transit_lic2      { default = "DKMVY-INBUX-RFVEW-LFLVG-KQAKIZV" }
-variable dmz_lic1          { default = "OWONS-UKJQP-HCWZR-XLIJD-TBQTABU" }
-variable dmz_lic2          { default = "RSJVH-LDYXL-SUJFT-XVDOE-SCYNSIQ" }
-variable tenant_bigip_lic1 { default = "KZBIP-ABHUK-GKAJX-FLQEJ-SACARSD" }
-variable tenant_bigip_lic2 { default = "FTDKR-QWUOV-UMCDJ-NZTPF-HFDFSII" }
-variable maz_bigip_lic1    { default = "FFQMY-FYNUT-FFZID-QVZOQ-LBSAWOW" }
-variable maz_bigip_lic2    { default = "CKTTI-YAWJW-USCHP-CSVIH-KBOSQTK" }
+variable paz_lic1          { default = "MFDMO-KRVNQ-WYAAS-QNUUZ-ZVJQCBU" }
+variable paz_lic2          { default = "PPOEX-BNSAA-EFJOT-HATXH-RUXBDKL" }
+variable transit_lic1      { default = "PQOPD-ZIGYD-DFEBA-GADVM-TLGLTCT" }
+variable transit_lic2      { default = "XPHDC-NBZMA-VZBKK-OHZGX-AIVUNCO" }
+variable dmz_lic1          { default = "VRFJA-WCENA-XJEFW-YNSZM-HOTGBWP" }
+variable dmz_lic2          { default = "CTIPD-JRLIG-CLHUB-HKXLT-GWSTQNE" }
+variable tenant_bigip_lic1 { default = "XDEJW-QHTBQ-PQSPH-IHJGS-HKENGYC" }
+variable tenant_bigip_lic2 { default = "OHXTW-HXGIK-ODMYQ-OORVL-CMPUHLL" }
+variable maz_bigip_lic1    { default = "QDCIC-SQHBC-EZZGL-SLMBB-NVICVES" }
+variable maz_bigip_lic2    { default = "MBSSG-EKNFM-BXRXX-DYPPH-NNXNNVX" }
 
 
 # Platform settings variables
@@ -159,7 +159,7 @@ variable az2_dmzF5 {
     type = "map"
     default = {
         "hostname" = "dmzF5vm02"
-        "mgmt"     = "10.1.0.12"
+        "mgmt"     = "10.1.10.12"
         "dmz_ext_self" = "10.1.12.12"
         "dmz_ext_vip"  = "10.1.12.112"        
         "dmz_int_self" = "10.1.13.12"
@@ -171,7 +171,7 @@ variable az2_transitF5 {
     type = "map"
     default = {
         "hostname" = "transitF5vm02"
-        "mgmt"     = "10.1.0.13"
+        "mgmt"     = "10.1.10.13"
         "dmz_int_self"     = "10.1.13.13"
         "dmz_int_vip"      = "10.1.13.113"
         "transit_self" = "10.1.14.13"

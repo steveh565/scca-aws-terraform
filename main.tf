@@ -64,11 +64,11 @@ output "PAZ_Ingress_Public_IP"   { value = "${aws_eip.eip_vip.public_ip}" }
 output "az1_pazF5_secondary_VIP" { value = "${var.az1_pazF5.paz_ext_vip}"}
 output "az2_pazF5_secondary_VIP" { value = "${var.az2_pazF5.paz_ext_vip}"}
 
-#output "az1_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az1_dmzBigip.public_ip}" }
-#output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmzBigip.public_ip}" }
+output "az1_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az1_dmz_bigip.public_ip}" }
+output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmz_bigip.public_ip}" }
 
-#output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
-#output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
+output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
+output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
 
 
 output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
