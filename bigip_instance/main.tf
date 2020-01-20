@@ -75,12 +75,6 @@ variable host1_name { default = "bigip1" }
 variable host2_name { default = "bigip2" }
 variable advisory_text { default = "/Common/hostname" }
 variable advisory_color { default = "green" }
-variable provision_ltm { default = "nominal" }
-variable provision_avr { default = "nominal" }
-variable provision_ilx { default = "nominal" }
-variable provision_asm { default = "nominal" }
-variable provision_apm { default = "nominal" }
-
 
 // Deploy BIGIP //
 
@@ -211,19 +205,20 @@ data "template_file" "bigip_do_json" {
     provision_apm          = var.provision_apm
     bigip_ext_priv_self_ip = var.bigip_ext_priv_self_ip
     bigip_int_priv_self_ip = var.bigip_int_priv_self_ip
-    gateway                = cidrhost(var.maz_ext1_cidr, 1)
-    dns_server             = "${var.dns_server}"
-    ntp_server             = "${var.ntp_server}"
-    timezone               = "${var.timezone}"
-    app1_net               = var.tenant_vpc_cidr
-    app1_net_gw            = cidrhost(var.maz_ext1_cidr, 1)
+    gateway                = cidrhost(var.az1_ztsra_subnets.transit, 1)
+    #    gateway                = cidrhost(var.maz_ext1_cidr, 1)
+    dns_server  = "${var.dns_server}"
+    ntp_server  = "${var.ntp_server}"
+    timezone    = "${var.timezone}"
+    app1_net    = var.tenant_vpc_cidr
+    app1_net_gw = cidrhost(var.az1_ztsra_subnets.transit, 1)
   }
 }
 
 # save bigip DO to local file
 resource "local_file" "bigip_do_file" {
   content  = data.template_file.bigip_do_json.rendered
-  filename = "${path.module}/${var.rest_bigip_do_file}"
+  filename = "${path.module}/${var.az1_maz_do_json}"
 }
 
 # push DO declaration onto bigip
@@ -233,7 +228,7 @@ resource "null_resource" "bigip_DO" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.rest_bigip_do_file}
+      curl -k -X ${var.rest_do_method} https://${aws_instance.bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_maz_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
@@ -284,8 +279,8 @@ resource "null_resource" "bigip_DO" {
 
 #output "sg_id" { value = "${azurerm_network_security_group.main.id}" }
 #output "sg_name" { value = "${azurerm_network_security_group.main.name}" }
-output "mgmt_subnet_gw" { value = cidrhost(var.maz_mgmt1_cidr, 1) }
-output "ext_subnet_gw" { value = cidrhost(var.maz_ext1_cidr, 1) }
+#output "mgmt_subnet_gw" { value = cidrhost(var.maz_mgmt1_cidr, 1) }
+#output "ext_subnet_gw" { value = cidrhost(var.maz_ext1_cidr, 1) }
 #output "ALB_app1_pip" { value = "${data.azurerm_public_ip.lbpip.ip_address}" }
 
 #output "f5vm01_id" { value = "${azurerm_virtual_machine.f5vm01.id}" }
