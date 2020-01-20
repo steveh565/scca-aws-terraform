@@ -42,8 +42,8 @@
             "class": "Provision",
             "ltm": "nominal",
             "avr": "nominal",
-            "asm": "nominal",
-            "afm": "nominal"
+            "afm": "nominal",
+            "asm": "nominal"
         },
         "myManagementRoute": {
             "class": "ManagementRoute",
@@ -86,33 +86,6 @@
             "vlan": "external",
             "allowService": ["tcp:22", "tcp:53", "tcp:161", "tcp:443", "tcp:1029", "tcp:1043", "tcp:4353", "udp:53", "udp:161", "udp:520", "udp:1026", "udp:4353"],
             "trafficGroup": "traffic-group-local-only"
-        },
-        "configsync": {
-            "class": "ConfigSync",
-                "configsyncIp": "/Common/external-self/address"
-        },
-        "failoverAddress": {
-                "class": "FailoverUnicast",
-                "address": "/Common/external-self/address"
-        },
-        "failoverGroup": {
-            "class": "DeviceGroup",
-            "type": "sync-failover",
-            "members": ["${host1}.example.com", "${host2}.example.com"],
-            "owner": "/Common/failoverGroup/members/0",
-            "autoSync": true,
-            "saveOnAutoSync": false,
-            "networkFailover": true,
-            "fullLoadOnSync": false,
-            "asmSync": false
-        },
-        "trust": {
-            "class": "DeviceTrust",
-            "localUsername": "${admin_user}",
-            "localPassword": "${admin_password}",
-            "remoteHost": "${remote_selfip}",
-            "remoteUsername": "${admin_user}",
-            "remotePassword": "${admin_password}"
-        }
+        },        
     }
 }
