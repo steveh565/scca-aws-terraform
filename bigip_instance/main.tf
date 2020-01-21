@@ -1,3 +1,25 @@
+/*
+// INPUT VARIABLES FOR DAN's TEMPORARY TESTING: //
+*/
+variable subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
+variable aws_security_group {
+  type = map
+  default = {
+    sg_ext_mgmt = "sg-0d240145dbf1a93a9"
+    sg_external = "sg-0d240145dbf1a93a9"
+    sg_internal = "sg-0d240145dbf1a93a9"
+  }
+}
+variable subnet_ext_id { default = "subnet-0471ee7772cc91d63" }
+variable bigip_ext_sg { default = "sg-0d240145dbf1a93a9" }
+variable subnet_int_id { default = "subnet-05506b7d2258805fd" }
+variable bigip_int_sg { default = "sg-0d240145dbf1a93a9" }
+variable key_name { default = "terraform-daniel-keypair" }
+variable public_key_path { default = "/Users/cayer/.ssh/id_rsa_aws_daniel.pub" }
+variable domain_name { default = "example.com" }
+variable advisory_text { default = "/Common/hostname" }
+variable advisory_color { default = "green" }
+
 // provider, backend, storage and networking/vpc should be moved/handled in the root main/init calling module //
 provider "aws" {
   region  = var.aws_region
@@ -50,92 +72,69 @@ resource "aws_iam_instance_profile" "bigip-Failover-Extension-IAM-instance-profi
   role = aws_iam_role.bigip-Failover-Extension-IAM-role.name
 }
 
-/*
-// INPUT VARIABLES FOR DAN's TEMPORARY TESTING: //
-*/
-variable subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
-variable aws_security_group {
-  type = map
-  default = {
-    sg_ext_mgmt = "sg-0d240145dbf1a93a9"
-    sg_external = "sg-0d240145dbf1a93a9"
-    sg_internal = "sg-0d240145dbf1a93a9"
-  }
-}
-variable subnet_ext_id { default = "subnet-0471ee7772cc91d63" }
-variable bigip_ext_sg { default = "sg-0d240145dbf1a93a9" }
-variable subnet_int_id { default = "subnet-05506b7d2258805fd" }
-variable bigip_int_sg { default = "sg-0d240145dbf1a93a9" }
-variable key_name { default = "terraform-daniel-keypair" }
-variable public_key_path { default = "/Users/cayer/.ssh/id_rsa_aws_daniel.pub" }
-variable domain_name { default = "example.com" }
-variable advisory_text { default = "/Common/hostname" }
-variable advisory_color { default = "green" }
-
-// Deploy BIGIP //
+// Deploy BIGIP1 //
 
 // Create and attach bigip tmm network interfaces           //
 
-resource "aws_network_interface" "mgmt" {
+resource "aws_network_interface" "az1_mgmt" {
   subnet_id       = var.subnet_mgmt_id
   private_ips     = [var.az1_ztsra_transitF5.mgmt]
   security_groups = [var.aws_security_group.sg_ext_mgmt]
   security_groups = [var.bigip_mgmt_sg]
 }
 
-resource "aws_network_interface" "external" {
+resource "aws_network_interface" "az1_external" {
   subnet_id       = var.subnet_ext_id
   private_ips     = [var.az1_ztsra_transitF5.transit_self]
   security_groups = [var.aws_security_group.sg_external]
 }
 
-resource "null_resource" "external_secondary_ips" {
-  depends_on = [aws_network_interface.external]
+resource "null_resource" "az1_external_secondary_ips" {
+  depends_on = [aws_network_interface.az1_external]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
   #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.external.id} --private-ip-addresses ${var.az1_ztsra_transitF5.transit_vip}
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-addresses ${var.az1_ztsra_transitF5.transit_vip}
     EOF
   }
 }
 
-resource "aws_network_interface" "internal" {
+resource "aws_network_interface" "az1_internal" {
   subnet_id       = var.subnet_int_id
   private_ips     = [var.az1_ztsra_transitF5.internal_self]
   security_groups = [var.aws_security_group.sg_internal]
 }
 
-resource "null_resource" "internal_secondary_ips" {
-  depends_on = [aws_network_interface.internal]
+resource "null_resource" "az1_internal_secondary_ips" {
+  depends_on = [aws_network_interface.az1_internal]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
   #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.internal.id} --private-ip-addresses ${var.az1_ztsra_transitF5.internal_vip}
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_ztsra_transitF5.internal_vip}
     EOF
   }
 }
 
 # Create and map elastic IPs external and mgmt nics
 resource "aws_eip" "eip_az1_mgmt" {
-  depends_on                = [aws_network_interface.az1_mgmt]
   vpc                       = true
-  network_interface         = aws_network_interface.external.id
+  network_interface         = aws_network_interface.az1_mgmt.id
   associate_with_private_ip = var.az1_ztsra_transitF5.mgmt
 }
 
 resource "aws_eip" "eip_az1_vip" {
   vpc                       = true
-  network_interface         = aws_network_interface.external.id
+  network_interface         = aws_network_interface.az1_external.id
   associate_with_private_ip = var.az1_ztsra_transitF5.transit_vip
 }
 
 resource "aws_eip" "eip_az1_ext_self" {
   vpc                       = true
-  network_interface         = aws_network_interface.external.id
+  network_interface         = aws_network_interface.az1_external.id
   associate_with_private_ip = var.az1_ztsra_transitF5.transit_self
 }
 
@@ -183,7 +182,7 @@ resource "aws_instance" "ztsra_bigip_az1" {
   }
   network_interface {
     device_index         = 1
-    network_interface_id = aws_network_interface.az1_external.id
+    network_interface_id = aws_network_interface.az1_az1_external.id
   }
   network_interface {
     device_index         = 2
@@ -191,7 +190,6 @@ resource "aws_instance" "ztsra_bigip_az1" {
   }
 
   provisioner "remote-exec" {
-/*
     connection {
       host     = "${aws_instance.ztsra_bigip_az1.public_ip}"
       type     = "ssh"
@@ -203,7 +201,6 @@ resource "aws_instance" "ztsra_bigip_az1" {
       "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
   }
-*/
 
   provisioner "remote-exec" {
     connection {
@@ -306,6 +303,24 @@ resource "null_resource" "bigip_DO" {
 #    EOF
 #  }
 #}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## OUTPUTS ###
