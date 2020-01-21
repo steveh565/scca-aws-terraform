@@ -51,84 +51,86 @@ resource "aws_iam_instance_profile" "bigip-Failover-Extension-IAM-instance-profi
 }
 
 /*
-// INPUT VARIABLES: //
+// INPUT VARIABLES FOR DAN's TEMPORARY TESTING: //
 */
 variable subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
-variable bigip_mgmt_priv_ip { default = "10.10.1.10" }
 variable bigip_mgmt_sg { default = "sg-0d240145dbf1a93a9" }
 variable subnet_ext_id { default = "subnet-0471ee7772cc91d63" }
-variable bigip_ext_priv_self_ip { default = "10.10.2.10" }
-variable bigip_ext_priv_vip1 { default = "10.10.2.133" }
 variable bigip_ext_sg { default = "sg-0d240145dbf1a93a9" }
 variable subnet_int_id { default = "subnet-05506b7d2258805fd" }
-variable bigip_int_priv_self_ip { default = "10.10.3.10" }
-variable bigip2_int_priv_self_ip { default = "10.10.103.10" }
-variable bigip_int_priv_vip1 { default = "10.10.3.133" }
 variable bigip_int_sg { default = "sg-0d240145dbf1a93a9" }
 variable key_name { default = "terraform-daniel-keypair" }
 variable public_key_path { default = "/Users/cayer/.ssh/id_rsa_aws_daniel.pub" }
-variable instance_type { default = "m5.xlarge" }
-variable associate_public_ip_address { default = true }
 variable availability_zone { default = "ca-central-1a" }
-variable ve_name { default = "bigip" }
-variable license { default = "PXMKK-USKBI-OTKPW-EJNCP-FTEJUXK" }
 variable domain_name { default = "example.com" }
-variable host1_name { default = "bigip1" }
-variable host2_name { default = "bigip2" }
 variable advisory_text { default = "/Common/hostname" }
 variable advisory_color { default = "green" }
 
 // Deploy BIGIP //
 
 // Create and attach bigip tmm network interfaces           //
-// (mgmt interface is handled by aws_instance module below) //
+
+resource "aws_network_interface" "mgmt" {
+  subnet_id       = var.subnet_mgmt_id
+  private_ips     = [var.az1_ztsra_transitF5.mgmt]
+  security_groups = [var.bigip_mgmt_sg]
+}
+
 resource "aws_network_interface" "external" {
-  depends_on      = [aws_instance.bigip]
   subnet_id       = var.subnet_ext_id
-  private_ips     = [var.bigip_ext_priv_self_ip, var.bigip_ext_priv_vip1]
+  private_ips     = [var.az1_ztsra_transitF5.transit_self]
   security_groups = [var.bigip_ext_sg]
-  attachment {
-    instance     = aws_instance.bigip.id
-    device_index = 1
+}
+
+resource "null_resource" "external_secondary_ips" {
+  depends_on = [aws_network_interface.external]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.external.id} --private-ip-addresses ${var.az1_ztsra_transitF5.transit_vip}
+    EOF
   }
 }
 
 resource "aws_network_interface" "internal" {
-  depends_on      = [aws_instance.bigip]
   subnet_id       = var.subnet_int_id
-  private_ips     = [var.bigip_int_priv_self_ip, var.bigip_int_priv_vip1]
+  private_ips     = [var.az1_ztsra_transitF5.internal_self]
   security_groups = [var.bigip_int_sg]
-  attachment {
-    instance     = aws_instance.bigip.id
-    device_index = 2
+}
+
+resource "null_resource" "internal_secondary_ips" {
+  depends_on = [aws_network_interface.internal]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.internal.id} --private-ip-addresses ${var.az1_ztsra_transitF5.internal_vip}
+    EOF
   }
 }
 
-/*
-// uncomment and adjust for additional interfaces... and don't forget to adjust device_index and cluster.json do template accordingly! //
-resource "aws_network_interface" "ToSC" {
-  depends_on      = ["aws_instance.bigip"]
-  subnet_id       = module.networking.tosc_subnet_id
-  private_ips     = [var.f5vm01ToSC, var.f5vm01ToSC_sec]
-  security_groups = [module.networking.sg_allow_all]
-  attachment {
-    instance     = aws_instance.bigip.id
-    device_index = 3
-  }
-}
-*/
-
-/*
-//           Uncomment to assign a public IP (EIP)          //
-// Create and associate public IP to bigip_ext_priv_vip1    //
-// (mgmt interface is handled by aws_instance module below) //
-//
-resource "aws_eip" "eip_vip" {
+# Create and map elastic IPs external and mgmt nics
+resource "aws_eip" "eip_az1_mgmt" {
+  depends_on                = [aws_network_interface.az1_mgmt]
   vpc                       = true
   network_interface         = aws_network_interface.external.id
-  associate_with_private_ip = var.bigip_ext_priv_vip1
+  associate_with_private_ip = var.az1_ztsra_transitF5.mgmt
 }
-*/
+
+resource "aws_eip" "eip_az1_vip" {
+  vpc                       = true
+  network_interface         = aws_network_interface.external.id
+  associate_with_private_ip = var.az1_ztsra_transitF5.transit_vip
+}
+
+resource "aws_eip" "eip_az1_ext_self" {
+  vpc                       = true
+  network_interface         = aws_network_interface.external.id
+  associate_with_private_ip = var.az1_ztsra_transitF5.transit_self
+}
 
 
 // Create a new key pair for login access to this bigip instance                          //
@@ -156,18 +158,31 @@ data "template_file" "ve_onboard" {
 
 # deploy bigip EC2 VM instance, with execution of initial onboarding script
 resource "aws_instance" "bigip" {
-  ami                         = "ami-038e6394d715e5eac"
-  instance_type               = var.instance_type
-  associate_public_ip_address = true
-  private_ip                  = var.bigip_mgmt_priv_ip
-  availability_zone           = var.availability_zone
-  subnet_id                   = var.subnet_mgmt_id
-  vpc_security_group_ids      = [var.bigip_mgmt_sg]
-  user_data                   = data.template_file.ve_onboard.rendered
-  key_name                    = var.key_name
-  iam_instance_profile        = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
+  ami           = var.ami_f5image_name
+  instance_type = var.ami_ztsra_f5iinstance_type
+  #  associate_public_ip_address = false
+  availability_zone      = var.availability_zone
+  subnet_id              = var.subnet_mgmt_id
+  vpc_security_group_ids = [var.bigip_mgmt_sg]
+  user_data              = data.template_file.ve_onboard.rendered
+  #  key_name      = "kp${var.tag_name}"
+  key_name             = var.key_name
+  iam_instance_profile = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
   root_block_device {
     delete_on_termination = true
+  }
+
+  network_interface {
+    device_index         = 0
+    network_interface_id = aws_network_interface.az1_mgmt.id
+  }
+  network_interface {
+    device_index         = 1
+    network_interface_id = aws_network_interface.az1_external.id
+  }
+  network_interface {
+    device_index         = 2
+    network_interface_id = aws_network_interface.az1_internal.id
   }
 
   provisioner "remote-exec" {
@@ -179,9 +194,45 @@ resource "aws_instance" "bigip" {
   }
 
   tags = {
-    Name = "${var.tag_name}-${var.ve_name}"
+    Name = "${var.tag_name}-${var.az1_ztsra_transitF5.hostname}"
   }
 }
+
+resource "aws_instance" "az1_bigip" {
+  provisioner "remote-exec" {
+    connection {
+      host     = "${aws_instance.az1_bigip.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
+      password = "${var.upassword}"
+    }
+    when = "create"
+    inline = [
+      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+    ]
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = "${aws_instance.az1_bigip.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
+      password = "${var.upassword}"
+    }
+    when = "destroy"
+    inline = [
+      "echo y | tmsh revoke sys license"
+    ]
+    on_failure = "continue"
+  }
+
+  tags = {
+    Name = "${var.tag_name}-${var.az1_pazF5.hostname}"
+  }
+}
+
+
+
+
 
 # setup bigip declarative onboarding (DO) script for licensing and initial/base configuration
 data "template_file" "bigip_do_json" {
@@ -189,14 +240,14 @@ data "template_file" "bigip_do_json" {
 
   vars = {
     #Uncomment the following line for BYOL
-    regkey                 = "${var.license}"
-    host1                  = "${var.host1_name}"
-    host2                  = "${var.host2_name}"
-    local_host             = "${var.host1_name}"
+    regkey                 = "${var.ztsra_bigip_lic1}"
+    host1                  = "${var.az1_ztsra_transitF5.hostname}"
+    host2                  = "${var.az2_ztsra_transitF5.hostname}"
+    local_host             = "${var.az1_ztsra_transitF5.hostname}"
     admin_user             = var.uname
     localPassword          = var.upassword
     admin_password         = var.upassword
-    remote_selfip          = var.bigip2_int_priv_self_ip
+    remote_selfip          = var.az2_ztsra_transitF5.mgmt
     domain_name            = var.domain_name
     advisory_color         = var.advisory_color
     advisory_text          = var.advisory_text
@@ -205,8 +256,8 @@ data "template_file" "bigip_do_json" {
     provision_ilx          = var.provision_ilx
     provision_asm          = var.provision_asm
     provision_apm          = var.provision_apm
-    bigip_ext_priv_self_ip = var.bigip_ext_priv_self_ip
-    bigip_int_priv_self_ip = var.bigip_int_priv_self_ip
+    bigip_ext_priv_self_ip = var.az1_ztsra_transitF5.transit_self
+    bigip_int_priv_self_ip = var.az1_ztsra_transitF5.internal_self
     gateway                = cidrhost(var.az1_ztsra_subnets.transit, 1)
     #    gateway                = cidrhost(var.maz_ext1_cidr, 1)
     dns_server  = "${var.dns_server}"
