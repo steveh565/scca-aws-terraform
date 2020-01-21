@@ -5,6 +5,7 @@ provider "aws" {
   // access_key and secret_key values should come from environment variables, don't store in here to keep them safe //
 }
 
+/*
 // set the backend to store the terraform state file in S3, for collaboration  //
 terraform {
   backend "s3" {
@@ -13,6 +14,7 @@ terraform {
     region = "ca-central-1"
   }
 }
+*/
 
 // for CF, AWS IAM role with specific privileges must be assigned to each bigip EC2 instance //
 // In AWS, go to IAM > Roles and create a policy with the following permissions:
