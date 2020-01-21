@@ -54,14 +54,20 @@ resource "aws_iam_instance_profile" "bigip-Failover-Extension-IAM-instance-profi
 // INPUT VARIABLES FOR DAN's TEMPORARY TESTING: //
 */
 variable subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
-variable bigip_mgmt_sg { default = "sg-0d240145dbf1a93a9" }
+variable aws_security_group {
+  type = map
+  default = {
+    sg_ext_mgmt = "sg-0d240145dbf1a93a9"
+    sg_external = "sg-0d240145dbf1a93a9"
+    sg_internal = "sg-0d240145dbf1a93a9"
+  }
+}
 variable subnet_ext_id { default = "subnet-0471ee7772cc91d63" }
 variable bigip_ext_sg { default = "sg-0d240145dbf1a93a9" }
 variable subnet_int_id { default = "subnet-05506b7d2258805fd" }
 variable bigip_int_sg { default = "sg-0d240145dbf1a93a9" }
 variable key_name { default = "terraform-daniel-keypair" }
 variable public_key_path { default = "/Users/cayer/.ssh/id_rsa_aws_daniel.pub" }
-variable availability_zone { default = "ca-central-1a" }
 variable domain_name { default = "example.com" }
 variable advisory_text { default = "/Common/hostname" }
 variable advisory_color { default = "green" }
@@ -73,13 +79,14 @@ variable advisory_color { default = "green" }
 resource "aws_network_interface" "mgmt" {
   subnet_id       = var.subnet_mgmt_id
   private_ips     = [var.az1_ztsra_transitF5.mgmt]
+  security_groups = [var.aws_security_group.sg_ext_mgmt]
   security_groups = [var.bigip_mgmt_sg]
 }
 
 resource "aws_network_interface" "external" {
   subnet_id       = var.subnet_ext_id
   private_ips     = [var.az1_ztsra_transitF5.transit_self]
-  security_groups = [var.bigip_ext_sg]
+  security_groups = [var.aws_security_group.sg_external]
 }
 
 resource "null_resource" "external_secondary_ips" {
@@ -97,7 +104,7 @@ resource "null_resource" "external_secondary_ips" {
 resource "aws_network_interface" "internal" {
   subnet_id       = var.subnet_int_id
   private_ips     = [var.az1_ztsra_transitF5.internal_self]
-  security_groups = [var.bigip_int_sg]
+  security_groups = [var.aws_security_group.sg_internal]
 }
 
 resource "null_resource" "internal_secondary_ips" {
@@ -157,13 +164,11 @@ data "template_file" "ve_onboard" {
 }
 
 # deploy bigip EC2 VM instance, with execution of initial onboarding script
-resource "aws_instance" "bigip" {
+resource "aws_instance" "ztsra_bigip_az1" {
   ami           = var.ami_f5image_name
   instance_type = var.ami_ztsra_f5iinstance_type
   #  associate_public_ip_address = false
-  availability_zone      = var.availability_zone
-  subnet_id              = var.subnet_mgmt_id
-  vpc_security_group_ids = [var.bigip_mgmt_sg]
+  availability_zone      = var.aws_region}a
   user_data              = data.template_file.ve_onboard.rendered
   #  key_name      = "kp${var.tag_name}"
   key_name             = var.key_name
@@ -186,6 +191,27 @@ resource "aws_instance" "bigip" {
   }
 
   provisioner "remote-exec" {
+/*
+    connection {
+      host     = "${aws_instance.ztsra_bigip_az1.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
+      password = "${var.upassword}"
+    }
+    when = "create"
+    inline = [
+      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+    ]
+  }
+*/
+
+  provisioner "remote-exec" {
+    connection {
+      host     = "${aws_instance.az1_bigip.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
+      password = "${var.upassword}"
+    }
     when = destroy
     inline = [
       "echo y | tmsh revoke sys license"
@@ -197,42 +223,6 @@ resource "aws_instance" "bigip" {
     Name = "${var.tag_name}-${var.az1_ztsra_transitF5.hostname}"
   }
 }
-
-resource "aws_instance" "az1_bigip" {
-  provisioner "remote-exec" {
-    connection {
-      host     = "${aws_instance.az1_bigip.public_ip}"
-      type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
-    }
-    when = "create"
-    inline = [
-      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
-    ]
-  }
-  provisioner "remote-exec" {
-    connection {
-      host     = "${aws_instance.az1_bigip.public_ip}"
-      type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
-    }
-    when = "destroy"
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = "continue"
-  }
-
-  tags = {
-    Name = "${var.tag_name}-${var.az1_pazF5.hostname}"
-  }
-}
-
-
-
-
 
 # setup bigip declarative onboarding (DO) script for licensing and initial/base configuration
 data "template_file" "bigip_do_json" {
