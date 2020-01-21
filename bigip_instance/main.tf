@@ -1,7 +1,8 @@
 /*
 // INPUT VARIABLES FOR DAN's TEMPORARY TESTING: //
 */
-variable subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
+variable az1_subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
+variable az2_subnet_mgmt_id { default = "subnet-0a094afdb3da643e7" }
 variable aws_security_group {
   type = map
   default = {
@@ -10,9 +11,11 @@ variable aws_security_group {
     sg_internal = "sg-0d240145dbf1a93a9"
   }
 }
-variable subnet_ext_id { default = "subnet-0471ee7772cc91d63" }
+variable az1_subnet_ext_id { default = "subnet-0471ee7772cc91d63" }
+variable az2_subnet_ext_id { default = "subnet-0471ee7772cc91d63" }
 variable bigip_ext_sg { default = "sg-0d240145dbf1a93a9" }
-variable subnet_int_id { default = "subnet-05506b7d2258805fd" }
+variable az1_subnet_int_id { default = "subnet-05506b7d2258805fd" }
+variable az2_subnet_int_id { default = "subnet-05506b7d2258805fd" }
 variable bigip_int_sg { default = "sg-0d240145dbf1a93a9" }
 variable key_name { default = "terraform-daniel-keypair" }
 variable public_key_path { default = "/Users/cayer/.ssh/id_rsa_aws_daniel.pub" }
@@ -72,73 +75,6 @@ resource "aws_iam_instance_profile" "bigip-Failover-Extension-IAM-instance-profi
   role = aws_iam_role.bigip-Failover-Extension-IAM-role.name
 }
 
-// Deploy BIGIP1 //
-
-// Create and attach bigip tmm network interfaces           //
-
-resource "aws_network_interface" "az1_mgmt" {
-  subnet_id       = var.subnet_mgmt_id
-  private_ips     = [var.az1_ztsra_transitF5.mgmt]
-  security_groups = [var.aws_security_group.sg_ext_mgmt]
-  security_groups = [var.bigip_mgmt_sg]
-}
-
-resource "aws_network_interface" "az1_external" {
-  subnet_id       = var.subnet_ext_id
-  private_ips     = [var.az1_ztsra_transitF5.transit_self]
-  security_groups = [var.aws_security_group.sg_external]
-}
-
-resource "null_resource" "az1_external_secondary_ips" {
-  depends_on = [aws_network_interface.az1_external]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-addresses ${var.az1_ztsra_transitF5.transit_vip}
-    EOF
-  }
-}
-
-resource "aws_network_interface" "az1_internal" {
-  subnet_id       = var.subnet_int_id
-  private_ips     = [var.az1_ztsra_transitF5.internal_self]
-  security_groups = [var.aws_security_group.sg_internal]
-}
-
-resource "null_resource" "az1_internal_secondary_ips" {
-  depends_on = [aws_network_interface.az1_internal]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_ztsra_transitF5.internal_vip}
-    EOF
-  }
-}
-
-# Create and map elastic IPs external and mgmt nics
-resource "aws_eip" "eip_az1_mgmt" {
-  vpc                       = true
-  network_interface         = aws_network_interface.az1_mgmt.id
-  associate_with_private_ip = var.az1_ztsra_transitF5.mgmt
-}
-
-resource "aws_eip" "eip_az1_vip" {
-  vpc                       = true
-  network_interface         = aws_network_interface.az1_external.id
-  associate_with_private_ip = var.az1_ztsra_transitF5.transit_vip
-}
-
-resource "aws_eip" "eip_az1_ext_self" {
-  vpc                       = true
-  network_interface         = aws_network_interface.az1_external.id
-  associate_with_private_ip = var.az1_ztsra_transitF5.transit_self
-}
-
-
 // Create a new key pair for login access to this bigip instance                          //
 // alternatiely, this new key pair could be done in main module, and used for all bigip's //
 resource "aws_key_pair" "auth" {
@@ -146,6 +82,101 @@ resource "aws_key_pair" "auth" {
   public_key = file(var.public_key_path)
 }
 
+# ZTSRA TS Declaration (common to both bigip's)
+data "template_file" "ztsra_ts_json" {
+  template = "${file("${path.module}/tsCloudwatch_ts.tpl.json")}"
+
+  vars = {
+    aws_region = var.aws_region
+    access_key = var.SP.access_key
+    secret_key = var.SP.secret_key
+  }
+}
+# Render PAZ TS declaration (common to both bigip's)
+resource "local_file" "ztsra_ts_file" {
+  content  = "${data.template_file.ztsra_ts_json.rendered}"
+  filename = "${path.module}/${var.ztsra_ts_json}"
+}
+
+# PAZ LogCollection AS3 Declaration (common to both bigip's)
+data "template_file" "paz_logs_as3_json" {
+  template = "${file("${path.module}/tsLogCollection_as3.tpl.json")}"
+
+  vars = {
+
+  }
+}
+# Render PAZ LogCollection AS3 declaration (common to both bigip's)
+resource "local_file" "paz_logs_as3_file" {
+  content  = "${data.template_file.paz_logs_as3_json.rendered}"
+  filename = "${path.module}/${var.paz_logs_as3_json}"
+}
+
+
+// Deploy BIGIP1 //
+
+// Create and attach bigip tmm network interfaces           //
+
+resource "aws_network_interface" "az1_ztsra_mgmt" {
+  subnet_id       = var.az1_ztsra_subnet_mgmt_id
+  private_ips     = [var.az1_ztsra_transitF5.mgmt]
+  security_groups = [var.aws_security_group.sg_ext_mgmt]
+}
+
+resource "aws_network_interface" "az1_ztsra_external" {
+  subnet_id       = var.az1_ztsra_subnet_ext_id
+  private_ips     = [var.az1_ztsra_transitF5.transit_self]
+  security_groups = [var.aws_security_group.sg_external]
+}
+
+resource "null_resource" "az1_ztsra_external_secondary_ips" {
+  depends_on = [aws_network_interface.az1_ztsra_external]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_ztsra_external.id} --private-ip-addresses ${var.az1_ztsra_transitF5.transit_vip}
+    EOF
+  }
+}
+
+resource "aws_network_interface" "az1_ztsra_internal" {
+  subnet_id       = var.az1_ztsra_subnet_int_id
+  private_ips     = [var.az1_ztsra_transitF5.internal_self]
+  security_groups = [var.aws_security_group.sg_internal]
+}
+
+resource "null_resource" "az1_ztsra_internal_secondary_ips" {
+  depends_on = [aws_network_interface.az1_ztsra_internal]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_ztsra_internal.id} --private-ip-addresses ${var.az1_ztsra_transitF5.internal_vip}
+    EOF
+  }
+}
+
+# Create and map elastic IPs external and mgmt nics
+resource "aws_eip" "eip_az1_ztsra_mgmt" {
+  vpc                       = true
+  network_interface         = aws_network_interface.az1_ztsra_mgmt.id
+  associate_with_private_ip = var.az1_ztsra_transitF5.mgmt
+}
+
+resource "aws_eip" "eip_az1_vip" {
+  vpc                       = true
+  network_interface         = aws_network_interface.az1_ztsra_external.id
+  associate_with_private_ip = var.az1_ztsra_transitF5.transit_vip
+}
+
+resource "aws_eip" "eip_az1_ext_self" {
+  vpc                       = true
+  network_interface         = aws_network_interface.az1_ztsra_external.id
+  associate_with_private_ip = var.az1_ztsra_transitF5.transit_self
+}
 
 # Setup initial Onboarding script
 data "template_file" "ve_onboard" {
@@ -178,11 +209,288 @@ resource "aws_instance" "ztsra_bigip_az1" {
 
   network_interface {
     device_index         = 0
+    network_interface_id = aws_network_interface.az1_ztsra_mgmt.id
+  }
+  network_interface {
+    device_index         = 1
+    network_interface_id = aws_network_interface.az1_ztsra_external.id
+  }
+  network_interface {
+    device_index         = 2
+    network_interface_id = aws_network_interface.az1_ztsra_internal.id
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      host     = "${aws_instance.ztsra_bigip_az1.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
+      password = "${var.upassword}"
+    }
+    when = "create"
+    inline = [
+      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+    ]
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      host     = "${aws_instance.ztsra_bigip_az1.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
+      password = "${var.upassword}"
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh revoke sys license"
+    ]
+    on_failure = continue
+  }
+
+  tags = {
+    Name = "${var.tag_name}-${var.az1_ztsra_transitF5.hostname}"
+  }
+}
+
+# setup bigip declarative onboarding (DO) script for licensing and initial/base configuration
+data "template_file" "ztsra_bigip_az1_do_json" {
+  template = "${file("${path.module}/cluster.json")}"
+
+  vars = {
+    #Uncomment the following line for BYOL
+    regkey                 = "${var.ztsra_bigip_lic1}"
+    host1                  = "${var.az1_ztsra_transitF5.hostname}"
+    host2                  = "${var.az2_ztsra_transitF5.hostname}"
+    local_host             = "${var.az1_ztsra_transitF5.hostname}"
+    admin_user             = var.uname
+    localPassword          = var.upassword
+    admin_password         = var.upassword
+    remote_selfip          = var.az2_ztsra_transitF5.mgmt
+    domain_name            = var.domain_name
+    advisory_color         = var.advisory_color
+    advisory_text          = var.advisory_text
+    provision_ltm          = var.provision_ltm
+    provision_avr          = var.provision_avr
+    provision_ilx          = var.provision_ilx
+    provision_asm          = var.provision_asm
+    provision_apm          = var.provision_apm
+    bigip_ext_priv_self_ip = var.az1_ztsra_transitF5.transit_self
+    bigip_int_priv_self_ip = var.az1_ztsra_transitF5.internal_self
+    gateway                = cidrhost(var.az1_ztsra_subnets.transit, 1)
+    #    gateway                = cidrhost(var.maz_ext1_cidr, 1)
+    dns_server  = "${var.dns_server}"
+    ntp_server  = "${var.ntp_server}"
+    timezone    = "${var.timezone}"
+    app1_net    = var.tenant_vpc_cidr
+    app1_net_gw = cidrhost(var.az1_ztsra_subnets.transit, 1)
+  }
+}
+
+# save bigip DO to local file
+resource "local_file" "ztsra_bigip_az1_do_file" {
+  content  = data.template_file.ztsra_bigip_az1_do_json.rendered
+  filename = "${path.module}/${var.az1_ztsra_do_json}"
+}
+
+# ZTSRA LOCAL_ONLY (HaAcrossAZs) Routing configuration
+data "template_file" "az1_ztsra_local_only_tmsh_json" {
+  template = "${file("${path.module}/local_only_tmsh.tpl.json")}"
+  vars = {
+    mgmt_ip = var.az1_ztsra_transitF5.mgmt
+    mgmt_gw = cidrhost(var.az1_ztsra_subnets.mgmt, 1)
+    gw      = cidrhost(var.az1_ztsra_subnets.transit, 1)
+  }
+}
+# Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
+resource "local_file" "az1_ztsra_local_only_tmsh_file" {
+  content  = "${data.template_file.az1_ztsra_local_only_tmsh_json.rendered}"
+  filename = "${path.module}/${var.az1_ztsra_local_only_tmsh_json}"
+}
+
+# push DO declaration onto bigip
+resource "null_resource" "ztsra_bigip_az1_DO" {
+  depends_on = [aws_instance.ztsra_bigip_az1]
+  # Running DO REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -X ${var.rest_do_method} https://${aws_instance.ztsra_bigip_az1.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_ztsra_do_json}
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.ztsra_bigip_az1.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 120
+    EOF
+  }
+}
+
+resource "null_resource" "az1_ztsra_F5_LOCAL_ONLY_routing" {
+  depends_on = ["null_resource.ztsra_bigip_az1_DO"]
+  # Running CF REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.ztsra_bigip_az1.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
+      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.ztsra_bigip_az1.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_local_only_tmsh_json}
+    EOF
+  }
+}
+
+resource "null_resource" "az1_ztsra_F5_DO" {
+  depends_on = [aws_instance.ztsra_bigip_az1]
+  # Running DO REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -X ${var.rest_do_method} https://${aws_instance.ztsra_bigip_az1.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_paz_do_json}
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.ztsra_bigip_az1.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 120
+    EOF
+  }
+}
+
+resource "null_resource" "az1_ztsra_F5_LOCAL_ONLY_routing" {
+  depends_on = ["null_resource.az1_ztsra_F5_DO"]
+  # Running CF REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
+      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_local_only_tmsh_json}
+    EOF
+  }
+}
+
+resource "null_resource" "pazF5_TS" {
+  depends_on = ["null_resource.az1_pazF5_LOCAL_ONLY_routing", "null_resource.az2_pazF5_LOCAL_ONLY_routing"]
+  # Running CF REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_bigip.public_ip}${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @${var.paz_ts_json}
+    EOF
+  }
+}
+
+resource "null_resource" "pazF5_TS_LogCollection" {
+  depends_on = ["null_resource.pazF5_TS"]
+  # Running CF REST API
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_bigip.public_ip}${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @${var.paz_logs_as3_json}
+    EOF
+  }
+}
+
+// add code for cloud failover declaration here //
+
+
+
+
+
+
+
+
+// Deploy BIGIP2 //
+
+// Create and attach bigip tmm network interfaces           //
+
+resource "aws_network_interface" "az2_mgmt" {
+  subnet_id       = var.az2_subnet_mgmt_id
+  private_ips     = [var.az2_ztsra_transitF5.mgmt]
+  security_groups = [var.aws_security_group.sg_ext_mgmt]
+  security_groups = [var.bigip_mgmt_sg]
+}
+
+resource "aws_network_interface" "az2_external" {
+  subnet_id       = var.az2_subnet_ext_id
+  private_ips     = [var.az2_ztsra_transitF5.transit_self]
+  security_groups = [var.aws_security_group.sg_external]
+}
+
+resource "null_resource" "az2_external_secondary_ips" {
+  depends_on = [aws_network_interface.az2_external]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az2_external.id} --private-ip-addresses ${var.az2_ztsra_transitF5.transit_vip}
+    EOF
+  }
+}
+
+resource "aws_network_interface" "az2_internal" {
+  subnet_id       = var.az2_subnet_int_id
+  private_ips     = [var.az2_ztsra_transitF5.internal_self]
+  security_groups = [var.aws_security_group.sg_internal]
+}
+
+resource "null_resource" "az2_internal_secondary_ips" {
+  depends_on = [aws_network_interface.az2_internal]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_ztsra_transitF5.internal_vip}
+    EOF
+  }
+}
+
+# Create and map elastic IPs external and mgmt nics
+resource "aws_eip" "eip_az2_mgmt" {
+  vpc                       = true
+  network_interface         = aws_network_interface.az2_mgmt.id
+  associate_with_private_ip = var.az2_ztsra_transitF5.mgmt
+}
+
+resource "aws_eip" "eip_az2_vip" {
+  vpc                       = true
+  network_interface         = aws_network_interface.az2_external.id
+  associate_with_private_ip = var.az2_ztsra_transitF5.transit_vip
+}
+
+resource "aws_eip" "eip_az2_ext_self" {
+  vpc                       = true
+  network_interface         = aws_network_interface.az2_external.id
+  associate_with_private_ip = var.az2_ztsra_transitF5.transit_self
+}
+
+# Setup initial Onboarding script
+data "template_file" "az2_ztsra_do_json" {
+  template = "${file("${path.module}/onboard.tpl")}"
+  vars = {
+    uname          = "${var.uname}"
+    upassword      = "${var.upassword}"
+    DO_onboard_URL = "${var.DO_onboard_URL}"
+    AS3_URL        = "${var.AS3_URL}"
+    TS_URL         = "${var.TS_URL}"
+    CF_URL         = "${var.CF_URL}"
+    libs_dir       = "${var.libs_dir}"
+    onboard_log    = "${var.onboard_log}"
+  }
+}
+
+# deploy bigip EC2 VM instance, with execution of initial onboarding script
+resource "aws_instance" "ztsra_bigip_az2" {
+  ami           = var.ami_f5image_name
+  instance_type = var.ami_ztsra_f5iinstance_type
+  #  associate_public_ip_address = false
+  availability_zone      = var.aws_region}a
+  user_data              = data.template_file.ve_onboard.rendered
+  #  key_name      = "kp${var.tag_name}"
+  key_name             = var.key_name
+  iam_instance_profile = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
+  root_block_device {
+    delete_on_termination = true
+  }
+
+  network_interface {
+    device_index         = 0
     network_interface_id = aws_network_interface.az1_mgmt.id
   }
   network_interface {
     device_index         = 1
-    network_interface_id = aws_network_interface.az1_az1_external.id
+    network_interface_id = aws_network_interface.az1_external.id
   }
   network_interface {
     device_index         = 2
@@ -222,19 +530,18 @@ resource "aws_instance" "ztsra_bigip_az1" {
 }
 
 # setup bigip declarative onboarding (DO) script for licensing and initial/base configuration
-data "template_file" "bigip_do_json" {
-  template = "${file("${path.module}/cluster.json")}"
-
+data "template_file" "az2_ztsra_do_json" {
+  template = "${file("${path.module}/cluster.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
-    regkey                 = "${var.ztsra_bigip_lic1}"
+    regkey                 = "${var.ztsra_bigip_lic2}"
     host1                  = "${var.az1_ztsra_transitF5.hostname}"
     host2                  = "${var.az2_ztsra_transitF5.hostname}"
-    local_host             = "${var.az1_ztsra_transitF5.hostname}"
+    local_host             = "${var.az2_ztsra_transitF5.hostname}"
     admin_user             = var.uname
     localPassword          = var.upassword
     admin_password         = var.upassword
-    remote_selfip          = var.az2_ztsra_transitF5.mgmt
+    remote_selfip          = var.az1_ztsra_transitF5.mgmt
     domain_name            = var.domain_name
     advisory_color         = var.advisory_color
     advisory_text          = var.advisory_text
@@ -243,26 +550,40 @@ data "template_file" "bigip_do_json" {
     provision_ilx          = var.provision_ilx
     provision_asm          = var.provision_asm
     provision_apm          = var.provision_apm
-    bigip_ext_priv_self_ip = var.az1_ztsra_transitF5.transit_self
-    bigip_int_priv_self_ip = var.az1_ztsra_transitF5.internal_self
-    gateway                = cidrhost(var.az1_ztsra_subnets.transit, 1)
-    #    gateway                = cidrhost(var.maz_ext1_cidr, 1)
+    bigip_ext_priv_self_ip = var.az2_ztsra_transitF5.transit_self
+    bigip_int_priv_self_ip = var.az2_ztsra_transitF5.internal_self
+    gateway                = cidrhost(var.az2_ztsra_subnets.transit, 1)
+    mgmt_gw        = cidrhost(var.az2_ztsra_subnets.mgmt, 1)
     dns_server  = "${var.dns_server}"
     ntp_server  = "${var.ntp_server}"
     timezone    = "${var.timezone}"
-    app1_net    = var.tenant_vpc_cidr
-    app1_net_gw = cidrhost(var.az1_ztsra_subnets.transit, 1)
+#    app1_net    = var.tenant_vpc_cidr
+#    app1_net_gw = cidrhost(var.az1_ztsra_subnets.transit, 1)
   }
 }
+# Render ZTSRA DO declaration
+resource "local_file" "az1_ztsra_do_file" {
+  content  = "${data.template_file.az2_ztsra_do_json.rendered}"
+  filename = "${path.module}/${var.az2_ztsra_do_json}"
+}
 
-# save bigip DO to local file
-resource "local_file" "bigip_do_file" {
-  content  = data.template_file.bigip_do_json.rendered
-  filename = "${path.module}/${var.az1_maz_do_json}"
+# ZTSRA LOCAL_ONLY (HaAcrossAZs) Routing configuration
+data "template_file" "az2_ztsra_local_only_tmsh_json" {
+  template = "${file("${path.module}/local_only_tmsh.tpl.json")}"
+  vars = {
+    mgmt_ip = var.az2_ztsra_transitF5.mgmt
+    mgmt_gw = cidrhost(var.az2_ztsra_subnets.mgmt, 1)
+    gw      = cidrhost(var.az2_ztsra_subnets.transit, 1)
+  }
+}
+# Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
+resource "local_file" "az2_ztsra_local_only_tmsh_file" {
+  content  = "${data.template_file.az2_ztsra_local_only_tmsh_json.rendered}"
+  filename = "${path.module}/${var.az2_ztsra_local_only_tmsh_json}"
 }
 
 # push DO declaration onto bigip
-resource "null_resource" "bigip_DO" {
+resource "null_resource" "az2_ztsra_bigip_DO" {
   depends_on = [aws_instance.bigip]
   # Running DO REST API
   provisioner "local-exec" {
@@ -276,44 +597,6 @@ resource "null_resource" "bigip_DO" {
 }
 
 // add code for cloud failover declaration here //
-
-
-#data "template_file" "ts_json" {
-#  template   = "${file("${path.module}/ts.json")}"
-#  depends_on = ["azurerm_log_analytics_workspace.law"]
-#  vars = {
-#    location    = "${var.location}"
-#    law_id      = "${azurerm_log_analytics_workspace.law.workspace_id}"
-#    law_primkey = "${azurerm_log_analytics_workspace.law.primary_shared_key}"
-#  }
-#}
-
-#resource "local_file" "vm_ts_file" {
-#  content  = data.template_file.ts_json.rendered
-#  filename = "${path.module}/${var.rest_vm_ts_file}"
-#}
-
-#resource "null_resource" "f5vm01_TS" {
-#  depends_on = [null_resource.bigip_DO]
-#  # Running CF REST API
-#  provisioner "local-exec" {
-#    command = <<-EOF
-#      #!/bin/bash
-#      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.bigip.public_ip}${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @${var.rest_vm_ts_file}
-#    EOF
-#  }
-#}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
