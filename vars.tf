@@ -33,7 +33,7 @@ variable paz_lic2          { default = "PPOEX-BNSAA-EFJOT-HATXH-RUXBDKL" }
 variable transit_lic1      { default = "PQOPD-ZIGYD-DFEBA-GADVM-TLGLTCT" }
 variable transit_lic2      { default = "XPHDC-NBZMA-VZBKK-OHZGX-AIVUNCO" }
 variable dmz_lic1          { default = "VRFJA-WCENA-XJEFW-YNSZM-HOTGBWP" }
-variable dmz_lic2          { default = "CTIPD-JRLIG-CLHUB-HKXLT-GWSTQNE" }
+variable dmz_lic2          { default = "OHXTW-HXGIK-ODMYQ-OORVL-CMPUHLL" }
 variable tenant_bigip_lic1 { default = "XDEJW-QHTBQ-PQSPH-IHJGS-HKENGYC" }
 variable tenant_bigip_lic2 { default = "OHXTW-HXGIK-ODMYQ-OORVL-CMPUHLL" }
 variable maz_bigip_lic1    { default = "QDCIC-SQHBC-EZZGL-SLMBB-NVICVES" }
@@ -284,20 +284,43 @@ variable AS3_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5
 
 
 # Declarative-Onboarding extension Vars
-variable az1_paz_do_json { default = "pazF5vm01.do.json" }
-variable az2_paz_do_json { default = "pazF5vm02.do.json" }
-variable az1_dmz_do_json { default = "dmzF5vm01.do.json" }
-variable az2_dmz_do_json { default = "dmzF5vm02.do.json" }
-variable az1_transit_do_json { default = "transitF5vm01.do.json" }
-variable az2_transit_do_json { default = "transitF5vm02.do.json" }
-variable az1_maz_do_json { default = "mazF5vm01.do.json" }
-variable az2_maz_do_json { default = "mazF5vm02.do.json" }
-variable az1_tenant_do_json { default = "edgeF5vm01.do.json" }
-variable az2_tenant_do_json { default = "edgeF5vm02.do.json" }
-variable az1_local_only_tmsh_json { default = "az1_localOnly_tmsh.json" }
-variable az2_local_only_tmsh_json { default = "az2_localOnly_tmsh.json" }
+variable az1_pazBase_do_json { default = "pazF5_base_vm01.do.json" }
+variable az2_pazBase_do_json { default = "pazF5_base_vm02.do.json" }
+variable az1_pazCluster_do_json { default = "pazF5vm01.do.json" }
+variable az2_pazCluster_do_json { default = "pazF5vm02.do.json" }
+variable az1_paz_local_only_tmsh_json { default = "az1_paz_localOnly_tmsh.json" }
+variable az2_paz_local_only_tmsh_json { default = "az2_paz_localOnly_tmsh.json" }
+
+variable az1_dmzBase_do_json { default = "dmzF5_base_vm01.do.json" }
+variable az2_dmzBase_do_json { default = "dmzF5_base_vm02.do.json" }
+variable az1_dmzCluster_do_json { default = "dmzF5vm01.do.json" }
+variable az2_dmzCluster_do_json { default = "dmzF5vm02.do.json" }
 variable az1_dmz_local_only_tmsh_json { default = "az1_dmz_localOnly_tmsh.json" }
 variable az2_dmz_local_only_tmsh_json { default = "az2_dmz_localOnly_tmsh.json" }
+
+variable az1_transitBase_do_json { default = "transitF5_base_vm01.do.json" }
+variable az2_transitBase_do_json { default = "transitF5_base_vm02.do.json" }
+variable az1_transitCluster_do_json { default = "transitF5vm01.do.json" }
+variable az2_transitCluster_do_json { default = "transitF5vm02.do.json" }
+variable az1_transit_local_only_tmsh_json { default = "az1_dmz_localOnly_tmsh.json" }
+variable az2_transit_local_only_tmsh_json { default = "az2_dmz_localOnly_tmsh.json" }
+
+variable az1_mazBase_do_json { default = "mazF5_base_vm01.do.json" }
+variable az2_mazBase_do_json { default = "mazF5_base_vm02.do.json" }
+variable az1_mazCluster_do_json { default = "mazF5vm01.do.json" }
+variable az2_mazCluster_do_json { default = "mazF5vm02.do.json" }
+variable az1_maz_local_only_tmsh_json { default = "az1_maz_localOnly_tmsh.json" }
+variable az2_maz_local_only_tmsh_json { default = "az2_maz_localOnly_tmsh.json" }
+
+variable az1_tenantBase_do_json { default = "tenantF5_base_vm01.do.json" }
+variable az2_tenantBase_do_json { default = "tenantF5_base_vm02.do.json" }
+variable az1_tenantCluster_do_json { default = "tenantF5vm01.do.json" }
+variable az2_tenantCluster_do_json { default = "tenantF5vm02.do.json" }
+variable az1_tenant_local_only_tmsh_json { default = "az1_dmz_localOnly_tmsh.json" }
+variable az2_tenant_local_only_tmsh_json { default = "az2_dmz_localOnly_tmsh.json" }
+
+
+
 
 # Telemetry Streaming externsion Vars
 variable paz_ts_json { default = "tsCloudwatch_ts.json" }
