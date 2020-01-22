@@ -1,4 +1,5 @@
 /*
+Steve is replacing CFT's with AWS Terraform modules!
 # https://github.com/F5Networks/f5-aws-cloudformation/tree/master/supported/failover/across-net/via-api/3nic/existing-stack/byol/
 resource "aws_cloudformation_stack" "bigipMAZ" {
 	name = "cf${var.tag_name}-${var.maz_name}"
