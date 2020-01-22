@@ -1,34 +1,3 @@
-/*
-# https://github.com/F5Networks/f5-aws-cloudformation/tree/master/supported/failover/across-net/via-api/3nic/existing-stack/byol/
-resource "aws_cloudformation_stack" "bigipPAZ" {
-	name = "cf${var.tag_name}-PAZ"
-	template_url = "${var.bigip_cft}"
-	parameters = {
-		Vpc = "${aws_vpc.main.id}"
-		ntpServer = "${var.ntp_server}"
-		bigIpModules = "${var.paz_f5provisioning}"
-		provisionPublicIP = "Yes"
-		#declarationUrl = "${file("bigip_as3.json")}"
-		managementSubnetAz1 = "${aws_subnet.mgmt1.id}"
-		managementSubnetAz2 = "${aws_subnet.mgmt2.id}"
-		subnet1Az1 = "${aws_subnet.ext1.id}"
-		subnet1Az2 = "${aws_subnet.ext2.id}"
-		subnet2Az1 = "${aws_subnet.dmzExt1.id}"
-		subnet2Az2 = "${aws_subnet.dmzExt2.id}"
-		imageName = "AllTwoBootLocations"
-		instanceType = "m5.xlarge"
-		licenseKey1 = "${var.bigip_lic1}"
-		licenseKey2 = "${var.bigip_lic2}"
-		sshKey = "${aws_key_pair.main.id}"
-		restrictedSrcAddress = "${var.mgmt_asrc[0]}"
-		restrictedSrcAddressApp = "0.0.0.0/0"
-		timezone = "UTC"
-		allowUsageAnalytics = "No"
-	}
-	capabilities = ["CAPABILITY_IAM"]
-}
-*/
-
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az1_mgmt" {
   depends_on      = [aws_security_group.sg_ext_mgmt]
@@ -47,7 +16,7 @@ resource "aws_network_interface" "az1_external" {
 resource "aws_network_interface" "az1_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az1_dmzExt.id
-  private_ips     = [var.az1_pazF5.dmz_ext_self, var.az1_pazF5.dmz_ext_vip]
+  private_ips     = [var.az1_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
 }
 
@@ -66,12 +35,19 @@ resource "aws_eip" "eip_az1_mgmt" {
   associate_with_private_ip = var.az1_pazF5.mgmt
 }
 
+resource "aws_eip" "eip_az1_external" {
+  depends_on                = [aws_network_interface.az1_external]
+  vpc                       = true
+  network_interface         = aws_network_interface.az1_external.id
+  associate_with_private_ip = var.az1_pazF5.paz_ext_self
+}
+
 #Big-IP 1
 resource "aws_instance" "az1_bigip" {
   depends_on                  = [aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_external, aws_network_interface.az1_internal, aws_network_interface.az1_mgmt]
   ami                         = var.ami_f5image_name
   instance_type               = var.ami_paz_f5instance_type
-  user_data                   = data.template_file.vm_onboard.rendered
+  user_data                   = data.template_file.az1_pazF5_vm_onboard.rendered
   key_name                    = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -120,10 +96,9 @@ resource "aws_instance" "az1_bigip" {
 }
 
 
-
-## AZ1 DO Declaration
-data "template_file" "az1_paz_do_json" {
-  template = "${file("${path.module}/clusterAcrossAZs_do.tpl.json")}"
+## AZ1 Cluster DO Declaration
+data "template_file" "az1_pazCluster_do_json" {
+  template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey	        = "${var.paz_lic1}"
@@ -147,27 +122,10 @@ data "template_file" "az1_paz_do_json" {
   }
 }
 # Render PAZ DO declaration
-resource "local_file" "az1_paz_do_file" {
-  content     = "${data.template_file.az1_paz_do_json.rendered}"
-  filename    = "${path.module}/${var.az1_paz_do_json}"
+resource "local_file" "az1_pazCluster_do_file" {
+  content     = "${data.template_file.az1_pazCluster_do_json.rendered}"
+  filename    = "${path.module}/${var.az1_pazCluster_do_json}"
 }
-
-
-# PAZ LOCAL_ONLY (HaAcrossAZs) Routing configuration
-data "template_file" "az1_local_only_tmsh_json" {
-  template = "${file("${path.module}/local_only_tmsh.tpl.json")}"
-  vars = {
-    mgmt_ip     = "${var.az1_pazF5.mgmt}"
-    mgmt_gw     = "${local.az1_mgmt_gw}"
-    gw	        = "${local.az1_paz_gw}"
-  }
-}
-# Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
-resource "local_file" "az1_local_only_tmsh_file" {
-  content     = "${data.template_file.az1_local_only_tmsh_json.rendered}"
-  filename    = "${path.module}/${var.az1_local_only_tmsh_json}"
-}
-
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_mgmt" {
@@ -180,14 +138,14 @@ resource "aws_network_interface" "az2_mgmt" {
 resource "aws_network_interface" "az2_external" {
   depends_on      = [aws_security_group.sg_external]
   subnet_id       = aws_subnet.az2_ext.id
-  private_ips     = [var.az2_pazF5.paz_ext_self, var.az2_pazF5.paz_ext_vip]
+  private_ips     = [var.az2_pazF5.paz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
 }
 
 resource "aws_network_interface" "az2_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az2_dmzExt.id
-  private_ips     = [var.az2_pazF5.dmz_ext_self, var.az2_pazF5.dmz_ext_vip]
+  private_ips     = [var.az2_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
 }
 
@@ -198,13 +156,20 @@ resource "aws_eip" "eip_az2_mgmt" {
   associate_with_private_ip = var.az2_pazF5.mgmt
 }
 
+resource "aws_eip" "eip_az2_external" {
+  depends_on                = [aws_network_interface.az2_external]
+  vpc                       = true
+  network_interface         = aws_network_interface.az2_external.id
+  associate_with_private_ip = var.az2_pazF5.paz_ext_self
+}
+
 # BigIP 2
 resource "aws_instance" "az2_bigip" {
   depends_on                  = [aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_external, aws_network_interface.az2_internal, aws_network_interface.az2_mgmt]
   ami                         = var.ami_f5image_name
   instance_type               = var.ami_paz_f5instance_type
   availability_zone           = "${var.aws_region}b"
-  user_data                   = data.template_file.vm_onboard.rendered
+  user_data                   = data.template_file.az2_pazF5_vm_onboard.rendered
   key_name                    = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -243,7 +208,7 @@ resource "aws_instance" "az2_bigip" {
     }
     when = "destroy"
     inline = [
-      "echo y | tmsh revoke /sys license"
+      "echo y | tmsh revoke sys license"
     ]
     on_failure = "continue"
   }
@@ -254,9 +219,9 @@ resource "aws_instance" "az2_bigip" {
 }
 
 
-## AZ2 DO Declaration
-data "template_file" "az2_paz_do_json" {
-  template = "${file("${path.module}/clusterAcrossAZs_do.tpl.json")}"
+## AZ2 Cluster DO Declaration
+data "template_file" "az2_pazCluster_do_json" {
+  template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey	        = "${var.paz_lic2}"
@@ -280,24 +245,9 @@ data "template_file" "az2_paz_do_json" {
   }
 }
 # Render PAZ DO declaration
-resource "local_file" "az2_paz_do_file" {
-  content     = "${data.template_file.az2_paz_do_json.rendered}"
-  filename    = "${path.module}/${var.az2_paz_do_json}"
-}
-
-# PAZ LOCAL_ONLY (HaAcrossAZs) Routing configuration
-data "template_file" "az2_local_only_tmsh_json" {
-  template = "${file("${path.module}/local_only_tmsh.tpl.json")}"
-  vars = {
-    mgmt_ip     = "${var.az2_pazF5.mgmt}"
-    mgmt_gw     = "${local.az2_mgmt_gw}"
-    gw	        = "${local.az2_paz_gw}"
-  }
-}
-# Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
-resource "local_file" "az2_local_only_tmsh_file" {
-  content     = "${data.template_file.az2_local_only_tmsh_json.rendered}"
-  filename    = "${path.module}/${var.az2_local_only_tmsh_json}"
+resource "local_file" "az2_pazCluster_do_file" {
+  content     = "${data.template_file.az2_pazCluster_do_json.rendered}"
+  filename    = "${path.module}/${var.az2_pazCluster_do_json}"
 }
 
 # PAZ TS Declaration
@@ -346,56 +296,84 @@ resource "local_file" "paz_as3_file" {
 }
 
 
-resource "null_resource" "az1_pazF5_DO" {
+
+## F5 REST API Declarations
+#resource "null_resource" "az1_pazF5_base_DO" {
+#  depends_on	= [aws_instance.az1_bigip]
+#  # Running DO REST API
+#  provisioner "local-exec" {
+#    command = <<-EOF
+#      #!/bin/bash
+#      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_pazBase_do_json}
+#      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+#      sleep 120
+#    EOF
+#  }
+#}
+
+#resource "null_resource" "az1_pazF5_LOCAL_ONLY_routing" {
+#  depends_on    = ["null_resource.az1_pazF5_base_DO"]
+#  # Running CF REST API
+#  provisioner "local-exec" {
+#    command = <<-EOF
+#      #!/bin/bash
+#      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
+#      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_paz_local_only_tmsh_json}
+#    EOF
+#  }
+#}
+
+resource "null_resource" "az1_pazF5_cluster_DO" {
   depends_on	= [aws_instance.az1_bigip]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_paz_do_json}
+      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_pazCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
 }
 
-resource "null_resource" "az1_pazF5_LOCAL_ONLY_routing" {
-  depends_on    = ["null_resource.az1_pazF5_DO"]
-  # Running CF REST API
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
-      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_local_only_tmsh_json}
-    EOF
-  }
-}
+#resource "null_resource" "az2_pazF5_base_DO" {
+#  depends_on    = [aws_instance.az2_bigip]
+#  # Running DO REST API
+#  provisioner "local-exec" {
+#    command = <<-EOF
+#      #!/bin/bash
+#      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_pazBase_do_json}
+#      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+#      sleep 120
+#    EOF
+#  }
+#}
 
-resource "null_resource" "az2_pazF5_DO" {
+#resource "null_resource" "az2_pazF5_LOCAL_ONLY_routing" {
+#  depends_on    = ["null_resource.az2_pazF5_base_DO"]
+#  # Running CF REST API
+#  provisioner "local-exec" {
+#    command = <<-EOF
+#      #!/bin/bash
+#      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
+#      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_paz_local_only_tmsh_json}
+#    EOF
+#  }
+#}
+
+resource "null_resource" "az2_pazF5_cluster_DO" {
   depends_on    = [aws_instance.az2_bigip]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_paz_do_json}
+      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_pazCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
 }
-
-resource "null_resource" "az2_pazF5_LOCAL_ONLY_routing" {
-  depends_on    = ["null_resource.az2_pazF5_DO"]
-  # Running CF REST API
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
-      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_local_only_tmsh_json}
-    EOF
-  }
-}
-
+/*
 resource "null_resource" "pazF5_TS" {
   depends_on    = ["null_resource.az1_pazF5_LOCAL_ONLY_routing", "null_resource.az2_pazF5_LOCAL_ONLY_routing"]
   # Running CF REST API
@@ -417,3 +395,4 @@ resource "null_resource" "pazF5_TS_LogCollection" {
     EOF
   }
 }
+*/

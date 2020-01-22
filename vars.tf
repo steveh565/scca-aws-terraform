@@ -58,7 +58,19 @@ variable dns_server { default = "8.8.8.8" }
 variable ntp_server { default = "0.us.pool.ntp.org" }
 variable timezone   { default = "UTC" }
 variable libs_dir   { default = "/config/cloud/aws/node_modules" }
-variable onboard_script { default = "onboard.sh" }
+
+
+variable az1_pazF5_onboard_script { default = "az1_pazF5_onboard.sh" }
+variable az2_pazF5_onboard_script { default = "az2_pazF5_onboard.sh" }
+variable az1_dmzF5_onboard_script { default = "az1_dmzF5_onboard.sh" }
+variable az2_dmzF5_onboard_script { default = "az2_dmzF5_onboard.sh" }
+variable az1_mazF5_onboard_script { default = "az1_mazF5_onboard.sh" }
+variable az2_mazF5_onboard_script { default = "az2_mazF5_onboard.sh" }
+variable az1_transitF5_onboard_script { default = "az1_transitF5_onboard.sh" }
+variable az2_transitF5_onboard_script { default = "az2_transitF5_onboard.sh" }
+variable az1_tenantF5_onboard_script { default = "az1_tenantF5_onboard.sh" }
+variable az2_tenantF5_onboard_script { default = "az2_tenantF5_onboard.sh" }
+
 variable onboard_log { default = "/var/log/startup-script.log" }
 
 # Platform Provisioning

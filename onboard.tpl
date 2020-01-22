@@ -33,11 +33,80 @@ do
   sleep 10
 done
 
-sleep 60
+sleep 30
 
-### CREATE ADMIN USER ACCOUNT
-tmsh create /auth user ${uname} password ${upassword} shell bash partition-access replace-all-with { all-partitions { role admin } }
+### TMSH onboarding commands
+
+# admin user
+echo "set creds"
+cat <<-EOF | tmsh -q
+create cli transaction;
+create /auth user ${uname} password ${upassword} shell bash partition-access replace-all-with { all-partitions { role admin } };
+submit cli transaction
+EOF
+
+# mgmt
+echo "set system"
+cat <<-EOF | tmsh -q
+create cli transaction;
+modify /sys global-settings mgmt-dhcp disabled; 
+modify /sys db config.allow.rfc3927 value enable;
+submit cli transaction
+EOF
+
+echo "set management networking"
+cat <<-EOF | tmsh -q
+create cli transaction;
+delete /sys management-route default;
+delete /sys management-ip ${mgmt_ip}/24; 
+create /sys management-ip ${mgmt_ip}/24; 
+create /sys management-route default network default gateway ${mgmt_gw};
+submit cli transaction
+EOF
+
+# LOCAL_ONLY
+echo "set LOCAL_ONLY partition"
+cat <<-EOF | tmsh -q
+create cli transaction;
+create /auth partition LOCAL_ONLY; 
+modify /sys folder /LOCAL_ONLY device-group none traffic-group /Common/traffic-group-local-only; 
+submit cli transaction
+EOF
+
+# Base Networking
+echo "set TMM base networking"
+#cat <<-EOF | tmsh -q
+#create cli transaction;
+tmsh create net vlan external interfaces add { 1.1 } mtu 1500;
+tmsh create net self external-self address ${ext_self}/24 vlan external;
+tmsh create net vlan internal interfaces add { 1.2 } mtu 1500;
+tmsh create net self internal-self address ${int_self}/24 vlan internal;
+tmsh create /net route /LOCAL_ONLY/default network default gw ${gateway}; 
+tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
+#submit cli transaction
+#EOF
+
 #tmsh modify /auth user admin password ${upassword}
+
+# CHECK TO SEE NETWORK IS READY AGAIN AFTER RECONFIGURING ROUTES
+CNT=0
+while true
+do
+  STATUS=$(curl -s -k -I https://github.com | grep HTTP)
+  if [[ $STATUS == *"200"* ]]; then
+    echo "Got 200! VE is Ready!"
+    break
+  elif [ $CNT -le 6 ]; then
+    echo "Status code: $STATUS  Not done yet..."
+    CNT=$[$CNT+1]
+  else
+    echo "GIVE UP..."
+    break
+  fi
+  sleep 10
+done
+
+sleep 30
 
 ### DOWNLOAD ONBOARDING PKGS
 # Could be pre-packaged or hosted internally
