@@ -13,6 +13,7 @@ resource "aws_network_interface" "az1_external" {
   security_groups = [aws_security_group.sg_external.id]
 }
 
+/*
 resource "null_resource" "az1_external_secondary_ips" {
   depends_on = [aws_network_interface.az1_external]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
@@ -20,11 +21,11 @@ resource "null_resource" "az1_external_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-addresses ${var.az1_pazF5.paz_ext_vip}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-addresses ${var.az1_pazF5.paz_ext_vip}
     EOF
   }
 }
-
+*/
 
 resource "aws_network_interface" "az1_internal" {
   depends_on      = [aws_security_group.sg_internal]
@@ -33,6 +34,7 @@ resource "aws_network_interface" "az1_internal" {
   security_groups = [aws_security_group.sg_internal.id]
 }
 
+/*
 resource "null_resource" "az1_internal_secondary_ips" {
   depends_on = [aws_network_interface.az1_internal]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
@@ -40,10 +42,11 @@ resource "null_resource" "az1_internal_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_ext_vip}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_ext_vip}
     EOF
   }
 }
+*/
 
 # Create elastic IP and map to "VIP" on external paz nic
 resource "aws_eip" "eip_vip" {
@@ -167,6 +170,7 @@ resource "aws_network_interface" "az2_external" {
   security_groups = [aws_security_group.sg_external.id]
 }
 
+/*
 resource "null_resource" "az2_external_secondary_ips" {
   depends_on = [aws_network_interface.az2_external]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
@@ -174,10 +178,11 @@ resource "null_resource" "az2_external_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az2_external.id} --private-ip-addresses ${var.az2_pazF5.paz_ext_vip}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_external.id} --private-ip-addresses ${var.az2_pazF5.paz_ext_vip}
     EOF
   }
 }
+*/
 
 resource "aws_network_interface" "az2_internal" {
   depends_on      = [aws_security_group.sg_internal]
@@ -186,6 +191,7 @@ resource "aws_network_interface" "az2_internal" {
   security_groups = [aws_security_group.sg_internal.id]
 }
 
+/*
 resource "null_resource" "az2_internal_secondary_ips" {
   depends_on = [aws_network_interface.az2_internal]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
@@ -193,10 +199,11 @@ resource "null_resource" "az2_internal_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_ext_vip}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_ext_vip}
     EOF
   }
 }
+*/
 
 resource "aws_eip" "eip_az2_mgmt" {
   depends_on                = [aws_network_interface.az2_mgmt]
