@@ -13,11 +13,36 @@ resource "aws_network_interface" "az1_external" {
   security_groups = [aws_security_group.sg_external.id]
 }
 
+resource "null_resource" "az1_external_secondary_ips" {
+  depends_on = [aws_network_interface.az1_external]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-addresses ${var.az1_pazF5.paz_ext_vip}
+    EOF
+  }
+}
+
+
 resource "aws_network_interface" "az1_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az1_dmzExt.id
   private_ips     = [var.az1_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
+}
+
+resource "null_resource" "az1_internal_secondary_ips" {
+  depends_on = [aws_network_interface.az1_internal]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_ext_vip}
+    EOF
+  }
 }
 
 # Create elastic IP and map to "VIP" on external paz nic
@@ -53,22 +78,22 @@ resource "aws_instance" "az1_bigip" {
     delete_on_termination = true
   }
   network_interface {
-    device_index = 0
+    device_index         = 0
     network_interface_id = aws_network_interface.az1_mgmt.id
   }
   network_interface {
-    device_index = 1
+    device_index         = 1
     network_interface_id = aws_network_interface.az1_external.id
   }
   network_interface {
-    device_index = 2
+    device_index         = 2
     network_interface_id = aws_network_interface.az1_internal.id
   }
   provisioner "remote-exec" {
     connection {
-      host = "${aws_instance.az1_bigip.public_ip}"
-      type = "ssh"
-      user = "${var.uname}"
+      host     = "${aws_instance.az1_bigip.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
       password = "${var.upassword}"
     }
     when = "create"
@@ -78,9 +103,9 @@ resource "aws_instance" "az1_bigip" {
   }
   provisioner "remote-exec" {
     connection {
-      host = "${aws_instance.az1_bigip.public_ip}"
-      type = "ssh"
-      user = "${var.uname}"
+      host     = "${aws_instance.az1_bigip.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
       password = "${var.upassword}"
     }
     when = "destroy"
@@ -101,21 +126,21 @@ data "template_file" "az1_pazCluster_do_json" {
   template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
-    regkey	        = "${var.paz_lic1}"
-    banner_color    = "red"
-    host1	          = "${var.az1_pazF5.hostname}"
-    host2	          = "${var.az2_pazF5.hostname}"
-    local_host      = "${var.az1_pazF5.hostname}"
-    local_selfip1   = "${var.az1_pazF5.paz_ext_self}"
-    local_selfip2   = "${var.az1_pazF5.dmz_ext_self}"
-    remote_selfip   = "${var.az2_pazF5.mgmt}"
-    mgmt_gw         = "${local.az1_mgmt_gw}"
-    gateway	        = "${local.az1_paz_gw}"
-    dns_server	    = "${var.dns_server}"
-    ntp_server	    = "${var.ntp_server}"
-    timezone	      = "${var.timezone}"
-    admin_user      = "${var.uname}"
-    admin_password  = "${var.upassword}"
+    regkey         = "${var.paz_lic1}"
+    banner_color   = "red"
+    host1          = "${var.az1_pazF5.hostname}"
+    host2          = "${var.az2_pazF5.hostname}"
+    local_host     = "${var.az1_pazF5.hostname}"
+    local_selfip1  = "${var.az1_pazF5.paz_ext_self}"
+    local_selfip2  = "${var.az1_pazF5.dmz_ext_self}"
+    remote_selfip  = "${var.az2_pazF5.mgmt}"
+    mgmt_gw        = "${local.az1_mgmt_gw}"
+    gateway        = "${local.az1_paz_gw}"
+    dns_server     = "${var.dns_server}"
+    ntp_server     = "${var.ntp_server}"
+    timezone       = "${var.timezone}"
+    admin_user     = "${var.uname}"
+    admin_password = "${var.upassword}"
 
     #app1_net        = "${local.app1_net}"
     #app1_net_gw     = "${local.app1_net_gw}"
@@ -142,11 +167,35 @@ resource "aws_network_interface" "az2_external" {
   security_groups = [aws_security_group.sg_external.id]
 }
 
+resource "null_resource" "az2_external_secondary_ips" {
+  depends_on = [aws_network_interface.az2_external]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az2_external.id} --private-ip-addresses ${var.az2_pazF5.paz_ext_vip}
+    EOF
+  }
+}
+
 resource "aws_network_interface" "az2_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az2_dmzExt.id
   private_ips     = [var.az2_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
+}
+
+resource "null_resource" "az2_internal_secondary_ips" {
+  depends_on = [aws_network_interface.az2_internal]
+  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_ext_vip}
+    EOF
+  }
 }
 
 resource "aws_eip" "eip_az2_mgmt" {
@@ -175,22 +224,22 @@ resource "aws_instance" "az2_bigip" {
     delete_on_termination = true
   }
   network_interface {
-    device_index = 0
+    device_index         = 0
     network_interface_id = aws_network_interface.az2_mgmt.id
   }
   network_interface {
-    device_index = 1
+    device_index         = 1
     network_interface_id = aws_network_interface.az2_external.id
   }
   network_interface {
-    device_index = 2
+    device_index         = 2
     network_interface_id = aws_network_interface.az2_internal.id
   }
   provisioner "remote-exec" {
     connection {
-      host = "${aws_instance.az2_bigip.public_ip}"
-      type = "ssh"
-      user = "${var.uname}"
+      host     = "${aws_instance.az2_bigip.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
       password = "${var.upassword}"
     }
     when = "create"
@@ -201,9 +250,9 @@ resource "aws_instance" "az2_bigip" {
 
   provisioner "remote-exec" {
     connection {
-      host = "${aws_instance.az2_bigip.public_ip}"
-      type = "ssh"
-      user = "${var.uname}"
+      host     = "${aws_instance.az2_bigip.public_ip}"
+      type     = "ssh"
+      user     = "${var.uname}"
       password = "${var.upassword}"
     }
     when = "destroy"
@@ -224,21 +273,21 @@ data "template_file" "az2_pazCluster_do_json" {
   template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
-    regkey	        = "${var.paz_lic2}"
-    banner_color    = "red"
-    host1	          = "${var.az2_pazF5.hostname}"
-    host2	          = "${var.az1_pazF5.hostname}"
-    local_host      = "${var.az2_pazF5.hostname}"
-    local_selfip1   = "${var.az2_pazF5.paz_ext_self}"
-    local_selfip2   = "${var.az2_pazF5.dmz_ext_self}"
-    remote_selfip   = "${var.az1_pazF5.mgmt}"
-    mgmt_gw         = "${local.az2_mgmt_gw}"
-    gateway	        = "${local.az2_paz_gw}"
-    dns_server	    = "${var.dns_server}"
-    ntp_server	    = "${var.ntp_server}"
-    timezone	      = "${var.timezone}"
-    admin_user      = "${var.uname}"
-    admin_password  = "${var.upassword}"
+    regkey         = "${var.paz_lic2}"
+    banner_color   = "red"
+    host1          = "${var.az2_pazF5.hostname}"
+    host2          = "${var.az1_pazF5.hostname}"
+    local_host     = "${var.az2_pazF5.hostname}"
+    local_selfip1  = "${var.az2_pazF5.paz_ext_self}"
+    local_selfip2  = "${var.az2_pazF5.dmz_ext_self}"
+    remote_selfip  = "${var.az1_pazF5.mgmt}"
+    mgmt_gw        = "${local.az2_mgmt_gw}"
+    gateway        = "${local.az2_paz_gw}"
+    dns_server     = "${var.dns_server}"
+    ntp_server     = "${var.ntp_server}"
+    timezone       = "${var.timezone}"
+    admin_user     = "${var.uname}"
+    admin_password = "${var.upassword}"
 
     #app1_net        = "${local.app1_net}"
     #app1_net_gw     = "${local.app1_net_gw}"
@@ -255,15 +304,15 @@ data "template_file" "paz_ts_json" {
   template = "${file("${path.module}/tsCloudwatch_ts.tpl.json")}"
 
   vars = {
-    aws_region  = var.aws_region
-    access_key  = var.SP.access_key
-	  secret_key  = var.SP.secret_key
+    aws_region = var.aws_region
+    access_key = var.SP.access_key
+    secret_key = var.SP.secret_key
   }
 }
 # Render PAZ TS declaration
 resource "local_file" "paz_ts_file" {
-  content     = "${data.template_file.paz_ts_json.rendered}"
-  filename    = "${path.module}/${var.paz_ts_json}"
+  content  = "${data.template_file.paz_ts_json.rendered}"
+  filename = "${path.module}/${var.paz_ts_json}"
 }
 
 # PAZ LogCollection AS3 Declaration
@@ -276,8 +325,8 @@ data "template_file" "paz_logs_as3_json" {
 }
 # Render PAZ LogCollection AS3 declaration
 resource "local_file" "paz_logs_as3_file" {
-  content     = "${data.template_file.paz_logs_as3_json.rendered}"
-  filename    = "${path.module}/${var.paz_logs_as3_json}"
+  content  = "${data.template_file.paz_logs_as3_json.rendered}"
+  filename = "${path.module}/${var.paz_logs_as3_json}"
 }
 
 # PAZ AS3 Declaration
@@ -285,14 +334,14 @@ data "template_file" "paz_as3_json" {
   template = "${file("${path.module}/paz_as3.tpl.json")}"
 
   vars = {
-    backendvm_ip    = ""
-	  asm_policy_url  = "${var.asm_policy_url}"
+    backendvm_ip   = ""
+    asm_policy_url = "${var.asm_policy_url}"
   }
 }
 # Render PAZ AS3 declaration
 resource "local_file" "paz_as3_file" {
-  content     = "${data.template_file.paz_as3_json.rendered}"
-  filename    = "${path.module}/${var.tenant1_paz_as3_json}"
+  content  = "${data.template_file.paz_as3_json.rendered}"
+  filename = "${path.module}/${var.tenant1_paz_as3_json}"
 }
 
 
@@ -375,7 +424,7 @@ resource "null_resource" "az2_pazF5_cluster_DO" {
 }
 /*
 resource "null_resource" "pazF5_TS" {
-  depends_on    = ["null_resource.az1_pazF5_LOCAL_ONLY_routing", "null_resource.az2_pazF5_LOCAL_ONLY_routing"]
+  depends_on = ["null_resource.az1_pazF5_LOCAL_ONLY_routing", "null_resource.az2_pazF5_LOCAL_ONLY_routing"]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -386,7 +435,7 @@ resource "null_resource" "pazF5_TS" {
 }
 
 resource "null_resource" "pazF5_TS_LogCollection" {
-  depends_on    = ["null_resource.pazF5_TS"]
+  depends_on = ["null_resource.pazF5_TS"]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
