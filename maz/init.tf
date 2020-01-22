@@ -8,6 +8,7 @@ provider "aws" {
 	secret_key = var.SP.secret_key
 }
 
+/*
 resource "aws_s3_bucket" "terraform_state" {
   bucket = lower("${var.tag_name}-${var.tfstate_s3Bucket}")
   # Enable versioning so we can see the full revision history of our
@@ -43,3 +44,4 @@ output "dynamodb_table_name" {
   value       = aws_dynamodb_table.terraform_locks.name
   description = "The name of the DynamoDB table"
 }
+*/

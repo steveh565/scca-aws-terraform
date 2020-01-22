@@ -1,6 +1,6 @@
 # VPC
 resource "aws_vpc" "maz" {
-	cidr_block = "${var.ztsra_vpc_cidr}"
+	cidr_block = "${var.maz_vpc_cidr}"
 	assign_generated_ipv6_cidr_block = true
 	enable_dns_support = true
 	enable_dns_hostnames = true
@@ -14,7 +14,7 @@ resource "aws_vpc" "maz" {
 resource "aws_subnet" "az1_maz_mgmt" {
 	vpc_id = "${aws_vpc.maz.id}"
 	availability_zone = "${var.aws_region}a"
-	cidr_block = var.az1_ztsra_subnets.mgmt
+	cidr_block = var.az1_maz_subnets.mgmt
 	tags = {
 		Name = "${var.maz_name}-snetMgmt1"
 		Tenant = "${var.maz_name}"
@@ -25,7 +25,7 @@ resource "aws_subnet" "az1_maz_mgmt" {
 resource "aws_subnet" "az2_maz_mgmt" {
 	vpc_id = "${aws_vpc.maz.id}"
 	availability_zone = "${var.aws_region}b"
-	cidr_block = var.az2_ztsra_subnets.mgmt
+	cidr_block = var.az2_maz_subnets.mgmt
 	tags = {
 		Name = "${var.maz_name}-snetMgmt2"
 		Tenant = "${var.maz_name}"
@@ -36,7 +36,7 @@ resource "aws_subnet" "az2_maz_mgmt" {
 resource "aws_subnet" "az1_maz_ext" {
 	vpc_id = "${aws_vpc.maz.id}"
 	availability_zone = "${var.aws_region}a"
-	cidr_block = var.az1_ztsra_subnets.transit
+	cidr_block = var.az1_maz_subnets.transit
 	tags = {
 		Name = "${var.maz_name}-snetExternal1"
 		Tenant = "${var.maz_name}"
@@ -47,7 +47,7 @@ resource "aws_subnet" "az1_maz_ext" {
 resource "aws_subnet" "az2_maz_ext" {
 	vpc_id = "${aws_vpc.maz.id}"
 	availability_zone = "${var.aws_region}b"
-	cidr_block = var.az2_ztsra_subnets.transit
+	cidr_block = var.az2_maz_subnets.transit
 	tags = {
 		Name = "${var.maz_name}-snetExternal2"
 		Tenant = "${var.maz_name}"
@@ -58,7 +58,7 @@ resource "aws_subnet" "az2_maz_ext" {
 resource "aws_subnet" "az1_maz_int" {
 	vpc_id = "${aws_vpc.maz.id}"
 	availability_zone = "${var.aws_region}a"
-	cidr_block = var.az1_ztsra_subnets.internal
+	cidr_block = var.az1_maz_subnets.internal
 	tags = {
 		Name = "${var.maz_name}-snetInternal1"
 		Tenant = "${var.maz_name}"
@@ -69,7 +69,7 @@ resource "aws_subnet" "az1_maz_int" {
 resource "aws_subnet" "az2_maz_int" {
 	vpc_id = "${aws_vpc.maz.id}"
 	availability_zone = "${var.aws_region}b"
-	cidr_block = var.az2_ztsra_subnets.internal
+	cidr_block = var.az2_maz_subnets.internal
 	tags = {
 		Name = "${var.maz_name}-snetInternal2"
 		Tenant = "${var.maz_name}"
