@@ -1,4 +1,4 @@
-
+/*
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az1_dmz_mgmt" {
   depends_on      = [aws_security_group.sg_ext_mgmt]
@@ -72,7 +72,7 @@ resource "aws_instance" "az1_dmz_bigip" {
     }
     when = "destroy"
     inline = [
-      "echo y | tmsh revoke sys license"
+      "tmsh delete /net route /LOCAL_ONLY/default; echo y | tmsh revoke sys license"
     ]
     on_failure = "continue"
   }
@@ -206,7 +206,7 @@ resource "aws_instance" "az2_dmz_bigip" {
     }
     when = "destroy"
     inline = [
-      "echo y | tmsh revoke /sys license"
+      "tmsh delete /net route /LOCAL_ONLY/default; echo y | tmsh revoke sys license"
     ]
     on_failure = "continue"
   }
@@ -254,7 +254,7 @@ data "template_file" "az2_dmz_local_only_tmsh_json" {
   vars = {
     mgmt_ip     = "${var.az2_dmzF5.mgmt}"
     mgmt_gw     = "${local.az2_mgmt_gw}"
-    gw	        = "${local.az2_dmz_ext_gw}"
+    gw	        = "${var.az2_pazF5.dmz_ext_vip}"
   }
 }
 # Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
@@ -380,3 +380,4 @@ resource "null_resource" "dmzF5_TS_LogCollection" {
     EOF
   }
 }
+*/
