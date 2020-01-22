@@ -1,0 +1,7 @@
+<customization_group name="default_resource_network_access" type="resource_network_access">
+	<item language="en">
+		<description></description>
+		<image>/public/images/full_wt/network_access.png</image>
+		<caption>SSL VPN</caption>
+	</item>
+</customization_group>
