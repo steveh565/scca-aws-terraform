@@ -297,40 +297,21 @@ variable AS3_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5
 
 
 # Declarative-Onboarding extension Vars
-variable az1_pazBase_do_json { default = "pazF5_base_vm01.do.json" }
-variable az2_pazBase_do_json { default = "pazF5_base_vm02.do.json" }
 variable az1_pazCluster_do_json { default = "pazF5vm01.do.json" }
 variable az2_pazCluster_do_json { default = "pazF5vm02.do.json" }
-variable az1_paz_local_only_tmsh_json { default = "az1_paz_localOnly_tmsh.json" }
-variable az2_paz_local_only_tmsh_json { default = "az2_paz_localOnly_tmsh.json" }
 
-variable az1_dmzBase_do_json { default = "dmzF5_base_vm01.do.json" }
-variable az2_dmzBase_do_json { default = "dmzF5_base_vm02.do.json" }
 variable az1_dmzCluster_do_json { default = "dmzF5vm01.do.json" }
 variable az2_dmzCluster_do_json { default = "dmzF5vm02.do.json" }
-variable az1_dmz_local_only_tmsh_json { default = "az1_dmz_localOnly_tmsh.json" }
-variable az2_dmz_local_only_tmsh_json { default = "az2_dmz_localOnly_tmsh.json" }
 
-variable az1_transitBase_do_json { default = "transitF5_base_vm01.do.json" }
-variable az2_transitBase_do_json { default = "transitF5_base_vm02.do.json" }
 variable az1_transitCluster_do_json { default = "transitF5vm01.do.json" }
 variable az2_transitCluster_do_json { default = "transitF5vm02.do.json" }
-variable az1_transit_local_only_tmsh_json { default = "az1_dmz_localOnly_tmsh.json" }
-variable az2_transit_local_only_tmsh_json { default = "az2_dmz_localOnly_tmsh.json" }
 
-variable az1_mazBase_do_json { default = "mazF5_base_vm01.do.json" }
-variable az2_mazBase_do_json { default = "mazF5_base_vm02.do.json" }
 variable az1_mazCluster_do_json { default = "mazF5vm01.do.json" }
 variable az2_mazCluster_do_json { default = "mazF5vm02.do.json" }
-variable az1_maz_local_only_tmsh_json { default = "az1_maz_localOnly_tmsh.json" }
-variable az2_maz_local_only_tmsh_json { default = "az2_maz_localOnly_tmsh.json" }
 
-variable az1_tenantBase_do_json { default = "tenantF5_base_vm01.do.json" }
-variable az2_tenantBase_do_json { default = "tenantF5_base_vm02.do.json" }
 variable az1_tenantCluster_do_json { default = "tenantF5vm01.do.json" }
 variable az2_tenantCluster_do_json { default = "tenantF5vm02.do.json" }
-variable az1_tenant_local_only_tmsh_json { default = "az1_dmz_localOnly_tmsh.json" }
-variable az2_tenant_local_only_tmsh_json { default = "az2_dmz_localOnly_tmsh.json" }
+
 
 
 
@@ -340,6 +321,9 @@ variable paz_ts_json { default = "tsCloudwatch_ts.json" }
 variable paz_logs_as3_json { default = "tsLogCollection_as3.json" }
 variable dmz_ts_json { default = "tsCloudwatch_ts.json" }
 variable dmz_logs_as3_json { default = "tsLogCollection_as3.json" }
+variable transit_ts_json { default = "tsCloudwatch_ts.json" }
+variable transit_logs_as3_json { default = "tsLogCollection_as3.json" }
+
 
 # Cloud-failover extension Vars
 

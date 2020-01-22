@@ -9,11 +9,11 @@ resource "aws_network_interface" "az1_mgmt" {
 resource "aws_network_interface" "az1_external" {
   depends_on      = [aws_security_group.sg_external]
   subnet_id       = aws_subnet.az1_ext.id
-  private_ips     = [var.az1_pazF5.paz_ext_self, var.az1_pazF5.paz_ext_vip]
+  private_ips     = [var.az1_pazF5.paz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
 }
 
-/*
+
 resource "null_resource" "az1_external_secondary_ips" {
   depends_on = [aws_network_interface.az1_external]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
@@ -27,7 +27,7 @@ resource "null_resource" "az1_external_secondary_ips" {
     EOF
   }
 }
-*/
+
 
 resource "aws_network_interface" "az1_internal" {
   depends_on      = [aws_security_group.sg_internal]
@@ -36,7 +36,7 @@ resource "aws_network_interface" "az1_internal" {
   security_groups = [aws_security_group.sg_internal.id]
 }
 
-/*
+
 resource "null_resource" "az1_internal_secondary_ips" {
   depends_on = [aws_network_interface.az1_internal]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
@@ -46,11 +46,11 @@ resource "null_resource" "az1_internal_secondary_ips" {
       #!/bin/bash
       export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
       export AWS_ACCESS_KEY_ID=${var.SP.access_key}
-      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_ext_vip}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_int_vip}
     EOF
   }
 }
-*/
+
 
 # Create elastic IP and map to "VIP" on external paz nic
 resource "aws_eip" "eip_vip" {
@@ -197,7 +197,7 @@ resource "aws_network_interface" "az2_internal" {
   security_groups = [aws_security_group.sg_internal.id]
 }
 
-/*
+
 resource "null_resource" "az2_internal_secondary_ips" {
   depends_on = [aws_network_interface.az2_internal]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
@@ -207,11 +207,11 @@ resource "null_resource" "az2_internal_secondary_ips" {
       #!/bin/bash
       export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
       export AWS_ACCESS_KEY_ID=${var.SP.access_key}
-      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_ext_vip}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_int_vip}
     EOF
   }
 }
-*/
+
 
 resource "aws_eip" "eip_az2_mgmt" {
   depends_on                = [aws_network_interface.az2_mgmt]
@@ -359,34 +359,6 @@ resource "local_file" "paz_as3_file" {
   filename = "${path.module}/${var.tenant1_paz_as3_json}"
 }
 
-
-
-## F5 REST API Declarations
-#resource "null_resource" "az1_pazF5_base_DO" {
-#  depends_on	= [aws_instance.az1_bigip]
-#  # Running DO REST API
-#  provisioner "local-exec" {
-#    command = <<-EOF
-#      #!/bin/bash
-#      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_pazBase_do_json}
-#      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-#      sleep 120
-#    EOF
-#  }
-#}
-
-#resource "null_resource" "az1_pazF5_LOCAL_ONLY_routing" {
-#  depends_on    = ["null_resource.az1_pazF5_base_DO"]
-#  # Running CF REST API
-#  provisioner "local-exec" {
-#    command = <<-EOF
-#      #!/bin/bash
-#      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
-#      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_paz_local_only_tmsh_json}
-#    EOF
-#  }
-#}
-
 resource "null_resource" "az1_pazF5_cluster_DO" {
   depends_on	= [aws_instance.az1_bigip]
   # Running DO REST API
@@ -400,31 +372,6 @@ resource "null_resource" "az1_pazF5_cluster_DO" {
   }
 }
 
-#resource "null_resource" "az2_pazF5_base_DO" {
-#  depends_on    = [aws_instance.az2_bigip]
-#  # Running DO REST API
-#  provisioner "local-exec" {
-#    command = <<-EOF
-#      #!/bin/bash
-#      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_pazBase_do_json}
-#      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-#      sleep 120
-#    EOF
-#  }
-#}
-
-#resource "null_resource" "az2_pazF5_LOCAL_ONLY_routing" {
-#  depends_on    = ["null_resource.az2_pazF5_base_DO"]
-#  # Running CF REST API
-#  provisioner "local-exec" {
-#    command = <<-EOF
-#      #!/bin/bash
-#      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
-#      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_paz_local_only_tmsh_json}
-#    EOF
-#  }
-#}
-
 resource "null_resource" "az2_pazF5_cluster_DO" {
   depends_on    = [aws_instance.az2_bigip]
   # Running DO REST API
@@ -437,9 +384,9 @@ resource "null_resource" "az2_pazF5_cluster_DO" {
     EOF
   }
 }
-/*
+
 resource "null_resource" "pazF5_TS" {
-  depends_on = ["null_resource.az1_pazF5_LOCAL_ONLY_routing", "null_resource.az2_pazF5_LOCAL_ONLY_routing"]
+  depends_on = ["null_resource.az1_pazF5_cluster_DO", "null_resource.az2_pazF5_cluster_DO"]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -459,4 +406,4 @@ resource "null_resource" "pazF5_TS_LogCollection" {
     EOF
   }
 }
-*/
+

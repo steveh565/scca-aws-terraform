@@ -22,3 +22,9 @@ foo.json
 foo2.json
 az1_pazF5_onboard.sh
 az2_pazF5_onboard.sh
+transitF5vm01.do.json
+transitF5vm02.do.json
+az1_dmzF5_onboard.sh
+az1_transitF5_onboard.sh
+az2_dmzF5_onboard.sh
+az2_transitF5_onboard.sh

@@ -1,4 +1,4 @@
-/*
+
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az1_dmz_mgmt" {
   depends_on      = [aws_security_group.sg_ext_mgmt]
@@ -10,9 +10,10 @@ resource "aws_network_interface" "az1_dmz_mgmt" {
 resource "aws_network_interface" "az1_dmz_external" {
   depends_on      = [aws_security_group.sg_external]
   subnet_id       = aws_subnet.az1_dmzExt.id
-  private_ips     = [var.az1_dmzF5.dmz_ext_self, var.az1_dmzF5.dmz_ext_vip]
+  private_ips     = [var.az1_dmzF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
 }
+
 
 resource "null_resource" "az1_dmz_external_secondary_ips" {
   depends_on = [aws_network_interface.az1_dmz_external]
@@ -21,15 +22,18 @@ resource "null_resource" "az1_dmz_external_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_dmz_external.id} --private-ip-addresses ${var.az1_dmzF5.dmz_ext_vip}
+      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
+      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_dmz_external.id} --private-ip-addresses ${var.az1_dmzF5.dmz_ext_vip}
     EOF
   }
 }
 
+
 resource "aws_network_interface" "az1_dmz_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az1_dmzInt.id
-  private_ips     = [var.az1_dmzF5.dmz_int_self, var.az1_dmzF5.dmz_int_vip]
+  private_ips     = [var.az1_dmzF5.dmz_int_self]
   security_groups = [aws_security_group.sg_internal.id]
 }
 
@@ -40,7 +44,9 @@ resource "null_resource" "az1_dmz_internal_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az1_dmz_internal.id} --private-ip-addresses ${var.az1_dmzF5.dmz_int_vip}
+      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
+      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_dmz_internal.id} --private-ip-addresses ${var.az1_dmzF5.dmz_int_vip}
     EOF
   }
 }
@@ -53,12 +59,19 @@ resource "aws_eip" "eip_az1_dmz_mgmt" {
   associate_with_private_ip = var.az1_dmzF5.mgmt
 }
 
+resource "aws_eip" "eip_az1_dmz_external" {
+  depends_on                = [aws_network_interface.az1_dmz_external]
+  vpc                       = true
+  network_interface         = aws_network_interface.az1_dmz_external.id
+  associate_with_private_ip = var.az1_dmzF5.dmz_ext_self
+}
+
 #Big-IP 1
 resource "aws_instance" "az1_dmz_bigip" {
   depends_on    = [aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_dmz_external, aws_network_interface.az1_dmz_internal, aws_network_interface.az1_dmz_mgmt]
   ami           = var.ami_f5image_name
   instance_type = var.ami_dmz_f5instance_type
-  user_data     = data.template_file.vm_onboard.rendered
+  user_data     = data.template_file.az1_dmzF5_vm_onboard.rendered
   key_name      = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -96,7 +109,7 @@ resource "aws_instance" "az1_dmz_bigip" {
     }
     when = "destroy"
     inline = [
-      "tmsh delete /net route /LOCAL_ONLY/default; echo y | tmsh revoke sys license"
+      "echo y | tmsh revoke sys license"
     ]
     on_failure = "continue"
   }
@@ -109,7 +122,7 @@ resource "aws_instance" "az1_dmz_bigip" {
 
 
 ## AZ1 DO Declaration
-data "template_file" "az1_dmz_do_json" {
+data "template_file" "az1_dmzCluster_do_json" {
   template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
@@ -134,26 +147,13 @@ data "template_file" "az1_dmz_do_json" {
   }
 }
 # Render dmz DO declaration
-resource "local_file" "az1_dmz_dmz_do_file" {
-  content  = "${data.template_file.az1_dmz_do_json.rendered}"
-  filename = "${path.module}/${var.az1_dmz_do_json}"
+resource "local_file" "az1_dmzCluster_do_file" {
+  content  = "${data.template_file.az1_dmzCluster_do_json.rendered}"
+  filename = "${path.module}/${var.az1_dmzCluster_do_json}"
 }
 
 
-# dmz LOCAL_ONLY (HaAcrossAZs) Routing configuration
-data "template_file" "az1_dmz_local_only_tmsh_json" {
-  template = "${file("${path.module}/local_only_tmsh.tpl.json")}"
-  vars = {
-    mgmt_ip = "${var.az1_dmzF5.mgmt}"
-    mgmt_gw = "${local.az1_mgmt_gw}"
-    gw      = "${local.az1_dmz_ext_gw}"
-  }
-}
-# Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
-resource "local_file" "az1_dmz_local_only_tmsh_file" {
-  content  = "${data.template_file.az1_dmz_local_only_tmsh_json.rendered}"
-  filename = "${path.module}/${var.az1_dmz_local_only_tmsh_json}"
-}
+
 
 
 # Create and attach bigip tmm network interfaces
@@ -167,7 +167,7 @@ resource "aws_network_interface" "az2_dmz_mgmt" {
 resource "aws_network_interface" "az2_dmz_external" {
   depends_on      = [aws_security_group.sg_external]
   subnet_id       = aws_subnet.az2_dmzExt.id
-  private_ips     = [var.az2_dmzF5.dmz_ext_self, var.az2_dmzF5.dmz_ext_vip]
+  private_ips     = [var.az2_dmzF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
 }
 
@@ -178,7 +178,9 @@ resource "null_resource" "az2_dmz_external_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az2_dmz_external.id} --private-ip-addresses ${var.az2_dmzF5.dmz_ext_vip}
+      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
+      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_dmz_external.id} --private-ip-addresses ${var.az2_dmzF5.dmz_ext_vip}
     EOF
   }
 }
@@ -186,7 +188,7 @@ resource "null_resource" "az2_dmz_external_secondary_ips" {
 resource "aws_network_interface" "az2_dmz_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az2_dmzInt.id
-  private_ips     = [var.az2_dmzF5.dmz_int_self, var.az2_dmzF5.dmz_int_vip]
+  private_ips     = [var.az2_dmzF5.dmz_int_self]
   security_groups = [aws_security_group.sg_internal.id]
 }
 
@@ -197,7 +199,9 @@ resource "null_resource" "az2_dmz_internal_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      aws ec2 assign-private-ip-addresses --network-interface-id ${aws_network_interface.az2_dmz_internal.id} --private-ip-addresses ${var.az2_dmzF5.dmz_int_vip}
+      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
+      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_dmz_internal.id} --private-ip-addresses ${var.az2_dmzF5.dmz_int_vip}
     EOF
   }
 }
@@ -209,13 +213,21 @@ resource "aws_eip" "eip_az2_dmz_mgmt" {
   associate_with_private_ip = var.az2_dmzF5.mgmt
 }
 
+resource "aws_eip" "eip_az2_dmz_external" {
+  depends_on                = [aws_network_interface.az2_dmz_external]
+  vpc                       = true
+  network_interface         = aws_network_interface.az2_dmz_external.id
+  associate_with_private_ip = var.az2_dmzF5.dmz_ext_self
+}
+
+
 # BigIP 2
 resource "aws_instance" "az2_dmz_bigip" {
   depends_on        = [aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_dmz_external, aws_network_interface.az2_dmz_internal, aws_network_interface.az2_dmz_mgmt]
   ami               = var.ami_f5image_name
   instance_type     = var.ami_dmz_f5instance_type
   availability_zone = "${var.aws_region}b"
-  user_data         = data.template_file.vm_onboard.rendered
+  user_data         = data.template_file.az2_dmzF5_vm_onboard.rendered
   key_name          = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -254,7 +266,7 @@ resource "aws_instance" "az2_dmz_bigip" {
     }
     when = "destroy"
     inline = [
-      "tmsh delete /net route /LOCAL_ONLY/default; echo y | tmsh revoke sys license"
+      "echo y | tmsh revoke sys license"
     ]
     on_failure = "continue"
   }
@@ -266,7 +278,7 @@ resource "aws_instance" "az2_dmz_bigip" {
 
 
 ## AZ2 DO Declaration
-data "template_file" "az2_dmz_do_json" {
+data "template_file" "az2_dmzCluster_do_json" {
   template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
@@ -292,23 +304,8 @@ data "template_file" "az2_dmz_do_json" {
 }
 # Render dmz DO declaration
 resource "local_file" "az2_dmz_do_file" {
-  content  = "${data.template_file.az2_dmz_do_json.rendered}"
-  filename = "${path.module}/${var.az2_dmz_do_json}"
-}
-
-# dmz LOCAL_ONLY (HaAcrossAZs) Routing configuration
-data "template_file" "az2_dmz_local_only_tmsh_json" {
-  template = "${file("${path.module}/local_only_tmsh.tpl.json")}"
-  vars = {
-    mgmt_ip     = "${var.az2_dmzF5.mgmt}"
-    mgmt_gw     = "${local.az2_mgmt_gw}"
-    gw	        = "${var.az2_pazF5.dmz_ext_vip}"
-  }
-}
-# Render LOCAL_ONLY (HaAcrossAZs) Routing declaration
-resource "local_file" "az2_dmz_local_only_tmsh_file" {
-  content  = "${data.template_file.az2_dmz_local_only_tmsh_json.rendered}"
-  filename = "${path.module}/${var.az2_dmz_local_only_tmsh_json}"
+  content  = "${data.template_file.az2_dmzCluster_do_json.rendered}"
+  filename = "${path.module}/${var.az2_dmzCluster_do_json}"
 }
 
 # dmz TS Declaration
@@ -363,21 +360,9 @@ resource "null_resource" "az1_dmzF5_DO" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_dmz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_dmz_do_json}
+      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_dmz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_dmzCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_dmz_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
-    EOF
-  }
-}
-
-resource "null_resource" "az1_dmzF5_LOCAL_ONLY_routing" {
-  depends_on = ["null_resource.az1_dmzF5_DO"]
-  # Running CF REST API
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_dmz_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
-      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az1_dmz_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_dmz_local_only_tmsh_json}
     EOF
   }
 }
@@ -388,27 +373,16 @@ resource "null_resource" "az2_dmzF5_DO" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_dmz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_dmz_do_json}
+      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_dmz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_dmzCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_dmz_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
 }
 
-resource "null_resource" "az2_dmzF5_LOCAL_ONLY_routing" {
-  depends_on = ["null_resource.az2_dmzF5_DO"]
-  # Running CF REST API
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_dmz_bigip.public_ip}/mgmt/shared/declarative-onboarding -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; echo $STATUS sleep 10; x=$(( $x + 1 )); done
-      curl -H 'Content-Type: application/json' -k -X ${var.rest_util_method} https://${aws_instance.az2_dmz_bigip.public_ip}${var.rest_tmsh_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_dmz_local_only_tmsh_json}
-    EOF
-  }
-}
 
 resource "null_resource" "dmzF5_TS" {
-  depends_on = ["null_resource.az1_dmzF5_LOCAL_ONLY_routing", "null_resource.az2_dmzF5_LOCAL_ONLY_routing"]
+  depends_on = ["null_resource.az1_dmzF5_DO", "null_resource.az2_dmzF5_DO"]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -428,4 +402,3 @@ resource "null_resource" "dmzF5_TS_LogCollection" {
     EOF
   }
 }
-*/

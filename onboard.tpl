@@ -55,14 +55,15 @@ submit cli transaction
 EOF
 
 echo "set management networking"
-cat <<-EOF | tmsh -q
-create cli transaction;
-delete /sys management-route default;
-delete /sys management-ip ${mgmt_ip}/24; 
-create /sys management-ip ${mgmt_ip}/24; 
-create /sys management-route default network default gateway ${mgmt_gw};
-submit cli transaction
-EOF
+#cat <<-EOF | tmsh -q
+#create cli transaction;
+tmsh delete /sys management-route default;
+tmsh delete /sys management-ip ${mgmt_ip}/24; 
+tmsh create /sys management-ip ${mgmt_ip}/24; 
+tmsh create /sys management-route default network default gateway ${mgmt_gw};
+#submit cli transaction
+#EOF
+
 
 # LOCAL_ONLY
 echo "set LOCAL_ONLY partition"
@@ -87,7 +88,7 @@ tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.
 #EOF
 
 #tmsh modify /auth user admin password ${upassword}
-
+#create /cm device-group failoverGroup devices replace-all-with { transitF5vm01.f5labs.gc.ca { set-sync-leader } transitF5vm02.f5labs.gc.ca } type sync-failover auto-sync enabled save-on-auto-sync false network-failover enabled full-load-on-sync false asm-sync disabled
 # CHECK TO SEE NETWORK IS READY AGAIN AFTER RECONFIGURING ROUTES
 CNT=0
 while true

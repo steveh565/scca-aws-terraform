@@ -1,6 +1,6 @@
 {
     "$schema": "https://raw.githubusercontent.com/F5Networks/f5-declarative-onboarding/master/src/schema/latest/base.schema.json",
-    "schemaVersion": "1.0.0",
+    "schemaVersion": "1.9.0",
     "class": "Device",
     "async": true,
     "label": "Basic onboarding",
@@ -35,7 +35,7 @@
                 "8.8.8.8"
             ],
             "search": [
-                "f5.com:"
+                "f5.com"
             ]
         },
         "myProvisioning": {
@@ -44,12 +44,6 @@
             "avr": "nominal",
             "afm": "nominal",
             "asm": "nominal"
-        },
-        "myManagementRoute": {
-            "class": "ManagementRoute",
-            "network": "default",
-            "gw": "${mgmt_gw}",
-            "mtu": 1500
         },
         "internal": {
             "class": "VLAN",
@@ -86,6 +80,6 @@
             "vlan": "external",
             "allowService": ["tcp:22", "tcp:53", "tcp:161", "tcp:443", "tcp:1029", "tcp:1043", "tcp:4353", "udp:53", "udp:161", "udp:520", "udp:1026", "udp:4353"],
             "trafficGroup": "traffic-group-local-only"
-        },        
+        }    
     }
 }

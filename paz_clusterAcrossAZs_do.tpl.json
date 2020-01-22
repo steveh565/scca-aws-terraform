@@ -92,7 +92,7 @@
         "failoverGroup": {
             "class": "DeviceGroup",
             "type": "sync-failover",
-            "members": ["${host1}.example.com", "${host2}.example.com"],
+            "members": ["${host1}.f5labs.gc.ca", "${host2}.f5labs.gc.ca"],
             "owner": "/Common/failoverGroup/members/0",
             "autoSync": true,
             "saveOnAutoSync": false,
