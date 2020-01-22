@@ -21,6 +21,8 @@ resource "null_resource" "az1_external_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
+      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
+      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-addresses ${var.az1_pazF5.paz_ext_vip}
     EOF
   }
@@ -42,6 +44,8 @@ resource "null_resource" "az1_internal_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
+      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
+      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_ext_vip}
     EOF
   }
@@ -201,6 +205,8 @@ resource "null_resource" "az2_internal_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
+      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
+      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_ext_vip}
     EOF
   }
