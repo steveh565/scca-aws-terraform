@@ -6,8 +6,8 @@ variable tfstate_dynamoLocksDb { default = "tfLocks" }
 variable "SP" {
   type = "map"
   default = {
-    access_key = "AKIAQL5QPPJL3CZT4CHM"
-    secret_key = "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"
+    access_key = "AKIAQL5QPPJLUJZLZXHN"
+    secret_key = "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"
   }
 }
 
@@ -15,8 +15,8 @@ variable "SP" {
 variable aws_region { default = "ca-central-1" }
 
 # Prefixes
-variable prefix { default = "SHSCA7" }
-variable tag_name { default = "SHSCA7" }
+variable prefix { default = "SHSCA9" }
+variable tag_name { default = "SHSCA9" }
 variable tenant_name { default = "CSD" }
 variable maz_name { default = "MAZ" }
 
@@ -28,30 +28,32 @@ variable key_path { default = "~/.ssh/id_rsa.pub" }
 variable mgmt_asrc { default = ["0.0.0.0/0"] }
 
 #Big-IP License Keys (BEST)
-variable paz_lic1          { default = "MFDMO-KRVNQ-WYAAS-QNUUZ-ZVJQCBU" }
-variable paz_lic2          { default = "PPOEX-BNSAA-EFJOT-HATXH-RUXBDKL" }
-variable transit_lic1      { default = "PQOPD-ZIGYD-DFEBA-GADVM-TLGLTCT" }
-variable transit_lic2      { default = "XPHDC-NBZMA-VZBKK-OHZGX-AIVUNCO" }
-variable dmz_lic1          { default = "VRFJA-WCENA-XJEFW-YNSZM-HOTGBWP" }
-variable dmz_lic2          { default = "OHXTW-HXGIK-ODMYQ-OORVL-CMPUHLL" }
-variable tenant_bigip_lic1 { default = "XDEJW-QHTBQ-PQSPH-IHJGS-HKENGYC" }
-variable tenant_bigip_lic2 { default = "OHXTW-HXGIK-ODMYQ-OORVL-CMPUHLL" }
-variable ztsra_bigip_lic1 { default = "QDCIC-SQHBC-EZZGL-SLMBB-NVICVES" }
-variable ztsra_bigip_lic2 { default = "MBSSG-EKNFM-BXRXX-DYPPH-NNXNNVX" }
-#variable maz_bigip_lic1    { default = "QDCIC-SQHBC-EZZGL-SLMBB-NVICVES" }
-#variable maz_bigip_lic2    { default = "MBSSG-EKNFM-BXRXX-DYPPH-NNXNNVX" }
+variable paz_lic1          { default = "DFSDQ-HGNLM-CJCSE-GGKWZ-TIYOZYA" }
+variable paz_lic2          { default = "XQTHX-XVNQY-OLBNR-GFFLX-PWFXWXA" }
+variable transit_lic1      { default = "DSEFW-CXTZS-LZHWB-ETHHO-FMLUIZN" }
+variable transit_lic2      { default = "XCFUI-UYLLG-SKQPJ-ZSYIP-GQGWQFA" }
+variable dmz_lic1          { default = "NLPAY-JJMGP-JSWFV-BZXYF-UECPAJX" }
+variable dmz_lic2          { default = "UFJBH-VLEXX-ZETKS-LIFEY-XWDBRTW" }
+variable tenant_bigip_lic1 { default = "KNBZH-VSFMF-JYKHS-THWSZ-WECPLWD" }
+variable tenant_bigip_lic2 { default = "WXWHV-LWFTA-RIQVV-UUJKN-SJFAATX" }
+variable maz_bigip_lic1    { default = "YLPAH-ZTKBN-ZLGHH-QPPEG-NADXYTU" }
+variable maz_bigip_lic2    { default = "YGZGS-GIKDG-QVFQB-NCVNV-EJWUWEF" }
 
 # Platform settings variables
 variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
 variable ami_f5image_type { default = "AllTwoBootLocations" }
 variable ami_image_version { default = "latest" }
 
-variable ami_f5instance_type { default = "m5.xlarge" }
-variable ami_paz_f5instance_type { default = "m5.xlarge" }
-variable ami_dmz_f5instance_type { default = "m5.xlarge" }
-variable ami_transit_f5instance_type { default = "m5.xlarge" }
-variable ami_ztsra_f5iinstance_type { default = "m5.xlarge" }
+variable ami_maz_f5image_name { default = "ami-038e6394d715e5eac" }
+variable ami_maz_f5image_type { default = "AllTwoBootLocations" }
+variable ami_maz_image_version { default = "latest" }
 
+variable ami_f5instance_type { default = "c4.2xlarge" }
+variable ami_paz_f5instance_type { default = "c4.2xlarge" }
+variable ami_dmz_f5instance_type { default = "c4.2xlarge" }
+variable ami_transit_f5instance_type { default = "c4.2xlarge" }
+variable ami_maz_f5instance_type { default = "c4.2xlarge" }
+variable ami_tenant_f5instance_type { default = "c4.2xlarge" }
 
 variable uname { default = "awsops" }
 variable upassword { default = "Canada12345" }
@@ -98,6 +100,7 @@ variable sgExtMgmt { default = "sgExtMgmt" }
 variable sgInternal { default = "sgInternal" }
 
 variable security_vpc_cidr { default = "10.1.0.0/16" }
+variable security_aip_cidr { default = "100.65.0.0/21" }
 variable az1_security_subnets {
   type = "map"
   default = {
@@ -106,9 +109,15 @@ variable az1_security_subnets {
     "dmz_ext" = "10.1.2.0/24"
     "dmz_int" = "10.1.3.0/24"
     "transit" = "10.1.4.0/24"
+    "aip_paz_dmz_ext" = "100.65.1.0/24"
+    "aip_dmz_ext" = "100.65.2.0/24"
+    "aip_dmz_int" = "100.65.3.0/24"
+    "aip_dmzTransit_ext" = "100.65.4.0/24"
+    "aip_Transit_int" = "100.65.5.0/24"
   }
 }
 
+variable paz_cf_label { default = "paz_az_failover" }
 variable az1_pazF5 {
   type = "map"
   default = {
@@ -118,8 +127,12 @@ variable az1_pazF5 {
     "paz_ext_vip"  = "10.1.1.111"
     "dmz_ext_self" = "10.1.2.11"
     "dmz_ext_vip"  = "10.1.2.111"
+    "aip_dmz_ext_self"   = "100.65.1.1"
+    "aip_dmz_ext_float"  = "100.65.1.3"
   }
 }
+
+variable dmz_cf_label { default = "dmz_az_failover" }
 
 variable az1_dmzF5 {
   type = "map"
@@ -130,8 +143,14 @@ variable az1_dmzF5 {
     "dmz_ext_vip"  = "10.1.2.112"
     "dmz_int_self" = "10.1.3.12"
     "dmz_int_vip"  = "10.1.3.112"
+    "aip_dmz_ext_self" = "100.65.2.1"
+    "aip_dmz_ext_vip"  = "100.65.2.3"
+    "aip_dmz_int_self" = "100.65.3.1"
+    "aip_dmz_int_vip"  = "100.65.3.3"
   }
 }
+
+variable transit_cf_label { default = "transit_az_failover" }
 
 variable az1_transitF5 {
   type = "map"
@@ -142,6 +161,10 @@ variable az1_transitF5 {
     "dmz_int_vip"  = "10.1.3.113"
     "transit_self" = "10.1.4.13"
     "transit_vip"  = "10.1.4.113"
+    "aip_dmz_int_self" = "100.65.4.1"
+    "aip_dmz_int_vip"  = "100.65.4.3"
+    "aip_transit_self" = "100.65.5.1"
+    "aip_transit_vip"  = "100.65.5.3"
   }
 }
 
@@ -165,6 +188,8 @@ variable az2_pazF5 {
     "paz_ext_vip"  = "10.1.11.111"
     "dmz_ext_self" = "10.1.12.11"
     "dmz_ext_vip"  = "10.1.12.111"
+    "aip_dmz_ext_self"   = "100.65.1.2"
+    "aip_dmz_ext_float"  = "100.65.1.3"    
   }
 }
 
@@ -177,6 +202,10 @@ variable az2_dmzF5 {
     "dmz_ext_vip"  = "10.1.12.112"
     "dmz_int_self" = "10.1.13.12"
     "dmz_int_vip"  = "10.1.13.112"
+    "aip_dmz_ext_self" = "100.65.2.2"
+    "aip_dmz_ext_vip"  = "100.65.2.3"
+    "aip_dmz_int_self" = "100.65.3.2"
+    "aip_dmz_int_vip"  = "100.65.3.3"    
   }
 }
 
@@ -189,13 +218,18 @@ variable az2_transitF5 {
     "dmz_int_vip"  = "10.1.13.113"
     "transit_self" = "10.1.14.13"
     "transit_vip"  = "10.1.14.113"
+    "aip_dmz_int_self" = "100.65.4.2"
+    "aip_dmz_int_vip"  = "100.65.4.3"
+    "aip_transit_self" = "100.65.5.2"
+    "aip_transit_vip"  = "100.65.5.3"    
   }
 }
 
 
 # remote mgmt VPC Network
-variable ztsra_vpc_cidr { default = "10.11.0.0/16" }
-variable az1_ztsra_subnets {
+variable maz_vpc_cidr { default = "10.11.0.0/16" }
+variable maz_aip_cidr { default = "100.66.71.250/29" }
+variable az1_maz_subnets {
   type = "map"
   default = {
     "mgmt"     = "10.11.0.0/24"
@@ -204,19 +238,23 @@ variable az1_ztsra_subnets {
   }
 }
 
-variable az1_ztsra_transitF5 {
+variable maz_cf_label { default = "maz_az_failover" }
+
+variable az1_mazF5 {
   type = "map"
   default = {
     "hostname"      = "mazF5vm01"
     "mgmt"          = "10.11.0.11"
-    "transit_self"  = "10.11.1.11"
-    "transit_vip"   = "10.11.1.111"
-    "internal_self" = "10.11.2.11"
-    "internal_vip"  = "10.11.2.111"
+    "maz_ext_self"  = "10.11.1.11"
+    "maz_ext_vip"   = "10.11.1.111"
+    "maz_int_self" = "10.11.2.11"
+    "maz_int_vip"  = "10.11.2.111"
+    "aip_gre_ext_self"   = "100.66.71.241"
+    "aip_gre_ext_float"  = "100.66.71.243"
   }
 }
 
-variable az2_ztsra_subnets {
+variable az2_maz_subnets {
   type = "map"
   default = {
     "mgmt"     = "10.11.10.0/24"
@@ -225,20 +263,23 @@ variable az2_ztsra_subnets {
   }
 }
 
-variable az2_ztsra_transitF5 {
+variable az2_mazF5 {
   type = "map"
   default = {
     "hostname"      = "mazF5vm02"
     "mgmt"          = "10.11.10.11"
-    "transit_self"  = "10.11.11.11"
-    "transit_vip"   = "10.11.11.111"
-    "internal_self" = "10.11.12.11"
-    "internal_vip"  = "10.11.12.111"
+    "maz_ext_self"  = "10.11.11.11"
+    "maz_ext_vip"   = "10.11.11.111"
+    "maz_int_self" = "10.11.12.11"
+    "maz_int_vip"  = "10.11.12.111"
+    "aip_gre_ext_self"   = "100.66.71.252"
+    "aip_gre_ext_float"  = "100.66.71.253"
   }
 }
 
 # Tenant 1 VPC Network
 variable tenant_vpc_cidr { default = "10.21.0.0/16" }
+variable tenant_aip_cidr { default = "100.66.71.240/29" }
 variable az1_tenant_subnets {
   type = "map"
   default = {
@@ -248,15 +289,19 @@ variable az1_tenant_subnets {
   }
 }
 
-variable az1_tenant_transitF5 {
+variable tenant_cf_label { default = "tenant_az_failover" }
+variable az1_tenantF5 {
   type = "map"
   default = {
     "hostname"      = "edgeF5vm01"
     "mgmt"          = "10.21.0.11"
-    "transit_self"  = "10.21.1.11"
-    "transit_vip"   = "10.21.1.111"
-    "internal_self" = "10.21.2.11"
-    "internal_vip"  = "10.21.2.111"
+    "tenant_ext_self"  = "10.21.1.11"
+    "tenant_ext_vip"   = "10.21.1.111"
+    "tenant_int_self" = "10.21.2.11"
+    "tenant_int_vip"  = "10.21.2.111"
+    "aip_gre_ext_self"   = "100.66.71.241"
+    "aip_gre_ext_float"  = "100.66.71.243"
+
   }
 }
 
@@ -269,15 +314,17 @@ variable az2_tenant_subnets {
   }
 }
 
-variable az2_tenant_transitF5 {
+variable az2_tenantF5 {
   type = "map"
   default = {
     "hostname"      = "edgeF5vm02"
     "mgmt"          = "10.21.10.11"
-    "transit_self"  = "10.21.11.11"
-    "transit_vip"   = "10.21.11.111"
-    "internal_self" = "10.21.12.11"
-    "internal_vip"  = "10.21.12.111"
+    "tenant_ext_self"  = "10.21.11.11"
+    "tenant_ext_vip"   = "10.21.11.111"
+    "tenant_int_self" = "10.21.12.11"
+    "tenant_int_vip"  = "10.21.12.111"
+    "aip_gre_ext_self"   = "100.66.71.242"
+    "aip_gre_ext_float"  = "100.66.71.243"
   }
 }
 
@@ -324,13 +371,19 @@ variable dmz_logs_as3_json { default = "tsLogCollection_as3.json" }
 variable transit_ts_json { default = "tsCloudwatch_ts.json" }
 variable transit_logs_as3_json { default = "tsLogCollection_as3.json" }
 
+variable maz_ts_json { default = "tsCloudwatch_ts.json" }
+variable maz_logs_as3_json { default = "tsLogCollection_as3.json" }
+
+variable tenant_ts_json { default = "tsCloudwatch_ts.json" }
+variable tenant_logs_as3_json { default = "tsLogCollection_as3.json" }
 
 # Cloud-failover extension Vars
 
 # AS3 extension Vars
 variable asm_policy_url { default = "https://raw.githubusercontent.com/steveh565/f5tools/master/asm-policies/asm-policy-linux-medium.xml" }
 variable tenant1_paz_as3_json { default = "tenant1_pas.as3.json" }
-variable maz_paz_as3_json { default = "maz_pas.as3.json" }
+variable maz_paz_as3_json { default = "maz_paz.as3.json" }
+variable maz_as3_json { default = "maz.as3.json" }
 variable dmz_as3_json { default = "dmz.as3.json" }
 variable transit_as3_json { default = "transit.as3.json" }
 
@@ -345,5 +398,6 @@ variable rest_as3_method { default = "POST" }
 variable rest_ts_method { default = "POST" }
 variable rest_cf_method { default = "POST" }
 variable rest_util_method { default = "POST" }
+
 
 

@@ -7,10 +7,14 @@ resource "aws_network_interface" "az1_maz_mgmt" {
 }
 
 resource "aws_network_interface" "az1_maz_external" {
-  depends_on      = [aws_security_group.maz_sg_external]
+  depends_on      = [aws_security_group.maz_sg_internal]
   subnet_id       = aws_subnet.az1_maz_ext.id
   private_ips     = [var.az1_mazF5.maz_ext_self, var.az1_mazF5.maz_ext_vip]
-  security_groups = [aws_security_group.maz_sg_external.id]
+  security_groups = [aws_security_group.maz_sg_internal.id]
+  source_dest_check = false
+  tags              = {
+    "f5_cloud_failover_label" = "maz_az_failover"
+  }
 }
 
 
@@ -34,6 +38,7 @@ resource "aws_network_interface" "az1_maz_internal" {
   subnet_id       = aws_subnet.az1_maz_int.id
   private_ips     = [var.az1_mazF5.maz_int_self, var.az1_mazF5.maz_int_vip]
   security_groups = [aws_security_group.maz_sg_internal.id]
+  source_dest_check = false
 }
 
 resource "null_resource" "az1_maz_internal_secondary_ips" {
@@ -71,6 +76,7 @@ resource "aws_instance" "az1_maz_bigip" {
   ami           = var.ami_f5image_name
   instance_type = var.ami_maz_f5instance_type
   user_data     = data.template_file.az1_mazF5_vm_onboard.rendered
+  
   key_name      = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -160,10 +166,14 @@ resource "aws_network_interface" "az2_maz_mgmt" {
 }
 
 resource "aws_network_interface" "az2_maz_external" {
-  depends_on      = [aws_security_group.maz_sg_external]
+  depends_on      = [aws_security_group.maz_sg_internal]
   subnet_id       = aws_subnet.az2_maz_ext.id
   private_ips     = [var.az2_mazF5.maz_ext_self, var.az2_mazF5.maz_ext_vip]
-  security_groups = [aws_security_group.maz_sg_external.id]
+  security_groups = [aws_security_group.maz_sg_internal.id]
+  source_dest_check = false
+  tags              = {
+    "f5_cloud_failover_label" = "maz_az_failover"
+  }
 }
 
 resource "null_resource" "az2_maz_external_secondary_ips" {
@@ -185,6 +195,7 @@ resource "aws_network_interface" "az2_maz_internal" {
   subnet_id       = aws_subnet.az2_maz_int.id
   private_ips     = [var.az2_mazF5.maz_int_self, var.az2_mazF5.maz_int_vip]
   security_groups = [aws_security_group.maz_sg_internal.id]
+  source_dest_check = false
 }
 
 resource "null_resource" "az2_maz_internal_secondary_ips" {
@@ -223,6 +234,7 @@ resource "aws_instance" "az2_maz_bigip" {
   instance_type     = var.ami_maz_f5instance_type
   availability_zone = "${var.aws_region}b"
   user_data         = data.template_file.az2_mazF5_vm_onboard.rendered
+  
   key_name          = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true

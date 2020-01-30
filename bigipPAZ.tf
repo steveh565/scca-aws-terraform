@@ -11,11 +11,12 @@ resource "aws_network_interface" "az1_external" {
   subnet_id       = aws_subnet.az1_ext.id
   private_ips     = [var.az1_pazF5.paz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
+  source_dest_check = false
 }
 
 
 resource "null_resource" "az1_external_secondary_ips" {
-  depends_on = [aws_network_interface.az1_external]
+  depends_on = [aws_network_interface.az1_external, aws_eip.eip_vip]
   # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
   #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
   provisioner "local-exec" {
@@ -24,6 +25,7 @@ resource "null_resource" "az1_external_secondary_ips" {
       export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
       export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-addresses ${var.az1_pazF5.paz_ext_vip}
+      aws ec2 associate-address --region ${var.aws_region} --allocation-id ${aws_eip.eip_vip.id} --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-address ${var.az1_pazF5.paz_ext_vip}
     EOF
   }
 }
@@ -34,6 +36,7 @@ resource "aws_network_interface" "az1_internal" {
   subnet_id       = aws_subnet.az1_dmzExt.id
   private_ips     = [var.az1_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
+  source_dest_check = false
 }
 
 
@@ -46,7 +49,7 @@ resource "null_resource" "az1_internal_secondary_ips" {
       #!/bin/bash
       export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
       export AWS_ACCESS_KEY_ID=${var.SP.access_key}
-      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_int_vip}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_ext_vip}
     EOF
   }
 }
@@ -54,21 +57,21 @@ resource "null_resource" "az1_internal_secondary_ips" {
 
 # Create elastic IP and map to "VIP" on external paz nic
 resource "aws_eip" "eip_vip" {
-  depends_on                = [aws_network_interface.az1_external]
+  depends_on                = [aws_internet_gateway.gw]
   vpc                       = true
-  network_interface         = aws_network_interface.az1_external.id
-  associate_with_private_ip = var.az1_pazF5.paz_ext_vip
+  #network_interface         = aws_network_interface.az1_external.id
+  #associate_with_private_ip = var.az1_pazF5.paz_ext_vip
 }
 
 resource "aws_eip" "eip_az1_mgmt" {
-  depends_on                = [aws_network_interface.az1_mgmt]
+  depends_on                = [aws_network_interface.az1_mgmt, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az1_mgmt.id
   associate_with_private_ip = var.az1_pazF5.mgmt
 }
 
 resource "aws_eip" "eip_az1_external" {
-  depends_on                = [aws_network_interface.az1_external]
+  depends_on                = [aws_network_interface.az1_external, null_resource.az1_external_secondary_ips, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az1_external.id
   associate_with_private_ip = var.az1_pazF5.paz_ext_self
@@ -79,6 +82,7 @@ resource "aws_instance" "az1_bigip" {
   depends_on                  = [aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_external, aws_network_interface.az1_internal, aws_network_interface.az1_mgmt]
   ami                         = var.ami_f5image_name
   instance_type               = var.ami_paz_f5instance_type
+  iam_instance_profile        = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
   user_data                   = data.template_file.az1_pazF5_vm_onboard.rendered
   key_name                    = "kp${var.tag_name}"
   root_block_device {
@@ -168,10 +172,11 @@ resource "aws_network_interface" "az2_mgmt" {
 }
 
 resource "aws_network_interface" "az2_external" {
-  depends_on      = [aws_security_group.sg_external]
+  depends_on      = [aws_security_group.sg_external, aws_subnet.az2_ext]
   subnet_id       = aws_subnet.az2_ext.id
   private_ips     = [var.az2_pazF5.paz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
+  source_dest_check = false
 }
 
 
@@ -191,10 +196,11 @@ resource "null_resource" "az2_external_secondary_ips" {
 
 
 resource "aws_network_interface" "az2_internal" {
-  depends_on      = [aws_security_group.sg_internal]
+  depends_on      = [aws_security_group.sg_internal, aws_subnet.az2_dmzExt]
   subnet_id       = aws_subnet.az2_dmzExt.id
   private_ips     = [var.az2_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
+  source_dest_check = false
 }
 
 
@@ -207,21 +213,21 @@ resource "null_resource" "az2_internal_secondary_ips" {
       #!/bin/bash
       export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
       export AWS_ACCESS_KEY_ID=${var.SP.access_key}
-      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_int_vip}
+      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_ext_vip}
     EOF
   }
 }
 
 
 resource "aws_eip" "eip_az2_mgmt" {
-  depends_on                = [aws_network_interface.az2_mgmt]
+  depends_on                = [aws_network_interface.az2_mgmt, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az2_mgmt.id
   associate_with_private_ip = var.az2_pazF5.mgmt
 }
 
 resource "aws_eip" "eip_az2_external" {
-  depends_on                = [aws_network_interface.az2_external]
+  depends_on                = [aws_network_interface.az2_external, null_resource.az2_external_secondary_ips, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az2_external.id
   associate_with_private_ip = var.az2_pazF5.paz_ext_self
@@ -234,6 +240,7 @@ resource "aws_instance" "az2_bigip" {
   instance_type               = var.ami_paz_f5instance_type
   availability_zone           = "${var.aws_region}b"
   user_data                   = data.template_file.az2_pazF5_vm_onboard.rendered
+  iam_instance_profile        = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
   key_name                    = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true

@@ -61,7 +61,7 @@ tmsh delete /sys management-route default;
 tmsh delete /sys management-ip 10.11.10.11/24; 
 tmsh create /sys management-ip 10.11.10.11/24; 
 tmsh create /sys management-route default network default gateway 10.11.10.1;
-tmsh modify /sys dns name-servers replace-all-with { 8.8.8.8 } search replace-all-with { f5.com }
+tmsh modify /sys dns name-servers replace-all-with { 10.11.0.2 } search replace-all-with { f5.com }
 #submit cli transaction
 #EOF
 

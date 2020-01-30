@@ -12,6 +12,7 @@ resource "aws_network_interface" "az1_transit_external" {
   subnet_id       = aws_subnet.az1_dmzInt.id
   private_ips     = [var.az1_transitF5.dmz_int_self]
   security_groups = [aws_security_group.sg_external.id]
+  source_dest_check = false
 }
 
 
@@ -35,6 +36,7 @@ resource "aws_network_interface" "az1_transit_internal" {
   subnet_id       = aws_subnet.az1_transit.id
   private_ips     = [var.az1_transitF5.transit_self]
   security_groups = [aws_security_group.sg_internal.id]
+  source_dest_check = false
 }
 
 resource "null_resource" "az1_transit_internal_secondary_ips" {
@@ -53,14 +55,14 @@ resource "null_resource" "az1_transit_internal_secondary_ips" {
 
 # Create elastic IP and map to "VIP" on external transit nic
 resource "aws_eip" "eip_az1_transit_mgmt" {
-  depends_on                = [aws_network_interface.az1_transit_mgmt]
+  depends_on                = [aws_network_interface.az1_transit_mgmt, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az1_transit_mgmt.id
   associate_with_private_ip = var.az1_transitF5.mgmt
 }
 
 resource "aws_eip" "eip_az1_transit_external" {
-  depends_on                = [aws_network_interface.az1_transit_external]
+  depends_on                = [aws_network_interface.az1_transit_external, null_resource.az1_transit_external_secondary_ips, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az1_transit_external.id
   associate_with_private_ip = var.az1_transitF5.dmz_int_self
@@ -72,6 +74,7 @@ resource "aws_instance" "az1_transit_bigip" {
   ami           = var.ami_f5image_name
   instance_type = var.ami_transit_f5instance_type
   user_data     = data.template_file.az1_transitF5_vm_onboard.rendered
+  iam_instance_profile        = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
   key_name      = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -169,6 +172,7 @@ resource "aws_network_interface" "az2_transit_external" {
   subnet_id       = aws_subnet.az2_dmzInt.id
   private_ips     = [var.az2_transitF5.dmz_int_self]
   security_groups = [aws_security_group.sg_external.id]
+  source_dest_check = false
 }
 
 resource "null_resource" "az2_transit_external_secondary_ips" {
@@ -190,6 +194,7 @@ resource "aws_network_interface" "az2_transit_internal" {
   subnet_id       = aws_subnet.az2_transit.id
   private_ips     = [var.az2_transitF5.transit_self]
   security_groups = [aws_security_group.sg_internal.id]
+  source_dest_check = false
 }
 
 resource "null_resource" "az2_transit_internal_secondary_ips" {
@@ -207,14 +212,14 @@ resource "null_resource" "az2_transit_internal_secondary_ips" {
 }
 
 resource "aws_eip" "eip_az2_transit_mgmt" {
-  depends_on                = [aws_network_interface.az2_transit_mgmt]
+  depends_on                = [aws_network_interface.az2_transit_mgmt, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az2_transit_mgmt.id
   associate_with_private_ip = var.az2_transitF5.mgmt
 }
 
 resource "aws_eip" "eip_az2_transit_external" {
-  depends_on                = [aws_network_interface.az2_transit_external]
+  depends_on                = [aws_network_interface.az2_transit_external, null_resource.az2_transit_external_secondary_ips, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az2_transit_external.id
   associate_with_private_ip = var.az2_transitF5.dmz_int_self
@@ -228,6 +233,7 @@ resource "aws_instance" "az2_transit_bigip" {
   instance_type     = var.ami_transit_f5instance_type
   availability_zone = "${var.aws_region}b"
   user_data         = data.template_file.az2_transitF5_vm_onboard.rendered
+  iam_instance_profile        = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
   key_name          = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true

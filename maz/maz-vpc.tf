@@ -76,6 +76,7 @@ resource "aws_subnet" "az2_maz_int" {
 	}
 }
 
+/**/
 # Hub Transit Gateway
 resource "aws_ec2_transit_gateway" "hubtgw" {
 	auto_accept_shared_attachments = "enable"
@@ -87,6 +88,7 @@ resource "aws_ec2_transit_gateway" "hubtgw" {
 		Name = "${var.vpc_tgw_name}"
 	}
 }
+
 
 # Transit Gateway Attach
 resource "aws_ec2_transit_gateway_vpc_attachment" "mazTgwAttach" {
@@ -112,6 +114,13 @@ resource "aws_internet_gateway" "mazGw" {
 # Route table
 resource "aws_route_table" "maz_TransitRt" {
 	vpc_id = "${aws_vpc.maz.id}"
+/*
+	route {
+		cidr_block = "10.1.0.0/0"
+		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+		#gateway_id = "${aws_internet_gateway.mazGw.id}"
+	}
+*/
 	route {
 		cidr_block = "0.0.0.0/0"
 		#transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
@@ -162,8 +171,14 @@ resource "aws_route_table_association" "az2_maz_mgmt" {
 resource "aws_route_table" "maz_intRt" {
 	vpc_id = "${aws_vpc.maz.id}"
 	route {
-		cidr_block = "0.0.0.0/0"
+		cidr_block = "10.1.0.0/16"
 		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+		#gateway_id = "${aws_internet_gateway.mazGw.id}"
+	}
+	route {
+		cidr_block = "0.0.0.0/0"
+		#transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+		gateway_id = "${aws_internet_gateway.mazGw.id}"
 	}
 	tags = {
 		Name = "${var.maz_name}-intRt"

@@ -110,6 +110,14 @@ resource "aws_subnet" "az2_transit" {
 	}
 }
 
+
+### TODO 
+# Add 2x VPC Endpoints to each "tenant_external, dmzint, dmzext, pazext subnets
+# S3 service & EC2 service - F5 cloud failover dependencies
+
+### TODO
+# Add S3 Storage Bucks for each pair of clustered F5 devices (using tags to map to F5 ha pair)
+
 # Internet gateway
 resource "aws_internet_gateway" "gw" {
 	vpc_id = "${aws_vpc.main.id}"
@@ -198,7 +206,7 @@ resource "aws_route_table" "TransitRt" {
 		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
 	}
 	route {
-		cidr_block = "${var.ztsra_vpc_cidr}"
+		cidr_block = "${var.maz_vpc_cidr}"
 		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
 	}
 	tags = {
