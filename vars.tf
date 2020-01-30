@@ -14,6 +14,9 @@ variable "SP" {
 # Input Variables
 variable aws_region { default = "ca-central-1" }
 
+
+
+
 # Prefixes
 variable prefix { default = "SHSCA9" }
 variable tag_name { default = "SHSCA9" }
