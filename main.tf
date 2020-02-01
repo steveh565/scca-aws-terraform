@@ -213,6 +213,10 @@ locals {
     az2_transit_ext_gw   = "${cidrhost(var.az2_security_subnets.dmz_int, 1)}"
     az1_transit_int_gw   = "${cidrhost(var.az1_security_subnets.transit, 1)}"
     az2_transit_int_gw   = "${cidrhost(var.az2_security_subnets.transit, 1)}"
+
+    security_vpc_dns     = "${cidrhost(var.security_vpc_cidr, 2)}"
+    tenant_vpc_dns       = "${cidrhost(var.tenant_vpc_cidr, 2)}"
+    maz_vpc_dns          = "${cidrhost(var.maz_vpc_cidr, 2)}"
 }
 
 
@@ -234,3 +238,4 @@ output "az1_transitF5_secondary_VIP" { value = "${var.az1_transitF5.transit_vip}
 output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}" }
 
 output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
+

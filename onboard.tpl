@@ -61,7 +61,7 @@ tmsh delete /sys management-route default;
 tmsh delete /sys management-ip ${mgmt_ip}/24; 
 tmsh create /sys management-ip ${mgmt_ip}/24; 
 tmsh create /sys management-route default network default gateway ${mgmt_gw};
-tmsh modify /sys dns name-servers replace-all-with { 10.11.0.2 } search replace-all-with { f5.com }
+tmsh modify /sys dns name-servers replace-all-with { ${vpc_dns} } search replace-all-with { f5.com }
 #submit cli transaction
 #EOF
 
@@ -87,6 +87,9 @@ tmsh create /net route /LOCAL_ONLY/default network default gw ${gateway};
 tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
 #submit cli transaction
 #EOF
+
+# Enable off-box AVR telemetry
+modify analytics global-settings { offbox-protocol tcp offbox-tcp-addresses add { 127.0.0.1 } offbox-tcp-port 6514 use-offbox enabled }
 
 #tmsh modify /auth user admin password ${upassword}
 #create /cm device-group failoverGroup devices replace-all-with { transitF5vm01.f5labs.gc.ca { set-sync-leader } transitF5vm02.f5labs.gc.ca } type sync-failover auto-sync enabled save-on-auto-sync false network-failover enabled full-load-on-sync false asm-sync disabled

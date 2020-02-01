@@ -1,0 +1,61 @@
+{
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                    [ "AWS/Logs", "IncomingLogEvents", "LogGroupName", "f5telemetry" ],
+                    [ ".", "IncomingBytes", ".", "." ]
+                ],
+                "region": "ca-central-1",
+                "period": 300,
+                "title": "GC-CAP Telemetry Stats"
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname, system.cpu,system.tmmCpu\n| sort by system.hostname\n| stats avg(system.cpu) as SystemCpu, avg(system.tmmCpu) as TmmCpu by system.hostname\n",
+                "region": "ca-central-1",
+                "title": "F5 System CPU Usage",
+                "view": "bar"
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname, system.memory, system.tmmMemory\n| sort by system.hostname\n| stats avg(system.memory) as SystemRAM, avg(system.tmmMemory) as TmmRAM by system.hostname",
+                "region": "ca-central-1",
+                "title": "F5 System Memory Usage",
+                "view": "bar"
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 12,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, hostname, STAT_SRC, Entity, bytes_in, bytes_out\n| filter STAT_SRC = \"TMSTAT\"\n| filter Entity = \"globalThroughput\"\n| stats avg(bytes_in) as Bytes_In, avg(bytes_out) as Bytes_Out by hostname\n\n\n \n",
+                "region": "ca-central-1",
+                "title": "Global System Throughput",
+                "view": "bar"
+            }
+        }
+    ]
+}
