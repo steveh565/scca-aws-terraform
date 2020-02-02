@@ -99,7 +99,7 @@ data "template_file" "az1_tenantF5_vm_onboard" {
 
     mgmt_ip        = "${var.az1_tenantF5.mgmt}"
     mgmt_gw        = "${local.az1_mgmt_gw}"
-    
+    vpc_dns        = "${local.tenant_vpc_dns}"
     ext_self       = "${var.az1_tenantF5.tenant_ext_self}"
     int_self       = "${var.az1_tenantF5.tenant_int_self}"
     gateway        = "${local.az1_tenant_ext_gw}"
@@ -128,7 +128,7 @@ data "template_file" "az2_tenantF5_vm_onboard" {
 
     mgmt_ip        = "${var.az2_tenantF5.mgmt}"
     mgmt_gw        = "${local.az2_mgmt_gw}"
-    
+    vpc_dns        = "${local.tenant_vpc_dns}"
     ext_self       = "${var.az2_tenantF5.tenant_ext_self}"
     int_self       = "${var.az2_tenantF5.tenant_int_self}"
     gateway        = "${local.az2_tenant_ext_gw}"

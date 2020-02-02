@@ -47,3 +47,5 @@ tenant/tenantF5vm01.do.json
 tenant/tenantF5vm02.do.json
 maz/az1_mazF5_onboard.sh
 maz/az2_mazF5_onboard.sh
+maz/cf-iam.tf
+tenant/cf-iam.tf

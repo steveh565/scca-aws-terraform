@@ -1,29 +1,29 @@
-resource "aws_iam_role" "bigip-Failover-Extension-IAM-role" {
-  name = "bigip-Failover-Extension-IAM-role"
+resource "aws_iam_role" "bigip-failover-extension-iam-role" {
+  name = "bigip-failover-extension-iam-role"
 
-  assume_role_policy = file("${path.module}/bigip-Failover-Extension-IAM-role-Assume-Role.json")
+  assume_role_policy = file("${path.module}/bigip-failover-extension-iam-role-assume-role.json")
 
   tags = {
     name = "f5_cloud_failover_iam_role"
   }
 }
 
-resource "aws_iam_policy" "bigip-Failover-Extension-IAM-policy" {
-  name        = "bigip-Failover-Extension-IAM-policy"
+resource "aws_iam_policy" "bigip-failover-extension-iam-policy" {
+  name        = "bigip-failover-extension-iam-policy"
   description = "for bigip cloud failover extension"
-  policy      = file("bigip-Failover-Extension-IAM-policy.json")
+  policy      = file("bigip-failover-extension-iam-policy.json")
 }
 
-resource "aws_iam_policy_attachment" "bigip-Failover-Extension-IAM-policy-attach" {
-  depends_on = [aws_iam_policy.bigip-Failover-Extension-IAM-policy]
-  name       = "bigip-Failover-Extension-IAM-policy-attach"
-  roles      = [aws_iam_role.bigip-Failover-Extension-IAM-role.name]
-  policy_arn = aws_iam_policy.bigip-Failover-Extension-IAM-policy.arn
+resource "aws_iam_policy_attachment" "bigip-failover-extension-iam-policy-attach" {
+  depends_on = [aws_iam_policy.bigip-failover-extension-iam-policy]
+  name       = "bigip-failover-extension-iam-policy-attach"
+  roles      = [aws_iam_role.bigip-failover-extension-iam-role.name]
+  policy_arn = aws_iam_policy.bigip-failover-extension-iam-policy.arn
 }
 
 
-resource "aws_iam_instance_profile" "bigip-Failover-Extension-IAM-instance-profile" {
-  depends_on = [aws_iam_role.bigip-Failover-Extension-IAM-role]
-  name = "bigip-Failover-Extension-IAM-instance-profile"
-  role = aws_iam_role.bigip-Failover-Extension-IAM-role.name
+resource "aws_iam_instance_profile" "bigip-failover-extension-iam-instance-profile" {
+  depends_on = [aws_iam_role.bigip-failover-extension-iam-role]
+  name = "bigip-failover-extension-iam-instance-profile"
+  role = aws_iam_role.bigip-failover-extension-iam-role.name
 }

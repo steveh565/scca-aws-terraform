@@ -47,32 +47,32 @@ terraform {
 //    - S3 Read/Write
 //    - STS Assume Role
 
-resource "aws_iam_role" "bigip-Failover-Extension-IAM-role" {
-  name = "bigip-Failover-Extension-IAM-role"
+resource "aws_iam_role" "bigip-failover-extension-iam-role" {
+  name = "bigip-failover-extension-iam-role"
 
-  assume_role_policy = file("${path.module}/bigip-Failover-Extension-IAM-role-Assume-Role.json")
+  assume_role_policy = file("${path.module}/bigip-failover-extension-iam-role-Assume-Role.json")
 
   tags = {
     tag-key = "tag-value"
   }
 }
 
-resource "aws_iam_policy" "bigip-Failover-Extension-IAM-policy" {
-  name        = "bigip-Failover-Extension-IAM-policy"
+resource "aws_iam_policy" "bigip-failover-extension-iam-policy" {
+  name        = "bigip-failover-extension-iam-policy"
   description = "for bigip cloud failover extension"
-  policy      = file("bigip-Failover-Extension-IAM-policy.json")
+  policy      = file("bigip-failover-extension-iam-policy.json")
 }
 
-resource "aws_iam_policy_attachment" "bigip-Failover-Extension-IAM-policy-attach" {
-  name       = "bigip-Failover-Extension-IAM-policy-attach"
-  roles      = [aws_iam_role.bigip-Failover-Extension-IAM-role.name]
-  policy_arn = aws_iam_policy.bigip-Failover-Extension-IAM-policy.arn
+resource "aws_iam_policy_attachment" "bigip-failover-extension-iam-policy-attach" {
+  name       = "bigip-failover-extension-iam-policy-attach"
+  roles      = [aws_iam_role.bigip-failover-extension-iam-role.name]
+  policy_arn = aws_iam_policy.bigip-failover-extension-iam-policy.arn
 }
 
 
-resource "aws_iam_instance_profile" "bigip-Failover-Extension-IAM-instance-profile" {
-  name = "bigip-Failover-Extension-IAM-instance-profile"
-  role = aws_iam_role.bigip-Failover-Extension-IAM-role.name
+resource "aws_iam_instance_profile" "bigip-failover-extension-iam-instance-profile" {
+  name = "bigip-failover-extension-iam-instance-profile"
+  role = aws_iam_role.bigip-failover-extension-iam-role.name
 }
 
 // Create a new key pair for login access to this bigip instance                          //
@@ -202,7 +202,7 @@ resource "aws_instance" "ztsra_bigip_az1" {
   user_data              = data.template_file.ve_onboard.rendered
   #  key_name      = "kp${var.tag_name}"
   key_name             = var.key_name
-  iam_instance_profile = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
+  iam_instance_profile = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   root_block_device {
     delete_on_termination = true
   }
@@ -479,7 +479,7 @@ resource "aws_instance" "ztsra_bigip_az2" {
   user_data              = data.template_file.ve_onboard.rendered
   #  key_name      = "kp${var.tag_name}"
   key_name             = var.key_name
-  iam_instance_profile = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
+  iam_instance_profile = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   root_block_device {
     delete_on_termination = true
   }

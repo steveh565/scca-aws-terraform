@@ -17,7 +17,7 @@ resource "aws_vpc_endpoint" "s3" {
 
   tags = {
 	Name = "vpcEpS3${var.tag_name}"
-    Environment = "${var.prefix_name}"
+    Environment = "${var.prefix}"
   }
 }
 
@@ -36,7 +36,7 @@ resource "aws_vpc_endpoint" "ec2" {
   
   tags = {
 	Name = "vpcEpEc2${var.tag_name}"
-    Environment = "${var.prefix_name}"
+    Environment = "${var.prefix}"
   }
 }
 
@@ -55,7 +55,7 @@ resource "aws_vpc_endpoint" "logs" {
   
   tags = {
 	Name = "vpcEpLogs${var.tag_name}"
-    Environment = "${var.prefix_name}"
+    Environment = "${var.prefix}"
   }
 }
 

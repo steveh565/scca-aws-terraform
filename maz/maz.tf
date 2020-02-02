@@ -97,7 +97,7 @@ data "template_file" "az1_mazF5_vm_onboard" {
 
     mgmt_ip        = "${var.az1_mazF5.mgmt}"
     mgmt_gw        = "${local.az1_mgmt_gw}"
-    
+    vpc_dns        = "${local.maz_vpc_dns}"
     ext_self       = "${var.az1_mazF5.maz_ext_self}"
     int_self       = "${var.az1_mazF5.maz_int_self}"
     gateway        = "${local.az1_maz_ext_gw}"
@@ -126,7 +126,7 @@ data "template_file" "az2_mazF5_vm_onboard" {
 
     mgmt_ip        = "${var.az2_mazF5.mgmt}"
     mgmt_gw        = "${local.az2_mgmt_gw}"
-    
+    vpc_dns        = "${local.maz_vpc_dns}"    
     ext_self       = "${var.az2_mazF5.maz_ext_self}"
     int_self       = "${var.az2_mazF5.maz_int_self}"
     gateway        = "${local.az2_maz_ext_gw}"

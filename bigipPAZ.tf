@@ -82,7 +82,7 @@ resource "aws_instance" "az1_bigip" {
   depends_on                  = [aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_external, aws_network_interface.az1_internal, aws_network_interface.az1_mgmt]
   ami                         = var.ami_f5image_name
   instance_type               = var.ami_paz_f5instance_type
-  iam_instance_profile        = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
+  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   user_data                   = data.template_file.az1_pazF5_vm_onboard.rendered
   key_name                    = "kp${var.tag_name}"
   root_block_device {
@@ -240,7 +240,7 @@ resource "aws_instance" "az2_bigip" {
   instance_type               = var.ami_paz_f5instance_type
   availability_zone           = "${var.aws_region}b"
   user_data                   = data.template_file.az2_pazF5_vm_onboard.rendered
-  iam_instance_profile        = aws_iam_instance_profile.bigip-Failover-Extension-IAM-instance-profile.name
+  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   key_name                    = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true

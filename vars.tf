@@ -104,6 +104,7 @@ variable sgInternal { default = "sgInternal" }
 
 variable security_vpc_cidr { default = "10.1.0.0/16" }
 variable security_aip_cidr { default = "100.65.0.0/21" }
+
 variable az1_security_subnets {
   type = "map"
   default = {

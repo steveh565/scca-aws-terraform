@@ -34,7 +34,7 @@ data "template_file" "az1_pazF5_vm_onboard" {
 
     mgmt_ip        = "${var.az1_pazF5.mgmt}"
     mgmt_gw        = "${local.az1_mgmt_gw}"
-    
+    vpc_dns        = "${local.security_vpc_dns}"
     ext_self       = "${var.az1_pazF5.paz_ext_self}"
     int_self       = "${var.az1_pazF5.dmz_ext_self}"
     gateway        = "${local.az1_paz_gw}"
@@ -63,7 +63,7 @@ data "template_file" "az2_pazF5_vm_onboard" {
 
     mgmt_ip        = "${var.az2_pazF5.mgmt}"
     mgmt_gw        = "${local.az2_mgmt_gw}"
-    
+    vpc_dns        = "${local.security_vpc_dns}"
     ext_self       = "${var.az2_pazF5.paz_ext_self}"
     int_self       = "${var.az2_pazF5.dmz_ext_self}"
     gateway        = "${local.az2_paz_gw}"
@@ -93,7 +93,7 @@ data "template_file" "az1_dmzF5_vm_onboard" {
 
     mgmt_ip        = "${var.az1_dmzF5.mgmt}"
     mgmt_gw        = "${local.az1_mgmt_gw}"
-    
+    vpc_dns        = "${local.security_vpc_dns}"
     ext_self       = "${var.az1_dmzF5.dmz_ext_self}"
     int_self       = "${var.az1_dmzF5.dmz_int_self}"
     gateway        = "${local.az1_dmz_ext_gw}"
@@ -122,7 +122,7 @@ data "template_file" "az2_dmzF5_vm_onboard" {
 
     mgmt_ip        = "${var.az2_dmzF5.mgmt}"
     mgmt_gw        = "${local.az2_mgmt_gw}"
-    
+    vpc_dns        = "${local.security_vpc_dns}"
     ext_self       = "${var.az2_dmzF5.dmz_ext_self}"
     int_self       = "${var.az2_dmzF5.dmz_int_self}"
     gateway        = "${local.az2_dmz_ext_gw}"
@@ -152,7 +152,7 @@ data "template_file" "az1_transitF5_vm_onboard" {
 
     mgmt_ip        = "${var.az1_transitF5.mgmt}"
     mgmt_gw        = "${local.az1_mgmt_gw}"
-    
+    vpc_dns        = "${local.security_vpc_dns}"
     ext_self       = "${var.az1_transitF5.dmz_int_self}"
     int_self       = "${var.az1_transitF5.transit_self}"
     gateway        = "${local.az1_dmz_int_gw}"
@@ -181,7 +181,7 @@ data "template_file" "az2_transitF5_vm_onboard" {
 
     mgmt_ip        = "${var.az2_transitF5.mgmt}"
     mgmt_gw        = "${local.az2_mgmt_gw}"
-    
+    vpc_dns        = "${local.security_vpc_dns}"
     ext_self       = "${var.az2_transitF5.dmz_int_self}"
     int_self       = "${var.az2_transitF5.transit_self}"
     gateway        = "${local.az2_dmz_int_gw}"
@@ -238,4 +238,4 @@ output "az1_transitF5_secondary_VIP" { value = "${var.az1_transitF5.transit_vip}
 output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}" }
 
 output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
-
+output "BigIP_IAM_Profile_ID" { value = "${aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.id}" }
