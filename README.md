@@ -33,13 +33,13 @@ The following Government of Canada ITSG security controls can be met through con
 - Incorporate SRA webtop portal solution deployment for each tenant F5 pair.
 - Add automation to complete the initial configuration of all devices
  - TS, DO, AS3, CF, onboarding script
-- Update f5 BigIP IAM Role to include permissions for S3 or Cloudwatch - whichever consumer TS is configured to send to.
+- ~Update f5 BigIP IAM Role to include permissions for S3 or Cloudwatch - whichever consumer TS is configured to send to.~
  - remove reference to AWS creds in TS declaration template
 - Remove all references to creds in vars.tf
 - ~Add VPC Endpoints to each VPC: S3, Cloudwatch (logs), EC2~
-- Add CF tags (CF failover label & f5_self_ips) to managed route tables and EIPs
-- Add CF tags (cf_failover_label) to tmm NICs (eth1, eth2)
- - Add CF Tags to vars.tf
+- ~Add CF tags (CF failover label & f5_self_ips) to managed route tables and EIPs~
+- ~Add CF tags (cf_failover_label) to tmm NICs (eth1, eth2)~
+ - ~Add CF Tags to vars.tf~
 - ~Upgrade to use CF-1.0.0 RPM (vars.tf URL)~
 - ~Upgrade to use Latest AnO RPMs (vars.tf URL)~
 - Fix up depends_on mess for Big-IP instance creation
