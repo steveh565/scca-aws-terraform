@@ -340,7 +340,7 @@ variable DO_onboard_URL { default = "https://github.com/steveh565/f5tools/raw/ma
 ## Please check and update the latest Telemetry Streaming from https://github.com/F5Networks/f5-telemetry-streaming/tree/master/dist
 variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.8.0-1.noarch.rpm" }
 ## Please check and update the latest Cloud Failover from https://github.com/f5devcentral/f5-cloud-failover-extension
-variable CF_URL { default = "https://github.com/f5devcentral/f5-cloud-failover-extension/releases/download/v0.9.1/f5-cloud-failover-0.9.1-1.noarch.rpm" }
+variable CF_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-cloud-failover-1.0.0-0.noarch.rpm" }
 ## Please check and update the latest AS3 URL from https://github.com/F5Networks/f5-appsvcs-extension/releases/latest 
 variable AS3_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-appsvcs-3.16.0-6.noarch.rpm" }
 

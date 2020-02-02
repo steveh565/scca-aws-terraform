@@ -36,12 +36,12 @@ The following Government of Canada ITSG security controls can be met through con
 - Update f5 BigIP IAM Role to include permissions for S3 or Cloudwatch - whichever consumer TS is configured to send to.
  - remove reference to AWS creds in TS declaration template
 - Remove all references to creds in vars.tf
-- Add VPC Endpoints to each VPC: S3, Cloudwatch (logs), EC2
+- ~Add VPC Endpoints to each VPC: S3, Cloudwatch (logs), EC2~
 - Add CF tags (CF failover label & f5_self_ips) to managed route tables and EIPs
 - Add CF tags (cf_failover_label) to tmm NICs (eth1, eth2)
  - Add CF Tags to vars.tf
-- Upgrade to use CF-1.0.0 RPM (vars.tf URL)
-- Upgrade to use Latest AnO RPMs (vars.tf URL)
+- ~Upgrade to use CF-1.0.0 RPM (vars.tf URL)~
+- ~Upgrade to use Latest AnO RPMs (vars.tf URL)~
 - Fix up depends_on mess for Big-IP instance creation
  - AWS ca-central-1 is slow: VM boot and onboard takes forever and often isn't finished before DO declaration fires
 - Develop patch for tg-active.sh failover script to decrease "think" time in CF failover trigger???

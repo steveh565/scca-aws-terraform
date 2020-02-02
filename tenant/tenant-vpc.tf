@@ -10,6 +10,55 @@ resource "aws_vpc" "tenant" {
 	}
 }
 
+# Create S3 VPC Endpoint
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = "${aws_vpc.tenant.id}"
+  service_name = "com.amazonaws.${var.aws_region}.s3"
+
+  tags = {
+	Name = "vpcEpS3${var.tag_name}"
+    Environment = "${var.prefix_name}"
+  }
+}
+
+# Create EC2 VPC Endpoint
+resource "aws_vpc_endpoint" "ec2" {
+  vpc_id            = "${aws_vpc.tenant.id}"
+  service_name      = "com.amazonaws.${var.aws_region}.ec2"
+  vpc_endpoint_type = "Interface"
+
+  security_group_ids = [
+    "${aws_security_group.tenant_sg_internal.id}",
+  ]
+
+  private_dns_enabled = true
+
+  
+  tags = {
+	Name = "vpcEpEc2${var.tag_name}"
+    Environment = "${var.prefix_name}"
+  }
+}
+
+# Create Cloudwatch VPC Endpoint
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id            = "${aws_vpc.tenant.id}"
+  service_name      = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type = "Interface"
+
+  security_group_ids = [
+    "${aws_security_group.tenant_sg_internal.id}",
+  ]
+
+  private_dns_enabled = true
+
+  
+  tags = {
+	Name = "vpcEpLogs${var.tag_name}"
+    Environment = "${var.prefix_name}"
+  }
+}
+
 # Management subnet in AZ1
 resource "aws_subnet" "az1_tenant_mgmt" {
 	vpc_id = "${aws_vpc.tenant.id}"
