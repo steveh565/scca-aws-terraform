@@ -1,0 +1,116 @@
+{
+    "widgets": [
+        {
+            "type": "log",
+            "x": 0,
+            "y": 12,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname\r\n| filter system.hostname = \"dmzF5vm01.f5labs.gc.ca\"\r\n| parse @message \"clientSideTraffic.bitsIn\\\":*,\" as clientSide_BytesIn\r\n| parse @message \"clientSideTraffic.bitsOut\\\":*,\" as clientSide_BytesOut\r\n| parse @message \"serverSideTraffic.bitsIn\\\":*,\" as serverSide_BytesIn\r\n| parse @message \"serverSideTraffic.bitsOut\\\":*,\" as serverSide_BytesOut\r\n| stats avg(serverSide_BytesIn/8) as Bytes_In, avg(serverSide_BytesOut/8) as Bytes_Out by bin(5m)\r\n",
+                "region": "ca-central-1",
+                "title": "dmzF5vm01 Client-side Throughput",
+                "view": "timeSeries",
+                "stacked": false
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 18,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname\r\n| filter system.hostname = \"dmzF5vm01.f5labs.gc.ca\"\r\n| parse @message \"clientSideTraffic.bitsIn\\\":*,\" as clientSide_BytesIn\r\n| parse @message \"clientSideTraffic.bitsOut\\\":*,\" as clientSide_BytesOut\r\n| parse @message \"serverSideTraffic.bitsIn\\\":*,\" as serverSide_BytesIn\r\n| parse @message \"serverSideTraffic.bitsOut\\\":*,\" as serverSide_BytesOut\r\n| stats avg(serverSide_BytesIn/8) as Bytes_In, avg(serverSide_BytesOut/8) as Bytes_Out by bin(5m)",
+                "region": "ca-central-1",
+                "title": "dmzF5vm01 Server-side Throughput",
+                "view": "timeSeries",
+                "stacked": false
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname, system.cpu, system.tmmCpu\r\n| filter system.hostname = \"dmzF5vm01.f5labs.gc.ca\"\r\n| stats avg(system.cpu) as SystemCpu, avg(system.tmmCpu) as TmmCpu by bin(5m)\r\n",
+                "region": "ca-central-1",
+                "title": "dmzF5vm01 CPU Utilization",
+                "view": "timeSeries",
+                "stacked": false
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname, system.memory, system.tmmMemory\n| filter system.hostname = \"dmzF5vm01.f5labs.gc.ca\"\n| stats avg(system.memory) as SystemMemory, avg(system.tmmMemory) as TmmMemory by bin(5m)",
+                "region": "ca-central-1",
+                "title": "dmzF5vm01 Memory Usage",
+                "view": "timeSeries",
+                "stacked": false
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 12,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname\r\n| filter system.hostname = \"dmzF5vm02.f5labs.gc.ca\"\r\n| parse @message \"clientSideTraffic.bitsIn\\\":*,\" as clientSide_BytesIn\r\n| parse @message \"clientSideTraffic.bitsOut\\\":*,\" as clientSide_BytesOut\r\n| parse @message \"serverSideTraffic.bitsIn\\\":*,\" as serverSide_BytesIn\r\n| parse @message \"serverSideTraffic.bitsOut\\\":*,\" as serverSide_BytesOut\r\n| stats avg(serverSide_BytesIn/8) as Bytes_In, avg(serverSide_BytesOut/8) as Bytes_Out by bin(5m)\r\n",
+                "region": "ca-central-1",
+                "title": "dmzF5vm02 Client-side Throughput",
+                "view": "timeSeries",
+                "stacked": false
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 18,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname\r\n| filter system.hostname = \"dmzF5vm02.f5labs.gc.ca\"\r\n| parse @message \"clientSideTraffic.bitsIn\\\":*,\" as clientSide_BytesIn\r\n| parse @message \"clientSideTraffic.bitsOut\\\":*,\" as clientSide_BytesOut\r\n| parse @message \"serverSideTraffic.bitsIn\\\":*,\" as serverSide_BytesIn\r\n| parse @message \"serverSideTraffic.bitsOut\\\":*,\" as serverSide_BytesOut\r\n| stats avg(serverSide_BytesIn/8) as Bytes_In, avg(serverSide_BytesOut/8) as Bytes_Out by bin(5m)",
+                "region": "ca-central-1",
+                "title": "dmzF5vm02 Server-side Throughput",
+                "view": "timeSeries",
+                "stacked": false
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname, system.cpu, system.tmmCpu\r\n| filter system.hostname = \"dmzF5vm02.f5labs.gc.ca\"\r\n| stats avg(system.cpu) as SystemCpu, avg(system.tmmCpu) as TmmCpu by bin(5m)\r\n",
+                "region": "ca-central-1",
+                "title": "dmzF5vm02 CPU Utilization",
+                "view": "timeSeries",
+                "stacked": false
+            }
+        },
+        {
+            "type": "log",
+            "x": 12,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE 'f5telemetry' | fields @timestamp, @message, system.hostname, system.memory, system.tmmMemory\n| filter system.hostname = \"dmzF5vm02.f5labs.gc.ca\"\n| stats avg(system.memory) as SystemMemory, avg(system.tmmMemory) as TmmMemory by bin(5m)",
+                "region": "ca-central-1",
+                "title": "dmzF5vm02 Memory Usage",
+                "view": "timeSeries",
+                "stacked": false
+            }
+        }
+    ]
+}
