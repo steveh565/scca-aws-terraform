@@ -19,14 +19,12 @@ The following Government of Canada ITSG security controls can be met through con
 
 ## Terraform Template Information
 
-To be filled in later:
-
 - Update vars.tf with valid License Keys, SSH Keys, AWS API Creds
-- Update setAwsCreds.sh 
 - Run the included shell scripts to deploy
-- init.sh: Initialize terraform
-- validate.sh: Validate terraform template syntax (useful if you're making changes)
-- apply.sh: Instantiate the deployment in AWS
+-- init.sh: Initialize terraform
+-- validate.sh: Validate terraform template syntax (useful if you're making changes)
+-- apply.sh: Instantiate the deployment in AWS
+- create 4x Cloudwatch dashboards, and inport the dashboard definitions for each one, found in the Cloudwatch folder
 
 ## Ideas for future enhancements
 
@@ -49,7 +47,7 @@ To be filled in later:
 - Develop patch for tg-active.sh failover script to decrease "think" time in CF failover trigger???
 - Implement a proper prefix based object naming convention 
 - Implement resource group tags
-- Develop visualization of TS data stored in Cloudwatch
+- ~Develop visualization of TS data stored in Cloudwatch~
 - Implement bigip_instance terraform module with options for 
  - 3-NIC, 4-NIC and 8-NIC configurations
   - 3-NIC: Standard tenant configuration: 2x VE-200M-BT (mgmt/external/internal)
