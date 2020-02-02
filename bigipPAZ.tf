@@ -12,6 +12,10 @@ resource "aws_network_interface" "az1_external" {
   private_ips     = [var.az1_pazF5.paz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
+
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 
@@ -37,6 +41,9 @@ resource "aws_network_interface" "az1_internal" {
   private_ips     = [var.az1_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }  
 }
 
 
@@ -61,6 +68,9 @@ resource "aws_eip" "eip_vip" {
   vpc                       = true
   #network_interface         = aws_network_interface.az1_external.id
   #associate_with_private_ip = var.az1_pazF5.paz_ext_vip
+  tags = {
+    f5_cloud_failover_label = "${var.paz_cf_label}"
+  }
 }
 
 resource "aws_eip" "eip_az1_mgmt" {
@@ -75,6 +85,9 @@ resource "aws_eip" "eip_az1_external" {
   vpc                       = true
   network_interface         = aws_network_interface.az1_external.id
   associate_with_private_ip = var.az1_pazF5.paz_ext_self
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 #Big-IP 1
@@ -177,6 +190,9 @@ resource "aws_network_interface" "az2_external" {
   private_ips     = [var.az2_pazF5.paz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 
@@ -201,6 +217,9 @@ resource "aws_network_interface" "az2_internal" {
   private_ips     = [var.az2_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 
@@ -231,6 +250,9 @@ resource "aws_eip" "eip_az2_external" {
   vpc                       = true
   network_interface         = aws_network_interface.az2_external.id
   associate_with_private_ip = var.az2_pazF5.paz_ext_self
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 # BigIP 2

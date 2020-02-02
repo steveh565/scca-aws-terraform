@@ -13,6 +13,9 @@ resource "aws_network_interface" "az1_transit_external" {
   private_ips     = [var.az1_transitF5.dmz_int_self]
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 
@@ -37,6 +40,9 @@ resource "aws_network_interface" "az1_transit_internal" {
   private_ips     = [var.az1_transitF5.transit_self]
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 resource "null_resource" "az1_transit_internal_secondary_ips" {
@@ -173,6 +179,9 @@ resource "aws_network_interface" "az2_transit_external" {
   private_ips     = [var.az2_transitF5.dmz_int_self]
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 resource "null_resource" "az2_transit_external_secondary_ips" {
@@ -195,6 +204,9 @@ resource "aws_network_interface" "az2_transit_internal" {
   private_ips     = [var.az2_transitF5.transit_self]
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
+  tags = {
+    f5_cloud_failover_label = "${var.gccap_cf_label}"
+  }
 }
 
 resource "null_resource" "az2_transit_internal_secondary_ips" {

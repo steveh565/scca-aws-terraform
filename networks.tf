@@ -218,6 +218,7 @@ resource "aws_route_table" "PazRt" {
 	}
 	tags = {
 		Name = "PazRT"
+		f5_cloud_failover_label = "${var.gccap_cf_label}"
 	}
 }
 
@@ -229,6 +230,7 @@ resource "aws_route_table" "DmzExtRt" {
 	}
 	tags = {
 		Name = "DmzExtRT"
+		f5_cloud_failover_label = "${var.gccap_cf_label}"
 	}
 }
 
@@ -240,6 +242,7 @@ resource "aws_route_table" "DmzIntRt" {
 	}
 	tags = {
 		Name = "DmzIntRT"
+		f5_cloud_failover_label = "${var.gccap_cf_label}"
 	}
 }
 
@@ -260,6 +263,7 @@ resource "aws_route_table" "TransitRt" {
 	}
 	tags = {
 		Name = "TransitRT"
+		f5_cloud_failover_label = "${var.gccap_cf_label}"
 	}
 }
 

@@ -177,6 +177,7 @@ resource "aws_route_table" "maz_TransitRt" {
 	}
 	tags = {
 		Name = "${var.maz_name}-TransitRt"
+		f5_cloud_failover_label = "${var.maz_cf_label}"
 	}
 }
 

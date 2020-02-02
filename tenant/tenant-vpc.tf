@@ -175,6 +175,7 @@ resource "aws_route_table" "tenant_TransitRt" {
 	}	
 	tags = {
 		Name = "${var.tenant_name}-TransitRt"
+    	f5_cloud_failover_label = "${var.tenant_cf_label}"
 	}
 }
 

@@ -121,6 +121,8 @@ variable az1_security_subnets {
   }
 }
 
+variable gccap_cf_label { default = "gccap_az_failover"}
+
 variable paz_cf_label { default = "paz_az_failover" }
 variable az1_pazF5 {
   type = "map"

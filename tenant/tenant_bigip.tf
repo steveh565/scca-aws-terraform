@@ -13,6 +13,9 @@ resource "aws_network_interface" "az1_tenant_external" {
   private_ips     = [var.az1_tenantF5.tenant_ext_self, var.az1_tenantF5.tenant_ext_vip]
   security_groups = [aws_security_group.tenant_sg_internal.id]
   source_dest_check = false
+  tags              = {
+    "f5_cloud_failover_label" = "tenant_az_failover"
+  }
 }
 
 
@@ -37,6 +40,9 @@ resource "aws_network_interface" "az1_tenant_internal" {
   private_ips     = [var.az1_tenantF5.tenant_int_self, var.az1_tenantF5.tenant_int_vip]
   security_groups = [aws_security_group.tenant_sg_internal.id]
   source_dest_check = false
+  tags              = {
+    "f5_cloud_failover_label" = "tenant_az_failover"
+  }
 }
 
 resource "null_resource" "az1_tenant_internal_secondary_ips" {
@@ -170,6 +176,9 @@ resource "aws_network_interface" "az2_tenant_external" {
   private_ips     = [var.az2_tenantF5.tenant_ext_self, var.az2_tenantF5.tenant_ext_vip]
   security_groups = [aws_security_group.tenant_sg_internal.id]
   source_dest_check = false
+  tags              = {
+    "f5_cloud_failover_label" = "tenant_az_failover"
+  }
 }
 
 resource "null_resource" "az2_tenant_external_secondary_ips" {
@@ -192,6 +201,9 @@ resource "aws_network_interface" "az2_tenant_internal" {
   private_ips     = [var.az2_tenantF5.tenant_int_self, var.az2_tenantF5.tenant_int_vip]
   security_groups = [aws_security_group.tenant_sg_internal.id]
   source_dest_check = false
+  tags              = {
+    "f5_cloud_failover_label" = "tenant_az_failover"
+  }
 }
 
 resource "null_resource" "az2_tenant_internal_secondary_ips" {

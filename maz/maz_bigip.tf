@@ -39,6 +39,9 @@ resource "aws_network_interface" "az1_maz_internal" {
   private_ips     = [var.az1_mazF5.maz_int_self, var.az1_mazF5.maz_int_vip]
   security_groups = [aws_security_group.maz_sg_internal.id]
   source_dest_check = false
+  tags              = {
+    "f5_cloud_failover_label" = "maz_az_failover"
+  }
 }
 
 resource "null_resource" "az1_maz_internal_secondary_ips" {
@@ -196,6 +199,9 @@ resource "aws_network_interface" "az2_maz_internal" {
   private_ips     = [var.az2_mazF5.maz_int_self, var.az2_mazF5.maz_int_vip]
   security_groups = [aws_security_group.maz_sg_internal.id]
   source_dest_check = false
+  tags              = {
+    "f5_cloud_failover_label" = "maz_az_failover"
+  }  
 }
 
 resource "null_resource" "az2_maz_internal_secondary_ips" {
