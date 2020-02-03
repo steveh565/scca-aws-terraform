@@ -1,0 +1,7 @@
+<customization_group name="default_resource_remote_desktop" type="resource_remote_desktop">
+	<item language="en">
+		<description>User-defined RDP host</description>
+		<image>/public/images/full_wt/terminal_service.png</image>
+		<caption>RDP</caption>
+	</item>
+</customization_group>
