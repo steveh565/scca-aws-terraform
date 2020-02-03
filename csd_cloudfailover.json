@@ -29,6 +29,7 @@
             }
         ],
         "defaultNextHopAddresses": {
+            "discoveryType": "static",
             "items": [
                 "10.21.2.11",
                 "10.21.12.11",

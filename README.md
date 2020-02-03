@@ -31,6 +31,7 @@ The following Government of Canada ITSG security controls can be met through con
 - Incorporate automatic SSL certificate service (i.e., let's encrypt?)
 - Incorporate Shape Fraud Prevention services (Install the iRule & DG, stage it for use)
 - Incorporate SRA webtop portal solution deployment for each tenant F5 pair.
+- Add outbound internet connectivity through the VDSS stack
 - Add automation to complete the initial configuration of all devices
  - TS, DO, AS3, CF, onboarding script
 - ~Update f5 BigIP IAM Role to include permissions for S3 or Cloudwatch - whichever consumer TS is configured to send to.~
