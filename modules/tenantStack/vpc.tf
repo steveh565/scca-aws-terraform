@@ -22,6 +22,11 @@ resource "aws_vpc_endpoint" "s3" {
     }
 }
 
+resource "aws_vpc_endpoint_route_table_association" "s3_rta" {
+  route_table_id  = "${aws_route_table.tenant_TransitRt.id}"
+  vpc_endpoint_id = "${aws_vpc_endpoint.s3.id}"
+}
+
 # Create EC2 VPC Endpoint
 resource "aws_vpc_endpoint" "ec2" {
     
@@ -37,6 +42,16 @@ resource "aws_vpc_endpoint" "ec2" {
         name = "${var.prefix}-${var.tenant_name}-ec2ep"
         ResourceGroup = "${var.prefix}"
     }
+}
+
+resource "aws_vpc_endpoint_subnet_association" "az1_ec2_sna" {
+  vpc_endpoint_id = "${aws_vpc_endpoint.ec2.id}"
+  subnet_id       = "${aws_subnet.az1_tenant_ext.id}"
+}
+
+resource "aws_vpc_endpoint_subnet_association" "az2_ec2_sna" {
+  vpc_endpoint_id = "${aws_vpc_endpoint.ec2.id}"
+  subnet_id       = "${aws_subnet.az2_tenant_ext.id}"
 }
 
 # Create Cloudwatch VPC Endpoint
@@ -55,6 +70,16 @@ resource "aws_vpc_endpoint" "logs" {
         Environment = "${var.prefix}"
         ResourceGroup = "${var.prefix}"
     }
+}
+
+resource "aws_vpc_endpoint_subnet_association" "az1_logs_sna" {
+  vpc_endpoint_id = "${aws_vpc_endpoint.logs.id}"
+  subnet_id       = "${aws_subnet.az1_tenant_ext.id}"
+}
+
+resource "aws_vpc_endpoint_subnet_association" "az2_logs_sna" {
+  vpc_endpoint_id = "${aws_vpc_endpoint.logs.id}"
+  subnet_id       = "${aws_subnet.az2_tenant_ext.id}"
 }
 
 # Management subnet in AZ1
