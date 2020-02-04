@@ -24,6 +24,9 @@
             },
             {
                 "range": "100.65.5.0/24"
+            },
+            {
+                "range": "0.0.0.0/0"
             }
         ],
         "defaultNextHopAddresses": {
