@@ -188,9 +188,8 @@ resource "aws_internet_gateway" "tenantGw" {
 resource "aws_route_table" "tenant_TransitRt" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	route {
-		cidr_block = "${var.security_vpc_cidr}"
-		transit_gateway_id = "${var.tgwId}"
-		#gateway_id = "${aws_internet_gateway.tenantGw.id}"
+		cidr_block = "${var.tenant_aip_vpc_cidr}"
+		network_interface_id = "${aws_network_interface.az1_external.id}"
 	}
 	route {
 		cidr_block = "0.0.0.0/0"
@@ -200,6 +199,7 @@ resource "aws_route_table" "tenant_TransitRt" {
 	tags = {
 		Name = "${var.tenant_name}-TransitRt"
     	f5_cloud_failover_label = "${var.tenant_cf_label}"
+        f5_self_ips             = "${var.az1ExtSelfIp},${var.az2ExtSelfIp}"
         ResourceGroup = "${var.prefix}"
 	}
 }
@@ -218,7 +218,7 @@ resource "aws_route_table_association" "az2_tenant_ext" {
 
 }
 
-
+# Mgmt Route Table
 resource "aws_route_table" "tenant_MgmtRt" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	route {
@@ -250,13 +250,13 @@ resource "aws_route_table" "tenant_intRt" {
 	vpc_id = "${aws_vpc.tenant.id}"
 	route {
 		cidr_block = "0.0.0.0/0"
-		#transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
-		gateway_id = "${aws_internet_gateway.tenantGw.id}"
+        network_interface_id = "${aws_network_interface.az1_internal.id}"
 	}
 	tags = {
 		Name = "${var.tenant_name}-intRt"
         ResourceGroup = "${var.prefix}"
-        f5_cloud_failover_label = var.tenant_cf_label
+        f5_cloud_failover_label = "${var.tenant_cf_label}"
+        f5_self_ips             = "${var.az1IntSelfIp},${var.az2IntSelfIp}"
 	}
 }
 
