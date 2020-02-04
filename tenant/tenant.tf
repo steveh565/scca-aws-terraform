@@ -35,8 +35,8 @@ resource "aws_instance" "az1_bastionHost" {
 		sudo apt-get -y install docker.io
 		#
 		# Bastion Host
-		docker run --restart unless-stopped -dit --name uxrdp --hostname terminalserver --shm-size 1g -p 3389:3389 danielguerra/ubuntu-xrdp:latest
-		docker run --privileged=true --restart unless-stopped -p 80:80 -dit vulnerables/web-dvwa:latest
+		sudo docker run -dit --restart unless-stopped --shm-size 1g --name rdp -p 3389:3389 danielguerra/alpine-xfce4-xrdp
+		sudo docker run --privileged=true --restart unless-stopped -p 80:80 -dit vulnerables/web-dvwa:latest
 	EOF
 
 	tags = {
