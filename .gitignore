@@ -35,10 +35,8 @@ maz/onboard.tpl
 maz/mazF5vm02.do.json
 maz/tsLogCollection_as3.tpl.json
 maz/tsCloudwatch_ts.tpl.json
-vars.tf
 onboard.tpl
 maz/maz_as3.tpl.json
-vars.tf
 tenant/az2_tenantF5_onboard.sh
 tenant/az1_tenantF5_onboard.sh
 tenant/tsLogCollection_as3.tpl.json
