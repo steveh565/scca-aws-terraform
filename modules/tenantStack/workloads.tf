@@ -19,7 +19,7 @@ resource "aws_instance" "az1_bastionHost" {
 	instance_type = "t2.micro"
 	key_name = "${aws_key_pair.tenant.id}"
 	subnet_id = aws_subnet.az1_tenant_int.id
-	vpc_security_group_ids = ["${aws_security_group.tenant_sg_internal.id}"]
+	vpc_security_group_ids = ["${aws_security_group.sg_internal.id}"]
 	associate_public_ip_address = true
 	source_dest_check = false
 	# user_data = "${file("install.sh")}"
@@ -36,7 +36,7 @@ resource "aws_instance" "az1_bastionHost" {
 	tags = {
 		Name = "az1_BastionHost${count.index}"
 		f5sd = "pool_BastionHost"
-		f5rg = "${var.tag_name}"
+		f5rg = "${var.prefix}"
 		tenant = "${var.tenant_name} "
 	}
 	count = 1
@@ -65,7 +65,7 @@ resource "aws_instance" "az2_bastionHost" {
 	tags = {
 		Name = "az2_BastionHost${count.index}"
 		f5sd = "pool_BastionHost"
-		f5rg = "${var.tag_name}"
+		f5rg = "${var.prefix}"
 		tenant = "${var.tenant_name} "
 	}
 	count = 1
