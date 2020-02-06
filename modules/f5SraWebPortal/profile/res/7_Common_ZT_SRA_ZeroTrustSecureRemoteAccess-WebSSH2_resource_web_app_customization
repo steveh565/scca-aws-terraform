@@ -1,7 +1,0 @@
-<customization_group name="default_resource_web_app" type="resource_web_app">
-	<item language="en">
-		<description>ssh to 10.10.1.228</description>
-		<image>/public/images/full_wt/link.png</image>
-		<caption>WebSSH2</caption>
-	</item>
-</customization_group>

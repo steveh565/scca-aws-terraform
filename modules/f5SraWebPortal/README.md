@@ -11,7 +11,20 @@ Because of the use of imperative commands, this code is non idempotent (be caref
 
 ## Instructions
 
-- Update the default variable values below or pass the appropriate values via the parent calling terraform module.
+- Pass the appropriate variable values as parameters when calling this module from a parent terraform module.
+example:
+
+/code snippet
+        module "f5SraWebPortal" {
+        source = "./f5SraWebPortal"
+
+        bigip_mgmt_public_ip = "52.139.83.189"
+        bigip_vip_private_ip = "10.21.2.51"
+        uname = "adminusername"
+        upassword  = "adminuserspassword" 
+        }
+code snippet/
+
 - Run 'terraform init' and then 'terraform apply'.
 - The APM tarball artifacts need to be refactored if to be deployed on a bigip version other than 15.0.
 - Choose/set the value of the bigip_vip_private_ip carefully (especially if your bigip is in an HA cluster with auto-sync enabled).
@@ -48,10 +61,10 @@ Each value for the following required variables should/can be passed/set from th
 
 ### Files (templates and RPM packages)
 
-- profile_ZT_SRA_ZeroTrustSecureRemoteAccess.conf.tar      (some objects are defined with hardcoded IP addresses)
-- policy_ZT_SRA_ZeroTrustSecureRemoteAccessPRP.conf.tar.gz    (URL branching rules are defined with harcoded IP addresses)
+- profile_SRA_ZeroTrustSecureRemoteAccess.conf.tar      (some objects are defined with hardcoded IP addresses)
+- policy_SRA_ZeroTrustSecureRemoteAccessPRP.conf.tar.gz    (URL branching rules are defined with harcoded IP addresses)
 - BIG-IP-ILX-WebSSH2-0.2.8.tgz  (this one is required until we figure out how to leverage the licensed PUA feature)
-- bigip_zt_sra.tpl.json  (AS3 template to deploy the virtual server for the webtop with SSLVPN and RDPG services, and also the WebSSH virtual server on port 4439)
+- bigip_sra.tpl.json  (AS3 template to deploy the virtual server for the webtop with SSLVPN and RDPG services, and also the WebSSH virtual server on port 4439)
 
 
 
@@ -60,9 +73,7 @@ Each value for the following required variables should/can be passed/set from th
 - Add documentation to describe the security controls that this solution addresses.
 - Replace hardcoded SSL cert in AS3 declaration template with SSL certificates from let's encrypt.
 - modify the vip variable to be a list (that's what the AS3 declaration needs for the "virtual adress" value, and two IP addresses are required for HA across AZ's in AWS)
-- make the application name, partition name, virtual server description a variable instead of hard-coding to "ZT_SRA"
-- modify the vip variable to be a list (that's what the AS3 declaration needs for the "virtual adress" value, and two IP addresses are required for HA across AZ's in AWS)
-- make the application name, partition name, virtual server description a variable instead of hard-coding to "ZT_SRA"
+- make the application name, partition name, virtual server description a variable instead of hard-coding to "SRA"
 - instead of waiting for APM to support declarative configuration via REST, consider unziping the APM policy tarbal files, templatizing the IP's and names, then re-zip?
 - make the SRA webtop work with a 0.0.0.0/0 destination address (suspect the APM policies don't like 0.0.0.0/0).
 

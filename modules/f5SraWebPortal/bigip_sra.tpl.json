@@ -6,27 +6,22 @@
     "declaration": {
         "class": "ADC",
         "schemaVersion": "3.5.0",
-        "id": "ZT-SRA",
+        "id": "SRA",
         "label": "ZeroTrust-Secure-Remote-Access",
         "remark": "ZeroTrust Webtop, RDP Proxy Gateway, WebSSH Proxy and SSL VPN",
         "controls": {
             "trace": true
         },
-        "ZT_SRA": {
+        "SRA": {
             "class": "Tenant",
-            "ZT_SRA_Webtop": {
+            "SRA_Webtop": {
                 "class": "Application",
                 "template": "https",
                 "serviceMain": {
                     "class": "Service_HTTPS",
-                    "remark": "Webtop Service over HTTPS",
+                    "remark": "SRA_Webtop Main",
                     "virtualAddresses": [
                         "${Bigip1VipPrivateIp}"
-                    ],
-                    "iRules": [
-                        {
-                            "bigip": "/Common/WebSSH2_plugin/webssh2_node"
-                        }
                     ],
                     "virtualPort": 443,
                     "snat": "none",
