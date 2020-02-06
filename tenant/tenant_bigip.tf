@@ -374,6 +374,9 @@ resource "local_file" "tenant_as3_file" {
 resource "null_resource" "az1_tenantF5_DO" {
   depends_on = [aws_instance.az1_tenant_bigip]
   # Running DO REST API
+
+  /* avoid use of local-exec to run curl... use file and remote-exec to run curl on bigip instead!
+  # -> assumption: the "file" provisioner works on Windows?
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -382,11 +385,43 @@ resource "null_resource" "az1_tenantF5_DO" {
       sleep 120
     EOF
   }
+  */
+  provisioner "file" {
+    #content = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
+    source = var.az1_tenantCluster_do_json
+    destination = "/var/tmp/${var.az1_tenantCluster_do_json}"
+
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az1_tenant_bigip.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "curl -k -X ${var.rest_do_method} https://localhost${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.az1_tenantCluster_do_json}",
+      "x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://localhost${var.rest_do_uri}/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep \"OK\" ); then break; fi; sleep 10; x=$(( $x + 1 )); done",
+      "sleep 120",
+    ]
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az1_tenant_bigip.public_ip
+    }
+  }
+
+
 }
 
 resource "null_resource" "az2_tenantF5_DO" {
   depends_on = [aws_instance.az2_tenant_bigip]
   # Running DO REST API
+
+  /* avoid use of local-exec to run curl... use file and remote-exec to run curl on bigip instead!
+  # -> assumption: the "file" provisioner works on Windows?
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -395,22 +430,82 @@ resource "null_resource" "az2_tenantF5_DO" {
       sleep 120
     EOF
   }
+  */
+  provisioner "file" {
+    #content = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
+    source = var.az2_tenantCluster_do_json
+    destination = "/var/tmp/${var.az2_tenantCluster_do_json}"
+
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az2_tenant_bigip.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "curl -k -X ${var.rest_do_method} https://localhost${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.az2_tenantCluster_do_json}",
+      "x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://localhost${var.rest_do_uri}/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep \"OK\" ); then break; fi; sleep 10; x=$(( $x + 1 )); done",
+      "sleep 120",
+    ]
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az2_tenant_bigip.public_ip
+    }
+  }
+  
 }
 
 
 resource "null_resource" "tenantF5_TS" {
   depends_on = ["null_resource.az1_tenantF5_DO", "null_resource.az2_tenantF5_DO"]
   # Running CF REST API
+
+  /* avoid use of local-exec to run curl... use file and remote-exec to run curl on bigip instead!
+  # -> assumption: the "file" provisioner works on Windows?
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
       curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_tenant_bigip.public_ip}${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @${var.tenant_ts_json}
     EOF
   }
+  */
+  provisioner "file" {
+    #content = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
+    source = var.tenant_ts_json
+    destination = "/var/tmp/${var.tenant_ts_json}"
+
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = var.aws_instance.az1_tenant_bigip.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "curl -k -X ${var.rest_ts_method} https://localhost${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.tenant_ts_json}",
+    ]
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az1_tenant_bigip.public_ip
+    }
+  }
+
 }
 
 resource "null_resource" "tenantF5_TS_LogCollection" {
   depends_on = ["null_resource.tenantF5_TS"]
+
+  /* avoid use of local-exec to run curl... use file and remote-exec to run curl on bigip instead!
+  # -> assumption: the "file" provisioner works on Windows?
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -418,4 +513,30 @@ resource "null_resource" "tenantF5_TS_LogCollection" {
       curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_tenant_bigip.public_ip}${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @${var.tenant_logs_as3_json}
     EOF
   }
+  */
+  provisioner "file" {
+    #content = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
+    source = var.tenant_logs_as3_json
+    destination = "/var/tmp/${var.tenant_logs_as3_json}"
+
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = var.aws_instance.az1_tenant_bigip.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "curl -k -X ${var.rest_as3_method} https://localhost${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.tenant_logs_as3_json}",
+    ]
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az1_tenant_bigip.public_ip
+    }
+  }
+
 }
