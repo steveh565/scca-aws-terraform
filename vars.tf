@@ -6,8 +6,8 @@ variable tfstate_dynamoLocksDb { default = "tfLocks" }
 variable "SP" {
   type = "map"
   default = {
-    access_key = "AKIAQL5QPPJLUJZLZXHN"
-    secret_key = "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"
+    access_key = "NULL"
+    secret_key = "NULL"
   }
 }
 
