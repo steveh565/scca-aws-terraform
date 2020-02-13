@@ -125,7 +125,7 @@ resource "aws_subnet" "az2_maz_int" {
 	}
 }
 
-/**/
+/*
 # Hub Transit Gateway
 resource "aws_ec2_transit_gateway" "hubtgw" {
 	auto_accept_shared_attachments = "enable"
@@ -137,7 +137,7 @@ resource "aws_ec2_transit_gateway" "hubtgw" {
 		Name = "${var.vpc_tgw_name}"
 	}
 }
-
+*/
 
 # Transit Gateway Attach
 resource "aws_ec2_transit_gateway_vpc_attachment" "mazTgwAttach" {

@@ -277,6 +277,7 @@ resource "aws_eip" "eip_az2_external" {
   associate_with_private_ip = var.az2_pazF5.paz_ext_self
 }
 
+
 # BigIP 2
 resource "aws_instance" "az2_bigip" {
   depends_on                  = [aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_external, aws_network_interface.az2_internal, aws_network_interface.az2_mgmt]
