@@ -414,7 +414,7 @@ resource "null_resource" "az1_tenantF5_DO" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_tenant_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_tenantCluster_do_json}
+      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az1_tenant_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_tenantCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_tenant_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
@@ -427,7 +427,7 @@ resource "null_resource" "az2_tenantF5_DO" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_tenant_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_tenantCluster_do_json}
+      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_tenant_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_tenantCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_tenant_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF

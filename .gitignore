@@ -50,3 +50,4 @@ tenant/cf-iam.tf
 *.tfvars
 *.log
 .terraform.tfstate.lock.info
+terraform.tfvars

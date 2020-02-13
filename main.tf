@@ -218,6 +218,74 @@ locals {
 }
 
 
+/*
+module "maz" {
+source = "./maz"
+}
+*/
+
+resource "null_resource" "revoke_eval_keys_upon_destroy" {
+  depends_on = [
+    aws_route_table_association.az1_mgmt,
+    aws_route_table_association.az2_mgmt,
+    aws_route_table_association.az1_dmzInt,
+    aws_route_table_association.az2_dmzInt,
+    aws_route_table_association.az1_dmzExt,
+    aws_route_table_association.az2_dmzExt,
+    aws_route_table_association.az1_transit,
+    aws_route_table_association.az2_transit,
+    aws_route_table_association.az1_ext,
+    aws_route_table_association.az2_ext,
+    aws_key_pair.main,
+    aws_route_table.MgmtRt,
+    aws_route_table.PazRt,
+    aws_route_table.TransitRt,
+    aws_route_table.DmzIntRt,
+    aws_route_table.DmzExtRt,
+    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
+    aws_ec2_transit_gateway_route_table.hubtgwRt,
+    aws_ec2_transit_gateway.hubtgw,
+
+    aws_instance.az1_bigip,
+    aws_instance.az2_bigip,
+    // aws_instance.az1_transit_bigip,
+    // aws_instance.az2_transit_bigip,
+    // aws_instance.az1_dmz_bigip,
+    // aws_instance.az2_dmz_bigip,
+    aws_eip.eip_az1_mgmt,
+    aws_eip.eip_az1_external,
+    aws_eip.eip_az2_mgmt,
+    aws_eip.eip_az2_external,
+    // aws_eip.eip_az1_transit_mgmt,
+    // aws_eip.eip_az2_transit_mgmt,
+    // aws_eip.eip_az1_dmz_mgmt,
+    // aws_eip.eip_az2_dmz_mgmt,
+    aws_internet_gateway.gw
+  ]
+  for_each = {
+    mgmt_ip = aws_instance.az1_bigip.public_ip
+    mgmt_ip1 = aws_instance.az2_bigip.public_ip
+    // mgmt_ip2 = aws_instance.az1_dmz_bigip.public_ip
+    // mgmt_ip3 = aws_instance.az2_dmz_bigip.public_ip
+    // mgmt_ip4 = aws_instance.az1_transit_bigip.public_ip
+    // mgmt_ip5 = aws_instance.az2_transit_bigip.public_ip
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = each.value
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh -q revoke sys license 2>/dev/null"
+    ]
+    on_failure = continue
+  }
+}
+
+
 output "az1_pazF5_Mgmt_Addr"     { value = "${aws_instance.az1_bigip.public_ip}" }
 output "az2_pazF5_Mgmt_Addr"     { value = "${aws_instance.az2_bigip.public_ip}" }
 
@@ -225,15 +293,15 @@ output "PAZ_Ingress_Public_EIP"   { value = "${aws_eip.eip_vip.public_ip}" }
 output "az1_pazF5_self_eip" { value = "${aws_eip.eip_az1_external.public_ip}"}
 output "az2_pazF5_self_eip" { value = "${aws_eip.eip_az2_external.public_ip}"}
 
-output "az1_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az1_dmz_bigip.public_ip}" }
-output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmz_bigip.public_ip}" }
-output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
-output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
+// output "az1_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az1_dmz_bigip.public_ip}" }
+// output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmz_bigip.public_ip}" }
+// output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
+// output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
 
-output "az1_transitF5_Mgmt_Addr"     { value = "${aws_instance.az1_transit_bigip.public_ip}" }
-output "az2_transitF5_Mgmt_Addr"     { value = "${aws_instance.az2_transit_bigip.public_ip}" }
-output "az1_transitF5_secondary_VIP" { value = "${var.az1_transitF5.transit_vip}" }
-output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}" }
+// output "az1_transitF5_Mgmt_Addr"     { value = "${aws_instance.az1_transit_bigip.public_ip}" }
+// output "az2_transitF5_Mgmt_Addr"     { value = "${aws_instance.az2_transit_bigip.public_ip}" }
+// output "az1_transitF5_secondary_VIP" { value = "${var.az1_transitF5.transit_vip}" }
+// output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}" }
 
 output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
 output "BigIP_IAM_Profile_ID" { value = "${aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.id}" }
