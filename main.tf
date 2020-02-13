@@ -10,12 +10,10 @@
 
 # Infrastructure
 provider "aws" {
-	region = "${var.aws_region}"
+	region = var.aws_region
 	
 	#uncomment if you set these variables in vars.tf
 	#Comment out if you wish to use ENV variables for auth tokens
-	access_key = var.SP.access_key
-	secret_key = var.SP.secret_key
 }
 
 # Setup Onboarding scripts
@@ -23,21 +21,21 @@ data "template_file" "az1_pazF5_vm_onboard" {
   template = "${file("${path.module}/onboard.tpl")}"
 
   vars = {
-    uname          = "${var.uname}"
-    upassword      = "${var.upassword}"
-    DO_onboard_URL = "${var.DO_onboard_URL}"
-    AS3_URL		     = "${var.AS3_URL}"
-    TS_URL		     = "${var.TS_URL}"
-    CF_URL		     = "${var.CF_URL}"
-    libs_dir	     = "${var.libs_dir}"
-    onboard_log	   = "${var.onboard_log}"
+    uname          = var.uname
+    upassword      = var.upassword
+    DO_onboard_URL = var.DO_onboard_URL
+    AS3_URL		     = var.AS3_URL
+    TS_URL		     = var.TS_URL
+    CF_URL		     = var.CF_URL
+    libs_dir	     = var.libs_dir
+    onboard_log	   = var.onboard_log
 
-    mgmt_ip        = "${var.az1_pazF5.mgmt}"
-    mgmt_gw        = "${local.az1_mgmt_gw}"
-    vpc_dns        = "${local.security_vpc_dns}"
-    ext_self       = "${var.az1_pazF5.paz_ext_self}"
-    int_self       = "${var.az1_pazF5.dmz_ext_self}"
-    gateway        = "${local.az1_paz_gw}"
+    mgmt_ip        = var.az1_pazF5.mgmt
+    mgmt_gw        = local.az1_mgmt_gw
+    vpc_dns        = local.security_vpc_dns
+    ext_self       = var.az1_pazF5.paz_ext_self
+    int_self       = var.az1_pazF5.dmz_ext_self
+    gateway        = local.az1_paz_gw
   }
 }
 

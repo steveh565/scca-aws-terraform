@@ -88,8 +88,6 @@ data "template_file" "ztsra_ts_json" {
 
   vars = {
     aws_region = var.aws_region
-    access_key = var.SP.access_key
-    secret_key = var.SP.secret_key
   }
 }
 # Render PAZ TS declaration (common to both bigip's)

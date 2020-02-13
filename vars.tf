@@ -4,7 +4,7 @@ variable tfstate_dynamoLocksDb { default = "tfLocks" }
 
 # AWS Creds
 variable "SP" {
-  type = "map"
+  type = map
   default = {
     access_key = "NULL"
     secret_key = "NULL"
@@ -31,16 +31,16 @@ variable key_path { default = "~/.ssh/id_rsa.pub" }
 variable mgmt_asrc { default = ["0.0.0.0/0"] }
 
 #Big-IP License Keys (BEST)
-variable paz_lic1          { default = "DFSDQ-HGNLM-CJCSE-GGKWZ-TIYOZYA" }
-variable paz_lic2          { default = "XQTHX-XVNQY-OLBNR-GFFLX-PWFXWXA" }
-variable transit_lic1      { default = "DSEFW-CXTZS-LZHWB-ETHHO-FMLUIZN" }
-variable transit_lic2      { default = "XCFUI-UYLLG-SKQPJ-ZSYIP-GQGWQFA" }
-variable dmz_lic1          { default = "NLPAY-JJMGP-JSWFV-BZXYF-UECPAJX" }
-variable dmz_lic2          { default = "UFJBH-VLEXX-ZETKS-LIFEY-XWDBRTW" }
-variable tenant_bigip_lic1 { default = "KNBZH-VSFMF-JYKHS-THWSZ-WECPLWD" }
-variable tenant_bigip_lic2 { default = "WXWHV-LWFTA-RIQVV-UUJKN-SJFAATX" }
-variable maz_bigip_lic1    { default = "YLPAH-ZTKBN-ZLGHH-QPPEG-NADXYTU" }
-variable maz_bigip_lic2    { default = "YGZGS-GIKDG-QVFQB-NCVNV-EJWUWEF" }
+variable paz_lic1          {}
+variable paz_lic2          {}
+variable transit_lic1      {}
+variable transit_lic2      {}
+variable dmz_lic1          {}
+variable dmz_lic2          {}
+variable tenant_bigip_lic1 {}
+variable tenant_bigip_lic2 {}
+variable maz_bigip_lic1    {}
+variable maz_bigip_lic2    {}
 
 # Platform settings variables
 variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
@@ -106,7 +106,7 @@ variable security_vpc_cidr { default = "10.1.0.0/16" }
 variable security_aip_cidr { default = "100.65.0.0/21" }
 
 variable az1_security_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"    = "10.1.0.0/24"
     "paz_ext" = "10.1.1.0/24"
@@ -125,7 +125,7 @@ variable gccap_cf_label { default = "gccap_az_failover"}
 
 variable paz_cf_label { default = "paz_az_failover" }
 variable az1_pazF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "pazF5vm01"
     "mgmt"         = "10.1.0.11"
@@ -141,7 +141,7 @@ variable az1_pazF5 {
 variable dmz_cf_label { default = "dmz_az_failover" }
 
 variable az1_dmzF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "dmzF5vm01"
     "mgmt"         = "10.1.0.12"
@@ -159,7 +159,7 @@ variable az1_dmzF5 {
 variable transit_cf_label { default = "transit_az_failover" }
 
 variable az1_transitF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "transitF5vm01"
     "mgmt"         = "10.1.0.13"
@@ -175,7 +175,7 @@ variable az1_transitF5 {
 }
 
 variable az2_security_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"    = "10.1.10.0/24"
     "paz_ext" = "10.1.11.0/24"
@@ -186,7 +186,7 @@ variable az2_security_subnets {
 }
 
 variable az2_pazF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "pazF5vm02"
     "mgmt"         = "10.1.10.11"
@@ -200,7 +200,7 @@ variable az2_pazF5 {
 }
 
 variable az2_dmzF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "dmzF5vm02"
     "mgmt"         = "10.1.10.12"
@@ -216,7 +216,7 @@ variable az2_dmzF5 {
 }
 
 variable az2_transitF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "transitF5vm02"
     "mgmt"         = "10.1.10.13"
@@ -236,7 +236,7 @@ variable az2_transitF5 {
 variable maz_vpc_cidr { default = "10.11.0.0/16" }
 variable maz_aip_cidr { default = "100.66.71.250/29" }
 variable az1_maz_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"     = "10.11.0.0/24"
     "transit"  = "10.11.1.0/24"
@@ -247,7 +247,7 @@ variable az1_maz_subnets {
 variable maz_cf_label { default = "maz_az_failover" }
 
 variable az1_mazF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"      = "mazF5vm01"
     "mgmt"          = "10.11.0.11"
@@ -261,7 +261,7 @@ variable az1_mazF5 {
 }
 
 variable az2_maz_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"     = "10.11.10.0/24"
     "transit"  = "10.11.11.0/24"
@@ -270,7 +270,7 @@ variable az2_maz_subnets {
 }
 
 variable az2_mazF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"      = "mazF5vm02"
     "mgmt"          = "10.11.10.11"
@@ -287,7 +287,7 @@ variable az2_mazF5 {
 variable tenant_vpc_cidr { default = "10.21.0.0/16" }
 variable tenant_aip_cidr { default = "100.66.71.240/29" }
 variable az1_tenant_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"     = "10.21.0.0/24"
     "transit"  = "10.21.1.0/24"
@@ -297,7 +297,7 @@ variable az1_tenant_subnets {
 
 variable tenant_cf_label { default = "tenant_az_failover" }
 variable az1_tenantF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"      = "edgeF5vm01"
     "mgmt"          = "10.21.0.11"
@@ -312,7 +312,7 @@ variable az1_tenantF5 {
 }
 
 variable az2_tenant_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"     = "10.21.10.0/24"
     "transit"  = "10.21.11.0/24"
@@ -321,7 +321,7 @@ variable az2_tenant_subnets {
 }
 
 variable az2_tenantF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"      = "edgeF5vm02"
     "mgmt"          = "10.21.10.11"

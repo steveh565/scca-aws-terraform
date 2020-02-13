@@ -25,8 +25,6 @@ resource "null_resource" "az1_maz_external_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_maz_external.id} --private-ip-addresses ${var.az1_mazF5.maz_ext_vip}
     EOF
   }
@@ -51,8 +49,6 @@ resource "null_resource" "az1_maz_internal_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_maz_internal.id} --private-ip-addresses ${var.az1_mazF5.maz_int_vip}
     EOF
   }
@@ -186,8 +182,6 @@ resource "null_resource" "az2_maz_external_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_maz_external.id} --private-ip-addresses ${var.az2_mazF5.maz_ext_vip}
     EOF
   }
@@ -211,8 +205,6 @@ resource "null_resource" "az2_maz_internal_secondary_ips" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_maz_internal.id} --private-ip-addresses ${var.az2_mazF5.maz_int_vip}
     EOF
   }
@@ -327,8 +319,6 @@ data "template_file" "maz_ts_json" {
 
   vars = {
     aws_region = var.aws_region
-    access_key = var.SP.access_key
-    secret_key = var.SP.secret_key
   }
 }
 # Render maz TS declaration
