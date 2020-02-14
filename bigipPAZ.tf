@@ -16,7 +16,7 @@ resource "aws_network_interface" "az1_external" {
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.paz_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -50,7 +50,7 @@ resource "aws_network_interface" "az1_internal" {
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.paz_cf_label
   }  
   lifecycle {
     ignore_changes = [
@@ -81,10 +81,9 @@ resource "aws_eip" "eip_vip" {
   network_interface         = aws_network_interface.az1_external.id
   associate_with_private_ip = var.az1_pazF5.paz_ext_vip
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.paz_cf_label
   }
 }
-#    f5_cloud_failover_label = var.paz_cf_label
 
 resource "aws_eip" "eip_az1_mgmt" {
   depends_on                = [aws_network_interface.az1_mgmt, aws_internet_gateway.gw]
@@ -136,56 +135,12 @@ resource "aws_instance" "az1_bigip" {
       "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
   }
-  // provisioner "remote-exec" {
-  //   connection {
-  //     host     = self.public_ip
-  //     type     = "ssh"
-  //     user     = var.uname
-  //     password = var.upassword
-  //   }
-  //   when = destroy
-  //   inline = [
-  //     "echo y | tmsh revoke sys license"
-  //   ]
-  //   on_failure = continue
-  // }
 
   tags = {
     Name = "${var.tag_name}-${var.az1_pazF5.hostname}"
   }
 }
 
-
-## AZ1 Cluster DO Declaration
-data "template_file" "az1_pazCluster_do_json" {
-  template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
-  vars = {
-    #Uncomment the following line for BYOL
-    regkey         = var.paz_lic1
-    banner_color   = "red"
-    host1          = var.az1_pazF5.hostname
-    host2          = var.az2_pazF5.hostname
-    local_host     = var.az1_pazF5.hostname
-    local_selfip1  = var.az1_pazF5.paz_ext_self
-    local_selfip2  = var.az1_pazF5.dmz_ext_self
-    remote_selfip  = var.az2_pazF5.mgmt
-    mgmt_gw        = local.az1_mgmt_gw
-    gateway        = local.az1_paz_gw
-    dns_server     = var.dns_server
-    ntp_server     = var.ntp_server
-    timezone       = var.timezone
-    admin_user     = var.uname
-    admin_password = var.upassword
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
-  }
-}
-# Render PAZ DO declaration
-resource "local_file" "az1_pazCluster_do_file" {
-  content     = data.template_file.az1_pazCluster_do_json.rendered
-  filename    = "${path.module}/${var.az1_pazCluster_do_json}"
-}
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_mgmt" {
@@ -205,7 +160,7 @@ resource "aws_network_interface" "az2_external" {
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.paz_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -239,7 +194,7 @@ resource "aws_network_interface" "az2_internal" {
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.paz_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -315,25 +270,42 @@ resource "aws_instance" "az2_bigip" {
     ]
   }
 
-  // provisioner "remote-exec" {
-  //   connection {
-  //     host     = self.public_ip
-  //     type     = "ssh"
-  //     user     = var.uname
-  //     password = var.upassword
-  //   }
-  //   when = destroy
-  //   inline = [
-  //     "echo y | tmsh revoke sys license"
-  //   ]
-  //   on_failure = continue
-  // }
-
   tags = {
     Name = "${var.tag_name}-${var.az2_pazF5.hostname}"
   }
 }
 
+
+## AZ1 Cluster DO Declaration
+data "template_file" "az1_pazCluster_do_json" {
+  template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
+  vars = {
+    #Uncomment the following line for BYOL
+    regkey         = var.paz_lic1
+    banner_color   = "red"
+    Domainname     = var.f5Domainname
+    host1          = var.az1_pazF5.hostname
+    host2          = var.az2_pazF5.hostname
+    local_host     = var.az1_pazF5.hostname
+    local_selfip1  = var.az1_pazF5.paz_ext_self
+    local_selfip2  = var.az1_pazF5.dmz_ext_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = var.az1_pazF5.mgmt
+    mgmt_gw        = local.az1_mgmt_gw
+    gateway        = local.az1_paz_gw
+    dns_server     = var.dns_server
+    ntp_server     = var.ntp_server
+    timezone       = var.timezone
+    admin_user     = var.uname
+    admin_password = var.upassword
+  }
+}
+
+# Render PAZ DO declaration
+resource "local_file" "az1_pazCluster_do_file" {
+  content     = data.template_file.az1_pazCluster_do_json.rendered
+  filename    = "${path.module}/${var.az1_pazCluster_do_json}"
+}
 
 ## AZ2 Cluster DO Declaration
 data "template_file" "az2_pazCluster_do_json" {
@@ -342,11 +314,13 @@ data "template_file" "az2_pazCluster_do_json" {
     #Uncomment the following line for BYOL
     regkey         = var.paz_lic2
     banner_color   = "red"
-    host1          = var.az2_pazF5.hostname
-    host2          = var.az1_pazF5.hostname
+    Domainname     = var.f5Domainname
+    host1          = var.az1_pazF5.hostname
+    host2          = var.az2_pazF5.hostname
     local_host     = var.az2_pazF5.hostname
     local_selfip1  = var.az2_pazF5.paz_ext_self
     local_selfip2  = var.az2_pazF5.dmz_ext_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
     remote_selfip  = var.az1_pazF5.mgmt
     mgmt_gw        = local.az2_mgmt_gw
     gateway        = local.az2_paz_gw
@@ -355,9 +329,6 @@ data "template_file" "az2_pazCluster_do_json" {
     timezone       = var.timezone
     admin_user     = var.uname
     admin_password = var.upassword
-
-    #app1_net        = local.app1_net
-    #app1_net_gw     = local.app1_net_gw
   }
 }
 
@@ -367,7 +338,26 @@ resource "local_file" "az2_pazCluster_do_file" {
   filename    = "${path.module}/${var.az2_pazCluster_do_json}"
 }
 
-/*
+# PAZ CF Declaration
+data "template_file" "paz_cf_json" {
+  template = "${file("${path.module}/paz_int_cloudfailover.json")}"
+
+  vars = {
+    cf_label = var.paz_cf_label
+    cf_cidr1 = "0.0.0.0/0"
+    cf_cidr2 = var.az1_security_subnets.aip_paz_dmz_ext
+    az1_nexthop = var.az1_pazF5.dmz_ext_self
+    az2_nexthop = var.az2_pazF5.dmz_ext_self
+  }
+}
+
+# Render PAZ CF Declaration
+resource "local_file" "paz_cf_file" {
+  content  = data.template_file.paz_cf_json.rendered
+  filename = "${path.module}/${var.paz_cf_json}"
+}
+
+
 # PAZ TS Declaration
 data "template_file" "paz_ts_json" {
   template = "${file("${path.module}/tsCloudwatch_ts.tpl.json")}"
@@ -397,7 +387,6 @@ resource "local_file" "paz_logs_as3_file" {
   content  = data.template_file.paz_logs_as3_json.rendered
   filename = "${path.module}/${var.paz_logs_as3_json}"
 }
-*/
 
 # PAZ AS3 Declaration
 data "template_file" "paz_as3_json" {
@@ -408,39 +397,59 @@ data "template_file" "paz_as3_json" {
     asm_policy_url = var.asm_policy_url
   }
 }
+
 # Render PAZ AS3 declaration
 resource "local_file" "paz_as3_file" {
   content  = data.template_file.paz_as3_json.rendered
   filename = "${path.module}/${var.tenant1_paz_as3_json}"
 }
 
+
+# Running DO REST API
 resource "null_resource" "az1_pazF5_cluster_DO" {
-  depends_on	= [aws_instance.az1_bigip]
+  depends_on	= [aws_instance.az1_bigip, local_file.az1_pazCluster_do_file]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
       curl -k -s -X ${var.rest_do_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_pazCluster_do_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -s -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
 }
 
+# Running DO REST API
 resource "null_resource" "az2_pazF5_cluster_DO" {
-  depends_on    = [aws_instance.az2_bigip]
+  depends_on    = [aws_instance.az2_bigip, local_file.az2_pazCluster_do_file]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
       curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_pazCluster_do_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -s -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
 }
 
-/*
+# Send PAZ CF Declaration to bigip 
+resource "null_resource" "az1_pazF5_CF" {
+  depends_on	= [null_resource.az1_pazF5_cluster_DO]
+  for_each = {
+    bigip1 = aws_instance.az1_bigip.public_ip
+    bigip2 = aws_instance.az2_bigip.public_ip
+  }
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.paz_cf_json}
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 120
+    EOF
+  }
+}
+
 resource "null_resource" "pazF5_TS" {
   depends_on = [null_resource.az1_pazF5_cluster_DO, null_resource.az2_pazF5_cluster_DO]
   # Running CF REST API
@@ -462,4 +471,3 @@ resource "null_resource" "pazF5_TS_LogCollection" {
     EOF
   }
 }
-*/

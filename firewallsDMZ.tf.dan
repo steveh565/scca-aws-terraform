@@ -16,7 +16,7 @@ resource "aws_network_interface" "az1_dmz_external" {
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.dmz_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -50,7 +50,7 @@ resource "aws_network_interface" "az1_dmz_internal" {
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.dmz_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -125,56 +125,12 @@ resource "aws_instance" "az1_dmz_bigip" {
       "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
   }
-  provisioner "remote-exec" {
-    connection {
-      host     = self.public_ip
-      type     = "ssh"
-      user     = var.uname
-      password = var.upassword
-    }
-    when = destroy
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = continue
-  }
 
   tags = {
     Name = "${var.tag_name}-${var.az1_dmzF5.hostname}"
   }
 }
 
-
-## AZ1 DO Declaration
-data "template_file" "az1_dmzCluster_do_json" {
-  template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
-  vars = {
-    #Uncomment the following line for BYOL
-    regkey         = var.dmz_lic1
-    banner_color   = "red"
-    host1          = var.az1_dmzF5.hostname
-    host2          = var.az2_dmzF5.hostname
-    local_host     = var.az1_dmzF5.hostname
-    local_selfip1  = var.az1_dmzF5.dmz_ext_self
-    local_selfip2  = var.az1_dmzF5.dmz_int_self
-    remote_selfip  = var.az2_dmzF5.mgmt
-    mgmt_gw        = local.az1_mgmt_gw
-    gateway        = local.az1_dmz_ext_gw
-    dns_server     = var.dns_server
-    ntp_server     = var.ntp_server
-    timezone       = var.timezone
-    admin_user     = var.uname
-    admin_password = var.upassword
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
-  }
-}
-# Render dmz DO declaration
-resource "local_file" "az1_dmzCluster_do_file" {
-  content  = data.template_file.az1_dmzCluster_do_json.rendered
-  filename = "${path.module}/${var.az1_dmzCluster_do_json}"
-}
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_dmz_mgmt" {
@@ -194,7 +150,7 @@ resource "aws_network_interface" "az2_dmz_external" {
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.dmz_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -228,7 +184,7 @@ resource "aws_network_interface" "az2_dmz_internal" {
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.dmz_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -303,39 +259,57 @@ resource "aws_instance" "az2_dmz_bigip" {
     ]
   }
 
-  provisioner "remote-exec" {
-    connection {
-      host     = self.public_ip
-      type     = "ssh"
-      user     = var.uname
-      password = var.upassword
-
-    }
-    when = destroy
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = continue
-  }
-
   tags = {
     Name = "${var.tag_name}-${var.az2_dmzF5.hostname}"
   }
 }
 
 
-## AZ2 DO Declaration
+## AZ1 DO Declaration
+data "template_file" "az1_dmzCluster_do_json" {
+  template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
+  vars = {
+    #Uncomment the following line for BYOL
+    regkey         = var.dmz_lic1
+    banner_color   = "red"
+    Domainname     = var.f5Domainname
+    host1          = var.az1_dmzF5.hostname
+    host2          = var.az2_dmzF5.hostname
+    local_host     = var.az1_dmzF5.hostname
+    local_selfip1  = var.az1_dmzF5.dmz_ext_self
+    local_selfip2  = var.az1_dmzF5.dmz_int_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = var.az1_dmzF5.mgmt
+    mgmt_gw        = local.az1_mgmt_gw
+    gateway        = local.az1_dmz_ext_gw
+    dns_server     = var.dns_server
+    ntp_server     = var.ntp_server
+    timezone       = var.timezone
+    admin_user     = var.uname
+    admin_password = var.upassword
+  }
+}
+
+# Render dmz DO declaration
+resource "local_file" "az1_dmzCluster_do_file" {
+  content  = data.template_file.az1_dmzCluster_do_json.rendered
+  filename = "${path.module}/${var.az1_dmzCluster_do_json}"
+}
+
+## AZ2 Cluster DO Declaration
 data "template_file" "az2_dmzCluster_do_json" {
   template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.dmz_lic2
     banner_color   = "red"
-    host1          = var.az2_dmzF5.hostname
-    host2          = var.az1_dmzF5.hostname
+    Domainname     = var.f5Domainname
+    host1          = var.az1_dmzF5.hostname
+    host2          = var.az2_dmzF5.hostname
     local_host     = var.az2_dmzF5.hostname
     local_selfip1  = var.az2_dmzF5.dmz_ext_self
     local_selfip2  = var.az2_dmzF5.dmz_int_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
     remote_selfip  = var.az1_dmzF5.mgmt
     mgmt_gw        = local.az2_mgmt_gw
     gateway        = local.az2_dmz_ext_gw
@@ -344,19 +318,36 @@ data "template_file" "az2_dmzCluster_do_json" {
     timezone       = var.timezone
     admin_user     = var.uname
     admin_password = var.upassword
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
   }
 }
-# Render dmz DO declaration
+
+# Render DMZ DO declaration
 resource "local_file" "az2_dmz_do_file" {
   content  = data.template_file.az2_dmzCluster_do_json.rendered
   filename = "${path.module}/${var.az2_dmzCluster_do_json}"
 }
 
-/*
-# dmz TS Declaration
+# DMZ CF Declaration
+data "template_file" "dmz_cf_json" {
+  template = "${file("${path.module}/cloudfailover.tpl.json")}"
+
+  vars = {
+    cf_label = var.dmz_cf_label
+    cf_cidr1 = "0.0.0.0/0"
+    cf_cidr2 = var.az1_security_subnets.aip_paz_dmz_ext
+    az1_nexthop = var.az1_pazF5.dmz_ext_self
+    az2_nexthop = var.az2_pazF5.dmz_ext_self
+  }
+}
+
+# Render PAZ CF Declaration
+resource "local_file" "paz_cf_file" {
+  content  = data.template_file.paz_cf_json.rendered
+  filename = "${path.module}/${var.paz_cf_json}"
+}
+
+
+# DMZ TS Declaration
 data "template_file" "dmz_ts_json" {
   template = "${file("${path.module}/tsCloudwatch_ts.tpl.json")}"
 

@@ -15,14 +15,14 @@ variable "SP" {
 variable aws_region { default = "ca-central-1" }
 
 
-
-
 # Prefixes
 variable prefix { default = "SHSCA9" }
 variable tag_name { default = "SHSCA9" }
 variable tenant_name { default = "CSD" }
 variable maz_name { default = "MAZ" }
 
+
+variable f5Domainname        { default = "f5labs.gc.ca" }
 
 #SSH public key path
 variable key_path { default = "~/.ssh/id_rsa.pub" }
@@ -62,7 +62,8 @@ variable uname { default = "awsops" }
 variable upassword { default = "Canada12345" }
 variable dns_server { default = "8.8.8.8" }
 variable ntp_server { default = "0.us.pool.ntp.org" }
-variable timezone   { default = "UTC" }
+#variable timezone   { default = "UTC" }
+variable timezone   { default = "America/New_York" }
 variable libs_dir   { default = "/config/cloud/aws/node_modules" }
 
 
@@ -123,7 +124,9 @@ variable az1_security_subnets {
 
 variable gccap_cf_label { default = "gccap_az_failover"}
 
-variable paz_cf_label { default = "paz_az_failover" }
+variable paz_cf_label { default = "paz-az-failover" }
+variable dmz_cf_label { default = "dmz-az-failover" }
+
 variable az1_pazF5 {
   type = map
   default = {
@@ -137,8 +140,6 @@ variable az1_pazF5 {
     "aip_dmz_ext_float"  = "100.65.1.3"
   }
 }
-
-variable dmz_cf_label { default = "dmz_az_failover" }
 
 variable az1_dmzF5 {
   type = map
@@ -341,7 +342,9 @@ variable az2_tenantF5 {
 ## Please check and update the latest DO URL from https://github.com/F5Networks/f5-declarative-onboarding/releases
 variable DO_onboard_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-declarative-onboarding-1.9.0-1.noarch.rpm" }
 ## Please check and update the latest Telemetry Streaming from https://github.com/F5Networks/f5-telemetry-streaming/tree/master/dist
-variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.8.0-1.noarch.rpm" }
+#variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.8.0-1.noarch.rpm" }
+## Ask Steve to add the TSv1.9 RPM asset to his f5tools repo!
+variable TS_URL { default = "https://github.com/F5Networks/f5-telemetry-streaming/releases/download/v1.9.0/f5-telemetry-1.9.0-1.noarch.rpm"}
 ## Please check and update the latest Cloud Failover from https://github.com/f5devcentral/f5-cloud-failover-extension
 variable CF_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-cloud-failover-1.0.0-0.noarch.rpm" }
 ## Please check and update the latest AS3 URL from https://github.com/F5Networks/f5-appsvcs-extension/releases/latest 
@@ -384,6 +387,12 @@ variable tenant_ts_json { default = "tsCloudwatch_ts.json" }
 variable tenant_logs_as3_json { default = "tsLogCollection_as3.json" }
 
 # Cloud-failover extension Vars
+variable paz_cf_json { default = "paz_cf.json" }
+variable dmz_cf_json { default = "dmz_cf.json" }
+variable transit_cf_json { default = "transit_cf.json" }
+variable maz_cf_json { default = "maz_cf.json" }
+variable tenant_cf_json { default = "tenant_cf.json" }
+
 
 # AS3 extension Vars
 variable asm_policy_url { default = "https://raw.githubusercontent.com/steveh565/f5tools/master/asm-policies/asm-policy-linux-medium.xml" }

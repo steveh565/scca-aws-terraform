@@ -12,8 +12,6 @@
 provider "aws" {
 	region = var.aws_region
 	
-	#uncomment if you set these variables in vars.tf
-	#Comment out if you wish to use ENV variables for auth tokens
 }
 
 # Setup Onboarding scripts
@@ -220,9 +218,15 @@ locals {
 
 /*
 module "maz" {
-source = "./maz"
+  source = "./maz"
 }
 */
+
+module "storage-paz" {
+  source = "./modules/storage"
+  storage_label = var.paz_cf_label
+}
+
 
 resource "null_resource" "revoke_eval_keys_upon_destroy" {
   depends_on = [
@@ -245,6 +249,12 @@ resource "null_resource" "revoke_eval_keys_upon_destroy" {
     aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
     aws_ec2_transit_gateway_route_table.hubtgwRt,
     aws_ec2_transit_gateway.hubtgw,
+    local_file.az1_pazF5_vm_onboarding_file,
+    local_file.az2_pazF5_vm_onboarding_file,
+    local_file.az2_transitF5_vm_onboarding_file,
+    local_file.az1_dmzF5_vm_onboarding_file,
+    local_file.az1_transitF5_vm_onboarding_file,
+    local_file.az2_dmzF5_vm_onboarding_file,
 
     aws_instance.az1_bigip,
     aws_instance.az2_bigip,
