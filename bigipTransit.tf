@@ -1,4 +1,3 @@
-
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az1_transit_mgmt" {
   depends_on      = [aws_security_group.sg_ext_mgmt]
@@ -17,7 +16,7 @@ resource "aws_network_interface" "az1_transit_external" {
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.transit_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -51,7 +50,7 @@ resource "aws_network_interface" "az1_transit_internal" {
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.transit_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -126,57 +125,12 @@ resource "aws_instance" "az1_transit_bigip" {
       "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
   }
-  provisioner "remote-exec" {
-    connection {
-      host     = self.public_ip
-      type     = "ssh"
-      user     = var.uname
-      password = var.upassword
-    }
-    when = destroy
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = continue
-  }
 
   tags = {
     Name = "${var.tag_name}-${var.az1_transitF5.hostname}"
   }
 }
 
-
-
-## AZ1 DO Declaration
-data "template_file" "az1_transitCluster_do_json" {
-  template = "${file("${path.module}/transit_clusterAcrossAZs_do.tpl.json")}"
-  vars = {
-    #Uncomment the following line for BYOL
-    regkey         = var.transit_lic1
-    banner_color   = "red"
-    host1          = var.az1_transitF5.hostname
-    host2          = var.az2_transitF5.hostname
-    local_host     = var.az1_transitF5.hostname
-    local_selfip1  = var.az1_transitF5.dmz_int_self
-    local_selfip2  = var.az1_transitF5.transit_self
-    remote_selfip  = var.az2_transitF5.mgmt
-    mgmt_gw        = local.az1_mgmt_gw
-    gateway        = local.az1_transit_ext_gw
-    dns_server     = var.dns_server
-    ntp_server     = var.ntp_server
-    timezone       = var.timezone
-    admin_user     = var.uname
-    admin_password = var.upassword
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
-  }
-}
-# Render transit DO declaration
-resource "local_file" "az1_transitCluster_do_file" {
-  content  = "${data.template_file.az1_transitCluster_do_json.rendered}"
-  filename = "${path.module}/${var.az1_transitCluster_do_json}"
-}
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_transit_mgmt" {
@@ -196,7 +150,7 @@ resource "aws_network_interface" "az2_transit_external" {
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.transit_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -230,7 +184,7 @@ resource "aws_network_interface" "az2_transit_internal" {
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.transit_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -305,25 +259,42 @@ resource "aws_instance" "az2_transit_bigip" {
     ]
   }
 
-  provisioner "remote-exec" {
-    connection {
-      host     = self.public_ip
-      type     = "ssh"
-      user     = var.uname
-      password = var.upassword
-    }
-    when = destroy
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = continue
-  }
-
   tags = {
     Name = "${var.tag_name}-${var.az2_transitF5.hostname}"
   }
 }
 
+
+## AZ1 DO Declaration
+data "template_file" "az1_transitCluster_do_json" {
+  template = "${file("${path.module}/transit_clusterAcrossAZs_do.tpl.json")}"
+  vars = {
+    #Uncomment the following line for BYOL
+    regkey         = var.transit_lic1
+    banner_color   = "red"
+    Domainname     = var.f5Domainname
+    host1          = var.az1_transitF5.hostname
+    host2          = var.az2_transitF5.hostname
+    local_host     = var.az1_transitF5.hostname
+    local_selfip1  = var.az1_transitF5.dmz_int_self
+    local_selfip2  = var.az1_transitF5.transit_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = var.az1_transitF5.mgmt
+    mgmt_gw        = local.az1_mgmt_gw
+    gateway        = local.az1_transit_ext_gw
+    dns_server     = var.dns_server
+    ntp_server     = var.ntp_server
+    timezone       = var.timezone
+    admin_user     = var.uname
+    admin_password = var.upassword
+  }
+}
+
+# Render transit DO declaration
+resource "local_file" "az1_transitCluster_do_file" {
+  content  = "${data.template_file.az1_transitCluster_do_json.rendered}"
+  filename = "${path.module}/${var.az1_transitCluster_do_json}"
+}
 
 ## AZ2 DO Declaration
 data "template_file" "az2_transitCluster_do_json" {
@@ -332,11 +303,13 @@ data "template_file" "az2_transitCluster_do_json" {
     #Uncomment the following line for BYOL
     regkey         = var.transit_lic2
     banner_color   = "red"
-    host1          = var.az2_transitF5.hostname
-    host2          = var.az1_transitF5.hostname
+    Domainname     = var.f5Domainname
+    host1          = var.az1_transitF5.hostname
+    host2          = var.az2_transitF5.hostname
     local_host     = var.az2_transitF5.hostname
     local_selfip1  = var.az2_transitF5.dmz_int_self
     local_selfip2  = var.az2_transitF5.transit_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
     remote_selfip  = var.az1_transitF5.mgmt
     mgmt_gw        = local.az2_mgmt_gw
     gateway        = local.az2_transit_ext_gw
@@ -345,18 +318,37 @@ data "template_file" "az2_transitCluster_do_json" {
     timezone       = var.timezone
     admin_user     = var.uname
     admin_password = var.upassword
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
   }
 }
 # Render transit DO declaration
-resource "local_file" "az2_transit_do_file" {
+resource "local_file" "az2_transitCluster_do_file" {
   content  = data.template_file.az2_transitCluster_do_json.rendered
   filename = "${path.module}/${var.az2_transitCluster_do_json}"
 }
 
-/*
+# transit CF Declaration
+data "template_file" "transit_cf_json" {
+  template = "${file("${path.module}/transit_cloudfailover.tpl.json")}"
+
+  vars = {
+    cf_label = var.transit_cf_label
+    cf_cidr1 = "100.100.0.0/16"
+    cf_cidr2 = var.az1_security_subnets.aip_dmzTransit_ext
+    cf_cidr3 = var.az1_security_subnets.aip_Transit_int
+    cf_cidr4 = "0.0.0.0/0"
+    cf_nexthop1 = var.az1_transitF5.dmz_int_self
+    cf_nexthop2 = var.az2_transitF5.dmz_int_self
+    cf_nexthop3 = var.az1_transitF5.transit_self
+    cf_nexthop4 = var.az2_transitF5.transit_self
+  }
+}
+
+# Render transit CF Declaration
+resource "local_file" "transit_cf_file" {
+  content  = data.template_file.transit_cf_json.rendered
+  filename = "${path.module}/${var.transit_cf_json}"
+}
+
 # transit TS Declaration
 data "template_file" "transit_ts_json" {
   template = "${file("${path.module}/tsCloudwatch_ts.tpl.json")}"
@@ -380,12 +372,12 @@ data "template_file" "transit_logs_as3_json" {
 
   }
 }
+
 # Render transit LogCollection AS3 declaration
 resource "local_file" "transit_logs_as3_file" {
   content  = "${data.template_file.transit_logs_as3_json.rendered}"
   filename = "${path.module}/${var.transit_logs_as3_json}"
 }
-*/
 
 # transit AS3 Declaration
 data "template_file" "transit_as3_json" {
@@ -402,9 +394,9 @@ resource "local_file" "transit_as3_file" {
   filename = "${path.module}/${var.transit_as3_json}"
 }
 
+# Send declarations via REST API's
 resource "null_resource" "az1_transitF5_DO" {
-  depends_on = [aws_instance.az1_transit_bigip]
-  # Running DO REST API
+  depends_on = [aws_instance.az1_transit_bigip, local_file.az1_transitCluster_do_file]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -416,7 +408,7 @@ resource "null_resource" "az1_transitF5_DO" {
 }
 
 resource "null_resource" "az2_transitF5_DO" {
-  depends_on = [aws_instance.az2_transit_bigip]
+  depends_on = [aws_instance.az2_transit_bigip, local_file.az2_transitCluster_do_file]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -428,7 +420,22 @@ resource "null_resource" "az2_transitF5_DO" {
   }
 }
 
-/*
+resource "null_resource" "transitF5_CF" {
+  depends_on	= [null_resource.az1_transitF5_DO, null_resource.az2_transitF5_DO]
+  for_each = {
+    bigip1 = aws_instance.az1_transit_bigip.public_ip
+    bigip2 = aws_instance.az2_transit_bigip.public_ip
+  }
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.transit_cf_json}
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 120
+    EOF
+  }
+}
+
 resource "null_resource" "transitF5_TS" {
   depends_on = [null_resource.az1_transitF5_DO, null_resource.az2_transitF5_DO]
   # Running CF REST API
@@ -450,4 +457,3 @@ resource "null_resource" "transitF5_TS_LogCollection" {
     EOF
   }
 }
-*/

@@ -6,8 +6,8 @@
     "label": "Basic onboarding",
     "Common": {
         "class": "Tenant",
-        "hostname": "${local_host}.f5labs.gc.ca",
-	    "myLicense": {
+        "hostname": "${local_host}.${Domainname}",
+        "myLicense": {
             "class": "License",
             "licenseType": "regKey",
             "regKey": "${regkey}"

@@ -423,13 +423,13 @@ resource "null_resource" "az2_dmzF5_cluster_DO" {
 resource "null_resource" "dmzF5_CF" {
   depends_on	= [null_resource.az1_dmzF5_cluster_DO, null_resource.az2_dmzF5_cluster_DO]
   for_each = {
-    bigip1 = aws_instance.az1_bigip.public_ip
-    bigip2 = aws_instance.az2_bigip.public_ip
+    bigip1 = aws_instance.az1_dmz_bigip.public_ip
+    bigip2 = aws_instance.az2_dmz_bigip.public_ip
   }
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.paz_cf_json}
+      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.dmz_cf_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF

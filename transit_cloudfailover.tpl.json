@@ -3,39 +3,44 @@
     "environment": "aws",
     "internalStorage": {
         "scopingTags": {
-            "f5_cloud_failover_label": "dmz-az-failover"
+            "f5_cloud_failover_label": "${cf_label}"
         }
     },
     "failoverAddresses": {
         "scopingTags": {
-            "f5_cloud_failover_label": "dmz-az-failover"
+            "f5_cloud_failover_label": "${cf_label}"
         }
     },
     "failoverRoutes": {
         "scopingTags": {
-            "f5_cloud_failover_label": "dmz-az-failover"
+            "f5_cloud_failover_label": "${cf_label}"
         },
         "scopingAddressRanges": [
             {
-                "range": "100.65.3.0/24"
+                "range": "${cf_cidr1}"
             },
             {
-                "range": "100.65.4.0/24"
+                "range": "${cf_cidr2}"
+            },
+            {
+                "range": "${cf_cidr3}"
+            },
+            {
+                "range": "${cf_cidr4}"
             }
         ],
         "defaultNintHopAddresses": {
             "discoveryType": "static",
             "items": [
-                "10.1.2.12",
-                "10.1.12.12",
-                "10.1.3.12",
-                "10.1.13.12"
+                "${cf_nexthop1}",
+                "${cf_nexthop2}",
+                "${cf_nexthop3}",
+                "${cf_nexthop4}"
             ]
         },
         "controls": {
             "class": "Controls",
-            "logLevel": "info"
-
+            "logLevel": "silly"
         }
     }
 }

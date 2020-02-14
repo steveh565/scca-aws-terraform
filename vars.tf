@@ -126,6 +126,7 @@ variable gccap_cf_label { default = "gccap_az_failover"}
 
 variable paz_cf_label { default = "paz-az-failover" }
 variable dmz_cf_label { default = "dmz-az-failover" }
+variable transit_cf_label { default = "transit-az-failover" }
 
 variable az1_pazF5 {
   type = map
@@ -156,8 +157,6 @@ variable az1_dmzF5 {
     "aip_dmz_int_vip"  = "100.65.3.3"
   }
 }
-
-variable transit_cf_label { default = "transit_az_failover" }
 
 variable az1_transitF5 {
   type = map

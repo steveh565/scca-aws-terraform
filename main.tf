@@ -258,25 +258,25 @@ resource "null_resource" "revoke_eval_keys_upon_destroy" {
 
     aws_instance.az1_bigip,
     aws_instance.az2_bigip,
-    // aws_instance.az1_transit_bigip,
-    // aws_instance.az2_transit_bigip,
+    aws_instance.az1_transit_bigip,
+    aws_instance.az2_transit_bigip,
     aws_instance.az1_dmz_bigip,
     aws_instance.az2_dmz_bigip,
     aws_eip.eip_az1_mgmt,
     aws_eip.eip_az1_external,
     aws_eip.eip_az2_mgmt,
     aws_eip.eip_az2_external,
-    // aws_eip.eip_az1_transit_mgmt,
-    // aws_eip.eip_az2_transit_mgmt,
+    aws_eip.eip_az1_transit_mgmt,
+    aws_eip.eip_az2_transit_mgmt,
     aws_internet_gateway.gw
   ]
   for_each = {
     bigippaz1 = aws_instance.az1_bigip.public_ip
     bigippaz2 = aws_instance.az2_bigip.public_ip
-    bigippaz3 = aws_instance.az1_bigip.public_ip
-    bigippaz4 = aws_instance.az2_bigip.public_ip
-    // bigippaz5 = aws_instance.az1_transit_bigip.public_ip
-    // bigippaz6 = aws_instance.az2_transit_bigip.public_ip
+    bigipdmz1 = aws_instance.az1_dmz_bigip.public_ip
+    bigipdmz2 = aws_instance.az2_dmz_bigip.public_ip
+    bigiptransit1 = aws_instance.az1_transit_bigip.public_ip
+    bigiptransit2 = aws_instance.az2_transit_bigip.public_ip
   }
   provisioner "remote-exec" {
     connection {
@@ -306,10 +306,10 @@ output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmz_bigip.public_
 output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
 output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
 
-// output "az1_transitF5_Mgmt_Addr"     { value = "${aws_instance.az1_transit_bigip.public_ip}" }
-// output "az2_transitF5_Mgmt_Addr"     { value = "${aws_instance.az2_transit_bigip.public_ip}" }
-// output "az1_transitF5_secondary_VIP" { value = "${var.az1_transitF5.transit_vip}" }
-// output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}" }
+output "az1_transitF5_Mgmt_Addr"     { value = "${aws_instance.az1_transit_bigip.public_ip}" }
+output "az2_transitF5_Mgmt_Addr"     { value = "${aws_instance.az2_transit_bigip.public_ip}" }
+output "az1_transitF5_secondary_VIP" { value = "${var.az1_transitF5.transit_vip}" }
+output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}" }
 
 output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
 output "BigIP_IAM_Profile_ID" { value = "${aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.id}" }
