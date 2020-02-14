@@ -260,25 +260,23 @@ resource "null_resource" "revoke_eval_keys_upon_destroy" {
     aws_instance.az2_bigip,
     // aws_instance.az1_transit_bigip,
     // aws_instance.az2_transit_bigip,
-    // aws_instance.az1_dmz_bigip,
-    // aws_instance.az2_dmz_bigip,
+    aws_instance.az1_dmz_bigip,
+    aws_instance.az2_dmz_bigip,
     aws_eip.eip_az1_mgmt,
     aws_eip.eip_az1_external,
     aws_eip.eip_az2_mgmt,
     aws_eip.eip_az2_external,
     // aws_eip.eip_az1_transit_mgmt,
     // aws_eip.eip_az2_transit_mgmt,
-    // aws_eip.eip_az1_dmz_mgmt,
-    // aws_eip.eip_az2_dmz_mgmt,
     aws_internet_gateway.gw
   ]
   for_each = {
-    mgmt_ip = aws_instance.az1_bigip.public_ip
-    mgmt_ip1 = aws_instance.az2_bigip.public_ip
-    // mgmt_ip2 = aws_instance.az1_dmz_bigip.public_ip
-    // mgmt_ip3 = aws_instance.az2_dmz_bigip.public_ip
-    // mgmt_ip4 = aws_instance.az1_transit_bigip.public_ip
-    // mgmt_ip5 = aws_instance.az2_transit_bigip.public_ip
+    bigippaz1 = aws_instance.az1_bigip.public_ip
+    bigippaz2 = aws_instance.az2_bigip.public_ip
+    bigippaz3 = aws_instance.az1_bigip.public_ip
+    bigippaz4 = aws_instance.az2_bigip.public_ip
+    // bigippaz5 = aws_instance.az1_transit_bigip.public_ip
+    // bigippaz6 = aws_instance.az2_transit_bigip.public_ip
   }
   provisioner "remote-exec" {
     connection {
@@ -303,10 +301,10 @@ output "PAZ_Ingress_Public_EIP"   { value = "${aws_eip.eip_vip.public_ip}" }
 output "az1_pazF5_self_eip" { value = "${aws_eip.eip_az1_external.public_ip}"}
 output "az2_pazF5_self_eip" { value = "${aws_eip.eip_az2_external.public_ip}"}
 
-// output "az1_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az1_dmz_bigip.public_ip}" }
-// output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmz_bigip.public_ip}" }
-// output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
-// output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
+output "az1_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az1_dmz_bigip.public_ip}" }
+output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmz_bigip.public_ip}" }
+output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
+output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
 
 // output "az1_transitF5_Mgmt_Addr"     { value = "${aws_instance.az1_transit_bigip.public_ip}" }
 // output "az2_transitF5_Mgmt_Addr"     { value = "${aws_instance.az2_transit_bigip.public_ip}" }

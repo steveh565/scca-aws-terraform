@@ -340,14 +340,14 @@ resource "local_file" "az2_pazCluster_do_file" {
 
 # PAZ CF Declaration
 data "template_file" "paz_cf_json" {
-  template = "${file("${path.module}/paz_int_cloudfailover.json")}"
+  template = "${file("${path.module}/paz_int_cloudfailover.tpl.json")}"
 
   vars = {
     cf_label = var.paz_cf_label
     cf_cidr1 = "0.0.0.0/0"
     cf_cidr2 = var.az1_security_subnets.aip_paz_dmz_ext
-    az1_nexthop = var.az1_pazF5.dmz_ext_self
-    az2_nexthop = var.az2_pazF5.dmz_ext_self
+    cf_nexthop1 = var.az1_pazF5.dmz_ext_self
+    cf_nexthop2 = var.az2_pazF5.dmz_ext_self
   }
 }
 
@@ -356,7 +356,6 @@ resource "local_file" "paz_cf_file" {
   content  = data.template_file.paz_cf_json.rendered
   filename = "${path.module}/${var.paz_cf_json}"
 }
-
 
 # PAZ TS Declaration
 data "template_file" "paz_ts_json" {
@@ -405,10 +404,9 @@ resource "local_file" "paz_as3_file" {
 }
 
 
-# Running DO REST API
+# Send declarations via REST API's
 resource "null_resource" "az1_pazF5_cluster_DO" {
   depends_on	= [aws_instance.az1_bigip, local_file.az1_pazCluster_do_file]
-  # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -419,10 +417,8 @@ resource "null_resource" "az1_pazF5_cluster_DO" {
   }
 }
 
-# Running DO REST API
 resource "null_resource" "az2_pazF5_cluster_DO" {
   depends_on    = [aws_instance.az2_bigip, local_file.az2_pazCluster_do_file]
-  # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -433,9 +429,8 @@ resource "null_resource" "az2_pazF5_cluster_DO" {
   }
 }
 
-# Send PAZ CF Declaration to bigip 
-resource "null_resource" "az1_pazF5_CF" {
-  depends_on	= [null_resource.az1_pazF5_cluster_DO]
+resource "null_resource" "pazF5_CF" {
+  depends_on	= [null_resource.az1_pazF5_cluster_DO, null_resource.az2_pazF5_cluster_DO]
   for_each = {
     bigip1 = aws_instance.az1_bigip.public_ip
     bigip2 = aws_instance.az2_bigip.public_ip
@@ -452,7 +447,6 @@ resource "null_resource" "az1_pazF5_CF" {
 
 resource "null_resource" "pazF5_TS" {
   depends_on = [null_resource.az1_pazF5_cluster_DO, null_resource.az2_pazF5_cluster_DO]
-  # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -463,7 +457,6 @@ resource "null_resource" "pazF5_TS" {
 
 resource "null_resource" "pazF5_TS_LogCollection" {
   depends_on = [null_resource.pazF5_TS]
-  # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash

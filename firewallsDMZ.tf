@@ -322,30 +322,31 @@ data "template_file" "az2_dmzCluster_do_json" {
 }
 
 # Render DMZ DO declaration
-resource "local_file" "az2_dmz_do_file" {
+resource "local_file" "az2_dmzCluster_do_file" {
   content  = data.template_file.az2_dmzCluster_do_json.rendered
   filename = "${path.module}/${var.az2_dmzCluster_do_json}"
 }
 
 # DMZ CF Declaration
 data "template_file" "dmz_cf_json" {
-  template = "${file("${path.module}/cloudfailover.tpl.json")}"
+  template = "${file("${path.module}/dmz_int_cloudfailover.tpl.json")}"
 
   vars = {
     cf_label = var.dmz_cf_label
-    cf_cidr1 = "0.0.0.0/0"
-    cf_cidr2 = var.az1_security_subnets.aip_paz_dmz_ext
-    az1_nexthop = var.az1_pazF5.dmz_ext_self
-    az2_nexthop = var.az2_pazF5.dmz_ext_self
+    cf_cidr1 = var.az1_security_subnets.aip_dmz_int
+    cf_cidr2 = var.az1_security_subnets.aip_dmzTransit_ext
+    cf_nexthop1 = var.az1_dmzF5.dmz_ext_self
+    cf_nexthop2 = var.az2_dmzF5.dmz_ext_self
+    cf_nexthop3 = var.az1_dmzF5.dmz_int_self
+    cf_nexthop4 = var.az2_dmzF5.dmz_int_self
   }
 }
 
-# Render PAZ CF Declaration
-resource "local_file" "paz_cf_file" {
-  content  = data.template_file.paz_cf_json.rendered
-  filename = "${path.module}/${var.paz_cf_json}"
+# Render DMZ CF Declaration
+resource "local_file" "dmz_cf_file" {
+  content  = data.template_file.dmz_cf_json.rendered
+  filename = "${path.module}/${var.dmz_cf_json}"
 }
-
 
 # DMZ TS Declaration
 data "template_file" "dmz_ts_json" {
@@ -356,13 +357,13 @@ data "template_file" "dmz_ts_json" {
   }
 }
 
-# Render dmz TS declaration
+# Render DMZ TS declaration
 resource "local_file" "dmz_ts_file" {
   content  = data.template_file.dmz_ts_json.rendered
   filename = "${path.module}/${var.dmz_ts_json}"
 }
 
-# dmz LogCollection AS3 Declaration
+# DMZ LogCollection AS3 Declaration
 data "template_file" "dmz_logs_as3_json" {
   template = "${file("${path.module}/tsLogCollection_as3.tpl.json")}"
 
@@ -371,14 +372,13 @@ data "template_file" "dmz_logs_as3_json" {
   }
 }
 
-# Render dmz LogCollection AS3 declaration
+# Render DMZ LogCollection AS3 declaration
 resource "local_file" "dmz_logs_as3_file" {
   content  = data.template_file.dmz_logs_as3_json.rendered
   filename = "${path.module}/${var.dmz_logs_as3_json}"
 }
-*/
 
-# dmz AS3 Declaration
+# DMZ AS3 Declaration
 data "template_file" "dmz_as3_json" {
   template = "${file("${path.module}/dmz_as3.tpl.json")}"
 
@@ -387,6 +387,7 @@ data "template_file" "dmz_as3_json" {
     asm_policy_url = var.asm_policy_url
   }
 }
+
 # Render dmz AS3 declaration
 resource "local_file" "dmz_as3_file" {
   content  = data.template_file.dmz_as3_json.rendered
@@ -394,9 +395,9 @@ resource "local_file" "dmz_as3_file" {
 }
 
 
-resource "null_resource" "az1_dmzF5_DO" {
-  depends_on = [aws_instance.az1_dmz_bigip]
-  # Running DO REST API
+# Send declarations via REST API's
+resource "null_resource" "az1_dmzF5_cluster_DO" {
+  depends_on = [aws_instance.az1_dmz_bigip, local_file.az1_dmzCluster_do_file]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -407,9 +408,8 @@ resource "null_resource" "az1_dmzF5_DO" {
   }
 }
 
-resource "null_resource" "az2_dmzF5_DO" {
-  depends_on = [aws_instance.az2_dmz_bigip]
-  # Running DO REST API
+resource "null_resource" "az2_dmzF5_cluster_DO" {
+  depends_on = [aws_instance.az2_dmz_bigip, local_file.az2_dmzCluster_do_file]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -420,10 +420,24 @@ resource "null_resource" "az2_dmzF5_DO" {
   }
 }
 
-/*
+resource "null_resource" "dmzF5_CF" {
+  depends_on	= [null_resource.az1_dmzF5_cluster_DO, null_resource.az2_dmzF5_cluster_DO]
+  for_each = {
+    bigip1 = aws_instance.az1_bigip.public_ip
+    bigip2 = aws_instance.az2_bigip.public_ip
+  }
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.paz_cf_json}
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 120
+    EOF
+  }
+}
+
 resource "null_resource" "dmzF5_TS" {
-  depends_on = [null_resource.az1_dmzF5_DO, null_resource.az2_dmzF5_DO]
-  # Running CF REST API
+  depends_on = [null_resource.az1_dmzF5_cluster_DO, null_resource.az2_dmzF5_cluster_DO]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -434,7 +448,6 @@ resource "null_resource" "dmzF5_TS" {
 
 resource "null_resource" "dmzF5_TS_LogCollection" {
   depends_on = [null_resource.dmzF5_TS]
-  # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -442,4 +455,3 @@ resource "null_resource" "dmzF5_TS_LogCollection" {
     EOF
   }
 }
-*/
