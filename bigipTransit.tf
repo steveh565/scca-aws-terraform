@@ -320,6 +320,7 @@ data "template_file" "az2_transitCluster_do_json" {
     admin_password = var.upassword
   }
 }
+
 # Render transit DO declaration
 resource "local_file" "az2_transitCluster_do_file" {
   content  = data.template_file.az2_transitCluster_do_json.rendered

@@ -1,8 +1,12 @@
 # Infrastructure
 provider "aws" {
-	region = var.aws_region
-  }
+	region = "${var.aws_region}"
+  
+  #uncomment if you set these variables in vars.tf
+	#Comment out if you wish to use ENV variables for auth tokens
+}
 
+/*
 resource "aws_s3_bucket" "terraform_state" {
   bucket = lower("${var.tag_name}-${var.tfstate_s3Bucket}")
   # Enable versioning so we can see the full revision history of our
@@ -38,3 +42,4 @@ output "dynamodb_table_name" {
   value       = aws_dynamodb_table.terraform_locks.name
   description = "The name of the DynamoDB table"
 }
+*/

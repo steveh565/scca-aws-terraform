@@ -51,3 +51,10 @@ tenant/cf-iam.tf
 *.log
 .terraform.tfstate.lock.info
 terraform.tfvars
+dmz_cf.json
+paz_cf.json
+transit.as3.json
+transit_cf.json
+modules/maz/az1_mazF5_onboard.sh
+modules/maz/az2_mazF5_onboard.sh
+modules/maz/mazF5vm01.do.json

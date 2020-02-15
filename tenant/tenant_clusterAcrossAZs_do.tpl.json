@@ -6,8 +6,8 @@
     "label": "Basic onboarding",
     "Common": {
         "class": "Tenant",
-        "hostname": "${local_host}.maz.f5labs.gc.ca",
-	    "myLicense": {
+        "hostname": "${local_host}.${Domainname}",
+        "myLicense": {
             "class": "License",
             "licenseType": "regKey",
             "regKey": "${regkey}"
@@ -43,6 +43,8 @@
             "class": "Provision",
             "ltm": "nominal",
             "avr": "nominal",
+            "apm": "nominal",
+            "ilx": "nominal",
             "afm": "nominal"
         },
         "external": {
@@ -92,7 +94,9 @@
         "failoverGroup": {
             "class": "DeviceGroup",
             "type": "sync-failover",
-            "members": ["${host1}.maz.f5labs.gc.ca", "${host2}.maz.f5labs.gc.ca"],
+            "members": [
+                "${host1}.${Domainname}",
+                "${host2}.${Domainname}"],
             "owner": "/Common/failoverGroup/members/0",
             "autoSync": true,
             "saveOnAutoSync": false,

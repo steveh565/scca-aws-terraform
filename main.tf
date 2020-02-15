@@ -1,12 +1,12 @@
-#terraform {
-#  backend "s3" {
-#    bucket         = "shsca7-tfsharedstate"
-#    key            = "global/s3/terraform.tfstate"
-#    region         = "ca-central-1"
-#    dynamodb_table = "shsca7-tflocks"
-#    encrypt        = true
-#  }
-#}
+terraform {
+ backend "s3" {
+   bucket         = "shsca9-tfsharedstate"
+   key            = "global/s3/terraform.tfstate"
+   region         = "ca-central-1"
+   dynamodb_table = "shsca9-tflocks"
+   encrypt        = true
+ }
+}
 
 # Infrastructure
 provider "aws" {

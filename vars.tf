@@ -31,16 +31,16 @@ variable key_path { default = "~/.ssh/id_rsa.pub" }
 variable mgmt_asrc { default = ["0.0.0.0/0"] }
 
 #Big-IP License Keys (BEST)
-variable paz_lic1          {}
-variable paz_lic2          {}
-variable transit_lic1      {}
-variable transit_lic2      {}
-variable dmz_lic1          {}
-variable dmz_lic2          {}
-variable tenant_bigip_lic1 {}
-variable tenant_bigip_lic2 {}
-variable maz_bigip_lic1    {}
-variable maz_bigip_lic2    {}
+variable paz_lic1          {default = ""}
+variable paz_lic2          {default = ""}
+variable transit_lic1      {default = ""}
+variable transit_lic2      {default = ""}
+variable dmz_lic1          {default = ""}
+variable dmz_lic2          {default = ""}
+variable tenant_bigip_lic1 {default = ""}
+variable tenant_bigip_lic2 {default = ""}
+variable maz_bigip_lic1    {default = ""}
+variable maz_bigip_lic2    {default = ""}
 
 # Platform settings variables
 variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
@@ -283,9 +283,24 @@ variable az2_mazF5 {
   }
 }
 
+# MAZ Variables
+variable tenant_values {
+  description = "maz-related parameters"
+  type        = map(object({
+    vpc_cidr = string
+    aip_cidr = string
+    cf_label = string
+    prefix_label = string
+    az1 = map(any)
+    az2 = map(any)
+  }))
+}
+
 # Tenant 1 VPC Network
 variable tenant_vpc_cidr { default = "10.21.0.0/16" }
 variable tenant_aip_cidr { default = "100.66.71.240/29" }
+variable tenant_prefix_label { default = "Tenant0" }
+
 variable az1_tenant_subnets {
   type = map
   default = {
@@ -307,7 +322,6 @@ variable az1_tenantF5 {
     "tenant_int_vip"  = "10.21.2.111"
     "aip_gre_ext_self"   = "100.66.71.241"
     "aip_gre_ext_float"  = "100.66.71.243"
-
   }
 }
 
