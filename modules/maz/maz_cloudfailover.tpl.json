@@ -21,21 +21,13 @@
             },
             {
                 "range": "${cf_cidr2}"
-            },
-            {
-                "range": "${cf_cidr3}"
-            },
-            {
-                "range": "${cf_cidr4}"
             }
         ],
         "defaultNintHopAddresses": {
             "discoveryType": "static",
             "items": [
                 "${cf_nexthop1}",
-                "${cf_nexthop2}",
-                "${cf_nexthop3}",
-                "${cf_nexthop4}"
+                "${cf_nexthop2}"
             ]
         },
         "controls": {

@@ -91,7 +91,7 @@ resource "aws_eip" "eip_az1_maz_external" {
 
 #Big-IP 1
 resource "aws_instance" "az1_maz_bigip" {
-  depends_on    = [aws_subnet.az1_maz_mgmt, aws_security_group.maz_sg_ext_mgmt, aws_network_interface.az1_maz_mgmt]
+  depends_on    = [aws_subnet.az1_maz_mgmt, aws_security_group.maz_sg_ext_mgmt, aws_network_interface.az1_maz_mgmt, aws_network_interface.az1_maz_internal, aws_network_interface.az1_maz_external]
   ami           = var.ami_f5image_name
   instance_type = var.ami_maz_f5instance_type
   availability_zone           = "${var.aws_region}a"
@@ -135,10 +135,10 @@ resource "null_resource" "revoke_eval_keys_upon_destroy" {
   depends_on = [
     aws_route_table_association.az1_maz_ext,
     aws_key_pair.main,
-    aws_route_table.maz_intRt
+    aws_route_table.maz_intRt,
     # aws_ec2_transit_gateway_route_table.hubtgwRt,
     aws_ec2_transit_gateway_vpc_attachment.mazTgwAttach,
-    aws_ec2_transit_gateway.hubtgw
+    aws_ec2_transit_gateway.hubtgw,
     aws_instance.az1_maz_bigip,
     aws_eip.eip_az1_maz_external,
     aws_internet_gateway.mazGw
@@ -296,6 +296,39 @@ resource "aws_instance" "az2_maz_bigip" {
   }
 }
 
+# Recycle/revoke eval keys (useful for demo purposes)
+resource "null_resource" "revoke_eval_keys_upon_destroy2" {
+  depends_on = [
+    aws_route_table_association.az2_maz_ext,
+    aws_key_pair.main,
+    aws_route_table.maz_intRt,
+    # aws_ec2_transit_gateway_route_table.hubtgwRt,
+    aws_ec2_transit_gateway_vpc_attachment.mazTgwAttach,
+    aws_ec2_transit_gateway.hubtgw,
+    aws_instance.az2_maz_bigip,
+    aws_eip.eip_az2_maz_external,
+    aws_internet_gateway.mazGw
+    aws_eip.eip_az1_maz_mgmt
+  ]
+  for_each = {
+    bigipmaz2 = aws_instance.az2_maz_bigip.public_ip
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = each.value
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh -q revoke sys license 2>/dev/null"
+    ]
+    on_failure = continue
+  }
+}
+
+
 
 ## AZ1 DO Declaration
 data "template_file" "az1_mazCluster_do_json" {
@@ -365,8 +398,8 @@ data "template_file" "maz_cf_json" {
 
   vars = {
     cf_label = var.maz_cf_label
-    cf_cidr1 = "100.100.1.0/16"
-    cf_cidr2 = var.az1_security_subnets.aip_maz_dmz_ext
+    cf_cidr1 = "100.100.1.0/24"
+    cf_cidr2 = var.maz_aip_cidr
     cf_nexthop1 = var.tenant_values.maz.az1.ext_self
     cf_nexthop2 = var.tenant_values.maz.az2.ext_self
   }
@@ -408,6 +441,7 @@ resource "local_file" "maz_logs_as3_file" {
   filename = "${path.module}/${var.maz_logs_as3_json}"
 }
 
+/*
 # MAZ AS3 Declaration
 data "template_file" "maz_as3_json" {
   template = "${file("${path.module}/maz_as3.tpl.json")}"
@@ -423,12 +457,11 @@ resource "local_file" "maz_as3_file" {
   content  = "${data.template_file.maz_as3_json.rendered}"
   filename = "${path.module}/${var.maz_as3_json}"
 }
-
+*/
 
 # Send declarations via REST API's
 resource "null_resource" "az1_mazF5_DO" {
   depends_on = [aws_instance.az1_maz_bigip]
-  # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -439,10 +472,8 @@ resource "null_resource" "az1_mazF5_DO" {
   }
 }
 
-/*
 resource "null_resource" "az2_mazF5_DO" {
   depends_on = [aws_instance.az2_maz_bigip]
-  # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -452,12 +483,25 @@ resource "null_resource" "az2_mazF5_DO" {
     EOF
   }
 }
-*/
 
-/*
+resource "null_resource" "mazF5_CF" {
+  depends_on	= [null_resource.az1_mazF5_DO, null_resource.az2_mazF5_DO]
+  for_each = {
+    bigip1 = aws_instance.az1_maz_bigip.public_ip
+    bigip2 = aws_instance.az1_maz_bigip.public_ip
+  }
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.maz_cf_json}
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 120
+    EOF
+  }
+}
+
 resource "null_resource" "mazF5_TS" {
-  depends_on = ["null_resource.az1_mazF5_DO", "null_resource.az2_mazF5_DO"]
-  # Running CF REST API
+  depends_on = [null_resource.az1_mazF5_DO, null_resource.az2_mazF5_DO]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -467,7 +511,7 @@ resource "null_resource" "mazF5_TS" {
 }
 
 resource "null_resource" "mazF5_TS_LogCollection" {
-  depends_on = ["null_resource.mazF5_TS"]
+  depends_on = [null_resource.mazF5_TS]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -476,4 +520,3 @@ resource "null_resource" "mazF5_TS_LogCollection" {
     EOF
   }
 }
-*/

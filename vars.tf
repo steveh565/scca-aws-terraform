@@ -284,6 +284,8 @@ variable az2_mazF5 {
 }
 
 # MAZ Variables
+# This variables are easier to manipulate when defined with type = map(object)
+# The corresponding values are specified/set in the tenant_vars.auto.tfvars file. 
 variable tenant_values {
   description = "maz-related parameters"
   type        = map(object({

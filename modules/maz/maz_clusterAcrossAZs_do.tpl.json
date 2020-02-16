@@ -44,6 +44,7 @@
             "ltm": "nominal",
             "avr": "nominal",
             "apm": "nominal",
+            "asm": "nominal",
             "ilx": "nominal",
             "afm": "nominal"
         },
