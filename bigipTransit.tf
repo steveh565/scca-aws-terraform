@@ -91,7 +91,7 @@ resource "aws_eip" "eip_az1_transit_external" {
 
 #Big-IP 1
 resource "aws_instance" "az1_transit_bigip" {
-  depends_on    = [aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_transit_external, aws_network_interface.az1_transit_internal, aws_network_interface.az1_transit_mgmt]
+  depends_on    = [aws_eip.eip_az1_transit_mgmt, aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_transit_external, aws_network_interface.az1_transit_internal, aws_network_interface.az1_transit_mgmt]
   ami           = var.ami_f5image_name
   instance_type = var.ami_transit_f5instance_type
   availability_zone           = "${var.aws_region}a"
@@ -260,7 +260,7 @@ resource "aws_eip" "eip_az2_transit_external" {
 
 # BigIP 2
 resource "aws_instance" "az2_transit_bigip" {
-  depends_on        = [aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_transit_external, aws_network_interface.az2_transit_internal, aws_network_interface.az2_transit_mgmt]
+  depends_on        = [aws_eip.eip_az2_transit_mgmt, aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_transit_external, aws_network_interface.az2_transit_internal, aws_network_interface.az2_transit_mgmt]
   ami               = var.ami_f5image_name
   instance_type     = var.ami_transit_f5instance_type
   availability_zone = "${var.aws_region}b"

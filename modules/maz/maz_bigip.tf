@@ -261,7 +261,7 @@ resource "aws_eip" "eip_az2_maz_external" {
 
 # BigIP 2
 resource "aws_instance" "az2_maz_bigip" {
-  depends_on        = [aws_subnet.az2_maz_mgmt, aws_security_group.maz_sg_ext_mgmt, aws_network_interface.az2_maz_external, aws_network_interface.az2_maz_internal, aws_network_interface.az2_maz_mgmt]
+  depends_on        = [aws_eip.eip_az2_maz_mgmt, aws_subnet.az2_maz_mgmt, aws_security_group.maz_sg_ext_mgmt, aws_network_interface.az2_maz_external, aws_network_interface.az2_maz_internal, aws_network_interface.az2_maz_mgmt]
   ami               = var.ami_f5image_name
   instance_type     = var.ami_maz_f5instance_type
   availability_zone = "${var.aws_region}b"
