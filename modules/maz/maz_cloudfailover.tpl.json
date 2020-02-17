@@ -1,7 +1,11 @@
 {
     "class": "Cloud_Failover",
     "environment": "aws",
-    "internalStorage": {
+    "controls": {
+        "class": "Controls",
+        "logLevel": "silly"
+    },
+    "externalStorage": {
         "scopingTags": {
             "f5_cloud_failover_label": "${cf_label}"
         }
@@ -23,16 +27,12 @@
                 "range": "${cf_cidr2}"
             }
         ],
-        "defaultNintHopAddresses": {
+        "defaultNextHopAddresses": {
             "discoveryType": "static",
             "items": [
                 "${cf_nexthop1}",
                 "${cf_nexthop2}"
             ]
-        },
-        "controls": {
-            "class": "Controls",
-            "logLevel": "silly"
         }
     }
 }

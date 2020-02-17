@@ -141,6 +141,36 @@ resource "aws_instance" "az1_bigip" {
   }
 }
 
+# Recycle/revoke eval keys (useful for demo purposes)
+resource "null_resource" "revoke_eval_keys_upon_destroy1" {
+  depends_on = [
+    aws_route_table_association.az1_paz_ext,
+    aws_key_pair.main,
+    aws_route_table.paz_intRt,
+    aws_ec2_transit_gateway_vpc_attachment.pazTgwAttach,
+    aws_ec2_transit_gateway.hubtgw,
+    aws_instance.az1_paz_bigip,
+    aws_eip.eip_az1_paz_external,
+    aws_internet_gateway.pazGw,
+    aws_eip.eip_az1_paz_mgmt
+  ]
+  for_each = {
+    bigippaz1 = aws_instance.az1_paz_bigip.public_ip
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = each.value
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh -q revoke sys license 2>/dev/null"
+    ]
+    on_failure = continue
+  }
+}
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_mgmt" {
@@ -274,6 +304,38 @@ resource "aws_instance" "az2_bigip" {
     Name = "${var.tag_name}-${var.az2_pazF5.hostname}"
   }
 }
+
+# Recycle/revoke eval keys (useful for demo purposes)
+resource "null_resource" "revoke_eval_keys_upon_destroy2" {
+  depends_on = [
+    aws_route_table_association.az2_paz_ext,
+    aws_key_pair.main,
+    aws_route_table.paz_intRt,
+    aws_ec2_transit_gateway_vpc_attachment.pazTgwAttach,
+    aws_ec2_transit_gateway.hubtgw,
+    aws_instance.az2_paz_bigip,
+    aws_eip.eip_az2_paz_external,
+    aws_internet_gateway.pazGw,
+    aws_eip.eip_az2_paz_mgmt
+  ]
+  for_each = {
+    bigippaz2 = aws_instance.az2_paz_bigip.public_ip
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = each.value
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh -q revoke sys license 2>/dev/null"
+    ]
+    on_failure = continue
+  }
+}
+
 
 
 ## AZ1 Cluster DO Declaration

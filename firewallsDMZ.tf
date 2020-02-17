@@ -131,6 +131,42 @@ resource "aws_instance" "az1_dmz_bigip" {
   }
 }
 
+# Recycle/revoke eval keys (useful for demo purposes)
+resource "null_resource" "revoke_eval_keys_upon_destroy" {
+  depends_on = [
+    aws_route_table_association.az1_dmz_ext,
+    aws_route_table_association.az1_dmz_mgmt,
+    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+    aws_iam_policy.bigip-failover-extension-iam-policy,
+    aws_security_group.dmz_sg_external,
+    aws_key_pair.main,
+    aws_route_table.dmz_MgmtRt,
+    # aws_ec2_dmz_gateway_route_table.hubtgwRt,
+    aws_ec2_dmz_gateway_vpc_attachment.dmzTgwAttach,
+    aws_ec2_dmz_gateway.hubtgw,
+    aws_instance.az1_dmz_bigip,
+    aws_eip.eip_az1_dmz_external,
+    aws_eip.eip_az1_dmz_mgmt,
+    aws_internet_gateway.dmzGw
+  ]
+  for_each = {
+    bigipdmz1 = aws_instance.az1_dmz_bigip.public_ip
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = each.value
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh -q revoke sys license 2>/dev/null"
+    ]
+    on_failure = continue
+  }
+}
+
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_dmz_mgmt" {
@@ -261,6 +297,42 @@ resource "aws_instance" "az2_dmz_bigip" {
 
   tags = {
     Name = "${var.tag_name}-${var.az2_dmzF5.hostname}"
+  }
+}
+
+# Recycle/revoke eval keys (useful for demo purposes)
+resource "null_resource" "revoke_eval_keys_upon_destroy" {
+  depends_on = [
+    aws_route_table_association.az2_dmz_ext,
+    aws_route_table_association.az2_dmz_mgmt,
+    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+    aws_iam_policy.bigip-failover-extension-iam-policy,
+    aws_security_group.dmz_sg_external,
+    aws_key_pair.main,
+    aws_route_table.dmz_MgmtRt,
+    # aws_ec2_dmz_gateway_route_table.hubtgwRt,
+    aws_ec2_dmz_gateway_vpc_attachment.dmzTgwAttach,
+    aws_ec2_dmz_gateway.hubtgw,
+    aws_instance.az2_dmz_bigip,
+    aws_eip.eip_az2_dmz_external,
+    aws_eip.eip_az2_dmz_mgmt,
+    aws_internet_gateway.dmzGw
+  ]
+  for_each = {
+    bigipdmz2 = aws_instance.az2_dmz_bigip.public_ip
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = each.value
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh -q revoke sys license 2>/dev/null"
+    ]
+    on_failure = continue
   }
 }
 

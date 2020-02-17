@@ -134,13 +134,18 @@ resource "aws_instance" "az1_maz_bigip" {
 resource "null_resource" "revoke_eval_keys_upon_destroy" {
   depends_on = [
     aws_route_table_association.az1_maz_ext,
+    aws_route_table_association.az1_maz_mgmt,
+    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+    aws_iam_policy.bigip-failover-extension-iam-policy,
+    aws_security_group.maz_sg_external,
     aws_key_pair.main,
-    aws_route_table.maz_intRt,
+    aws_route_table.maz_MgmtRt,
     # aws_ec2_transit_gateway_route_table.hubtgwRt,
     aws_ec2_transit_gateway_vpc_attachment.mazTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
     aws_instance.az1_maz_bigip,
     aws_eip.eip_az1_maz_external,
+    aws_eip.eip_az1_maz_mgmt,
     aws_internet_gateway.mazGw
   ]
   for_each = {
@@ -215,7 +220,7 @@ resource "aws_network_interface" "az2_maz_internal" {
   security_groups = [aws_security_group.maz_sg_internal.id]
   source_dest_check = false
   tags              = {
-    "f5_cloud_failover_label" = "maz_az_failover"
+    f5_cloud_failover_label = var.maz_cf_label
   }  
   lifecycle {
     ignore_changes = [
@@ -300,15 +305,19 @@ resource "aws_instance" "az2_maz_bigip" {
 resource "null_resource" "revoke_eval_keys_upon_destroy2" {
   depends_on = [
     aws_route_table_association.az2_maz_ext,
+    aws_route_table_association.az2_maz_mgmt,
+    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+    aws_iam_policy.bigip-failover-extension-iam-policy,
+    aws_security_group.maz_sg_external,
     aws_key_pair.main,
     aws_route_table.maz_intRt,
-    # aws_ec2_transit_gateway_route_table.hubtgwRt,
+    aws_route_table.maz_MgmtRt,
     aws_ec2_transit_gateway_vpc_attachment.mazTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
     aws_instance.az2_maz_bigip,
     aws_eip.eip_az2_maz_external,
-    aws_internet_gateway.mazGw
-    aws_eip.eip_az1_maz_mgmt
+    aws_internet_gateway.mazGw,
+    aws_eip.eip_az2_maz_mgmt
   ]
   for_each = {
     bigipmaz2 = aws_instance.az2_maz_bigip.public_ip
@@ -422,7 +431,7 @@ data "template_file" "maz_ts_json" {
 
 # Render maz TS declaration
 resource "local_file" "maz_ts_file" {
-  content  = "${data.template_file.maz_ts_json.rendered}"
+  content  = data.template_file.maz_ts_json.rendered
   filename = "${path.module}/${var.maz_ts_json}"
 }
 
@@ -437,24 +446,24 @@ data "template_file" "maz_logs_as3_json" {
 
 # Render maz LogCollection AS3 declaration
 resource "local_file" "maz_logs_as3_file" {
-  content  = "${data.template_file.maz_logs_as3_json.rendered}"
+  content  = data.template_file.maz_logs_as3_json.rendered
   filename = "${path.module}/${var.maz_logs_as3_json}"
 }
 
 /*
 # MAZ AS3 Declaration
 data "template_file" "maz_as3_json" {
-  template = "${file("${path.module}/maz_as3.tpl.json")}"
+  template = file("${path.module}/maz_as3.tpl.json")
 
   vars = {
     backendvm_ip   = aws_instance.bastionHost[0].private_ip
-    asm_policy_url = "${var.asm_policy_url}"
+    asm_policy_url = var.asm_policy_url
   }
 }
 
 # Render maz AS3 declaration
 resource "local_file" "maz_as3_file" {
-  content  = "${data.template_file.maz_as3_json.rendered}"
+  content  = data.template_file.maz_as3_json.rendered
   filename = "${path.module}/${var.maz_as3_json}"
 }
 */
@@ -485,17 +494,17 @@ resource "null_resource" "az2_mazF5_DO" {
 }
 
 resource "null_resource" "mazF5_CF" {
-  depends_on	= [null_resource.az1_mazF5_DO, null_resource.az2_mazF5_DO]
+  depends_on	= [null_resource.az1_mazF5_DO, null_resource.az2_mazF5_DO, module.storage-maz.bucketname]
   for_each = {
     bigip1 = aws_instance.az1_maz_bigip.public_ip
-    bigip2 = aws_instance.az1_maz_bigip.public_ip
+    bigip2 = aws_instance.az2_maz_bigip.public_ip
   }
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
       curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.maz_cf_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-      sleep 120
+      sleep 30
     EOF
   }
 }

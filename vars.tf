@@ -244,7 +244,7 @@ variable az1_maz_subnets {
   }
 }
 
-variable maz_cf_label { default = "maz_az_failover" }
+variable maz_cf_label { default = "maz-az-failover" }
 
 variable az1_mazF5 {
   type = map
@@ -312,7 +312,7 @@ variable az1_tenant_subnets {
   }
 }
 
-variable tenant_cf_label { default = "tenant_az_failover" }
+variable tenant_cf_label { default = "tenant-az-failover" }
 variable az1_tenantF5 {
   type = map
   default = {

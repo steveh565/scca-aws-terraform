@@ -38,10 +38,10 @@ resource "aws_security_group" "maz_sg_external" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.maz.id}"
+	vpc_id = aws_vpc.maz.id
 	tags = {
 		Name = var.sgExternal
-		f5rg = "${var.tag_name}"
+		f5rg = var.tag_name
 	}
 }
 
@@ -72,10 +72,10 @@ resource "aws_security_group" "maz_sg_ext_mgmt" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.maz.id}"
+	vpc_id = aws_vpc.maz.id
 	tags = {
 		Name = var.sgExtMgmt
-		f5rg = "${var.tag_name}"
+		f5rg = var.tag_name
 	}
 }
 
@@ -95,9 +95,9 @@ resource "aws_security_group" "maz_sg_internal" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.maz.id}"
+	vpc_id = aws_vpc.maz.id
 	tags = {
 		Name = var.sgInternal
-		f5rg = "${var.tag_name}"
+		f5rg = var.tag_name
 	}
 }

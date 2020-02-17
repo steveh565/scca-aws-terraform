@@ -1,7 +1,7 @@
 # EC2 key pair
 resource "aws_key_pair" "maz" {
 	key_name = "kp${var.maz_name}"
-	public_key = "${file(var.key_path)}"
+	public_key = file(var.key_path)
 }
 
 # AMI
@@ -21,14 +21,14 @@ data "aws_ami" "ubuntu" {
 # Instance
 resource "aws_instance" "az1_bastionHost" {
 	depends_on = [aws_subnet.az1_maz_int]
-	ami = "${data.aws_ami.ubuntu.id}"
+	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
-	key_name = "${aws_key_pair.maz.id}"
+	key_name = aws_key_pair.maz.id
 	subnet_id = aws_subnet.az1_maz_int.id
-	vpc_security_group_ids = ["${aws_security_group.maz_sg_internal.id}"]
+	vpc_security_group_ids = [aws_security_group.maz_sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
-	# user_data = "${file("install.sh")}"
+	# user_data = file("install.sh")
 	user_data = <<-EOF
 		# Core dependencies
 		sudo apt-get update
@@ -44,22 +44,22 @@ resource "aws_instance" "az1_bastionHost" {
 	tags = {
 		Name = "az1_BastionHost${count.index}"
 		f5sd = "pool_BastionHost"
-		f5rg = "${var.tag_name}"
-		tenant = "${var.maz_name} "
+		f5rg = var.tag_name
+		tenant = var.maz_name
 	}
 	count = 1
 }
 
 resource "aws_instance" "az2_bastionHost" {
 	depends_on = [aws_subnet.az2_maz_int]
-	ami = "${data.aws_ami.ubuntu.id}"
+	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
-	key_name = "${aws_key_pair.maz.id}"
+	key_name = aws_key_pair.maz.id
 	subnet_id = aws_subnet.az2_maz_int.id
-	vpc_security_group_ids = ["${aws_security_group.maz_sg_internal.id}"]
+	vpc_security_group_ids = [aws_security_group.maz_sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
-	# user_data = "${file("install.sh")}"
+	# user_data = file("install.sh")
 	user_data = <<-EOF
 		# Core dependencies
 		sudo apt-get update
@@ -75,15 +75,15 @@ resource "aws_instance" "az2_bastionHost" {
 	tags = {
 		Name = "az2_BastionHost${count.index}"
 		f5sd = "pool_BastionHost"
-		f5rg = "${var.tag_name}"
-		tenant = "${var.maz_name} "
+		f5rg = var.tag_name
+		tenant = var.maz_name
 	}
 	count = 1
 }
 
 # Setup Onboarding scripts
 data "template_file" "az1_mazF5_vm_onboard" {
-  template = "${file("${path.root}/onboard.tpl")}"
+  template = file("${path.root}/onboard.tpl")
 
   vars = {
     uname          = var.uname
@@ -112,7 +112,7 @@ resource "local_file" "az1_mazF5_vm_onboarding_file" {
 
 
 data "template_file" "az2_mazF5_vm_onboard" {
-  template = "${file("${path.root}/onboard.tpl")}"
+  template = file("${path.root}/onboard.tpl")
 
   vars = {
     uname          = var.uname
@@ -149,5 +149,11 @@ locals {
     az1_maz_int_gw   = cidrhost(var.az1_maz_subnets.internal, 1)
     az2_maz_int_gw   = cidrhost(var.az2_maz_subnets.internal, 1)
 
-	maz_vpc_dns          = "${cidrhost(var.maz_vpc_cidr, 2)}"
+	maz_vpc_dns          = cidrhost(var.maz_vpc_cidr, 2)
+}
+
+module "storage-maz" {
+#  source = "./modules/storage"
+  source = "../storage"  
+  storage_label = var.maz_cf_label
 }
