@@ -39,8 +39,9 @@ variable dmz_lic1          {default = ""}
 variable dmz_lic2          {default = ""}
 variable tenant_bigip_lic1 {default = ""}
 variable tenant_bigip_lic2 {default = ""}
-variable maz_bigip_lic1    {default = ""}
-variable maz_bigip_lic2    {default = ""}
+#variable maz_bigip_lic1    {default = ""}
+#variable maz_bigip_lic1    {}
+#variable maz_bigip_lic2    {}
 
 # Platform settings variables
 variable ami_f5image_name { default = "ami-038e6394d715e5eac" }

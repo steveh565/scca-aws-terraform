@@ -142,20 +142,25 @@ resource "aws_instance" "az1_bigip" {
 }
 
 # Recycle/revoke eval keys (useful for demo purposes)
-resource "null_resource" "revoke_eval_keys_upon_destroy1" {
+resource "null_resource" "revoke_eval_keys_upon_destroy_paz1" {
   depends_on = [
-    aws_route_table_association.az1_paz_ext,
+    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+    aws_iam_policy.bigip-failover-extension-iam-policy,
     aws_key_pair.main,
-    aws_route_table.paz_intRt,
-    aws_ec2_transit_gateway_vpc_attachment.pazTgwAttach,
+    aws_security_group.sg_external,
+    aws_security_group.sg_ext_mgmt,
+    aws_route_table.PazRt,
+    aws_route_table_association.az1_ext,
+    aws_route_table_association.az1_mgmt,
+    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach, 
     aws_ec2_transit_gateway.hubtgw,
-    aws_instance.az1_paz_bigip,
-    aws_eip.eip_az1_paz_external,
-    aws_internet_gateway.pazGw,
-    aws_eip.eip_az1_paz_mgmt
+    aws_instance.az1_bigip,
+    aws_eip.eip_vip,
+    aws_internet_gateway.gw,
+    aws_eip.eip_az1_mgmt
   ]
   for_each = {
-    bigippaz1 = aws_instance.az1_paz_bigip.public_ip
+    bigippaz1 = aws_instance.az1_bigip.public_ip
   }
   provisioner "remote-exec" {
     connection {
@@ -306,20 +311,21 @@ resource "aws_instance" "az2_bigip" {
 }
 
 # Recycle/revoke eval keys (useful for demo purposes)
-resource "null_resource" "revoke_eval_keys_upon_destroy2" {
+resource "null_resource" "revoke_eval_keys_upon_destroy_paz2" {
   depends_on = [
-    aws_route_table_association.az2_paz_ext,
+    aws_route_table_association.az1_mgmt,
+    aws_route_table_association.az1_ext,
     aws_key_pair.main,
-    aws_route_table.paz_intRt,
-    aws_ec2_transit_gateway_vpc_attachment.pazTgwAttach,
+    aws_route_table.PazRt,
+    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
-    aws_instance.az2_paz_bigip,
-    aws_eip.eip_az2_paz_external,
-    aws_internet_gateway.pazGw,
-    aws_eip.eip_az2_paz_mgmt
+    aws_instance.az2_bigip,
+    aws_eip.eip_az2_external,
+    aws_internet_gateway.gw,
+    aws_eip.eip_az2_mgmt
   ]
   for_each = {
-    bigippaz2 = aws_instance.az2_paz_bigip.public_ip
+    bigippaz2 = aws_instance.az2_bigip.public_ip
   }
   provisioner "remote-exec" {
     connection {

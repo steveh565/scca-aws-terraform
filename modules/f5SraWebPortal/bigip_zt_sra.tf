@@ -12,7 +12,6 @@ If a copy of the MPL was not distributed with this file, You can obtain one at h
  bigip2_vip_private_ip   (the value of this variable should be passed from calling module as a parameter)
  upassword              (the value of this variable should be passed from calling module as a parameter)
  uname                  (the value of this variable should be passed from calling module as a parameter)
- create_tf_admin_user.txt       (json data to create tf_admin user via REST API)
  profile_ZT_SRA_ZeroTrustSecureRemoteAccess.conf.tar.gz      (some objects are defined with hardcoded IP addresses)
  policy_ZT_SRA_ZeroTrustSecureRemoteAccessPRP.conf.tar.gz    (URL branching rules are defined with harcoded IP addresses)
  BIG-IP-ILX-WebSSH2-0.2.8.tgz  (this one is required until we figure out how to leverage the licensed PUA feature)
@@ -39,30 +38,16 @@ provider "bigip" {
   password = var.upassword
 }
 
-// Using  provisioner to create a temporary tf_admin user account on bigip. This temporary user \
-// account is required with bash terminal access for uploading files to bigip and for running \
-// bash commands on the bigip.
-resource "null_resource" "bigip_create_tf_admin_user" {
-
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -sku ${var.uname}:${var.upassword} -H "Content-Type: application/json" -X POST https://${var.bigip_mgmt_public_ip}/mgmt/tm/auth/user -d @create_tf_admin_user.txt
-    EOF
-  }
-}
-
 // Using  provisioner to upload iLX NodeJS tar file and create iLX workspace and iLX plugin on bigip1 (auto-synch takes care of bigip2)
 resource "null_resource" "bigip_create_ilx_plugin" {
-  depends_on = [null_resource.bigip_create_tf_admin_user]
 
   provisioner "file" {
-    source      = "BIG-IP-ILX-WebSSH2-0.2.8.tgz"
+    source      = "${path.module}/BIG-IP-ILX-WebSSH2-0.2.8.tgz"
     destination = "/var/tmp/BIG-IP-ILX-WebSSH2-0.2.8.tgz"
     connection {
       type     = "ssh"
-      password = "Canada12345"
-      user     = "tf_admin"
+      password = var.upassword
+      user     = var.uname
       host     = var.bigip_mgmt_public_ip
     }
   }
@@ -77,8 +62,8 @@ resource "null_resource" "bigip_create_ilx_plugin" {
     ]
     connection {
       type     = "ssh"
-      password = "Canada12345"
-      user     = "tf_admin"
+      password = var.upassword
+      user     = var.uname
       host     = var.bigip_mgmt_public_ip
     }
   }
@@ -91,14 +76,14 @@ resource "null_resource" "bigip_create_ilx_plugin" {
 // therefore different AS3 declarations are required
 resource "bigip_as3" "bigip_zt_sra" {
   depends_on  = [null_resource.bigip_create_ilx_plugin]
-  as3_json    = templatefile("bigip_zt_sra.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, WebAppName = "ZT_SRA" })
+  as3_json    = templatefile("${path.module}/bigip_zt_sra.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, WebAppName = "ZT_SRA" })
   config_name = "zt_sra"
 }
 resource "bigip_as3" "bigip2_zt_sra" {
   depends_on = [bigip_as3.bigip_zt_sra]
   #override default bigip provider just for this resource, just to configure the vip with a different IP on bigip2...
   provider    = bigip.bigip2
-  as3_json    = templatefile("bigip_zt_sra.json", { Bigip1VipPrivateIp = var.bigip2_vip_private_ip, WebAppName = "ZT_SRA" })
+  as3_json    = templatefile("${path.module}/bigip_zt_sra.json", { Bigip1VipPrivateIp = var.bigip2_vip_private_ip, WebAppName = "ZT_SRA" })
   config_name = "zt_sra"
 }
 
@@ -107,23 +92,23 @@ resource "null_resource" "bigip_upload_apm_policies" {
   depends_on = [bigip_as3.bigip_zt_sra]
 
   provisioner "file" {
-    source      = "profile_ZT_SRA_ZeroTrustSecureRemoteAccess.conf.tar.gz"
+    source      = "${path.module}/profile_ZT_SRA_ZeroTrustSecureRemoteAccess.conf.tar"
     destination = "/var/tmp/profile_ZT_SRA_ZeroTrustSecureRemoteAccess.conf.tar.gz"
     connection {
       type     = "ssh"
-      password = "Canada12345"
-      user     = "tf_admin"
+      password = var.upassword
+      user     = var.uname
       host     = var.bigip_mgmt_public_ip
     }
   }
 
   provisioner "file" {
-    source      = "policy_ZT_SRA_ZeroTrustSecureRemoteAccessPRP.conf.tar.gz"
+    source      = "${path.module}/policy_ZT_SRA_ZeroTrustSecureRemoteAccessPRP.conf.tar.gz"
     destination = "/var/tmp/policy_ZT_SRA_ZeroTrustSecureRemoteAccessPRP.conf.tar.gz"
     connection {
       type     = "ssh"
-      password = "Canada12345"
-      user     = "tf_admin"
+      password = var.upassword
+      user     = var.uname
       host     = var.bigip_mgmt_public_ip
     }
   }
@@ -142,21 +127,9 @@ resource "null_resource" "bigip_upload_apm_policies" {
     ]
     connection {
       type     = "ssh"
-      password = "Canada12345"
-      user     = "tf_admin"
+      password = var.upassword
+      user     = var.uname
       host     = var.bigip_mgmt_public_ip
     }
-  }
-}
-
-// Using  provisioner to delete temporary tf_admin user account with bash terminal access on bigip1 (auto-synch takes care of bigip2)
-resource "null_resource" "bigip_delete_tf_admin_user" {
-  depends_on = [null_resource.bigip_upload_apm_policies]
-
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -sku ${var.uname}:${var.upassword} -H "Content-Type: application/json" -X DELETE https://${var.bigip_mgmt_public_ip}/mgmt/tm/auth/user/tf_admin
-    EOF
   }
 }

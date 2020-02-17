@@ -96,7 +96,8 @@ resource "aws_instance" "az1_maz_bigip" {
   instance_type = var.ami_maz_f5instance_type
   availability_zone           = "${var.aws_region}a"
   user_data     = data.template_file.az1_mazF5_vm_onboard.rendered
-  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
+#  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
+  iam_instance_profile        = var.iam_instance_profile
   key_name      = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -131,14 +132,14 @@ resource "aws_instance" "az1_maz_bigip" {
 }
 
 # Recycle/revoke eval keys (useful for demo purposes)
-resource "null_resource" "revoke_eval_keys_upon_destroy" {
+resource "null_resource" "revoke_eval_keys_upon_destroy_maz1" {
   depends_on = [
     aws_route_table_association.az1_maz_ext,
     aws_route_table_association.az1_maz_mgmt,
-    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
-    aws_iam_policy.bigip-failover-extension-iam-policy,
+#    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+#    aws_iam_policy.bigip-failover-extension-iam-policy,
     aws_security_group.maz_sg_external,
-    aws_key_pair.main,
+#    aws_key_pair.main,
     aws_route_table.maz_MgmtRt,
     # aws_ec2_transit_gateway_route_table.hubtgwRt,
     aws_ec2_transit_gateway_vpc_attachment.mazTgwAttach,
@@ -266,7 +267,8 @@ resource "aws_instance" "az2_maz_bigip" {
   instance_type     = var.ami_maz_f5instance_type
   availability_zone = "${var.aws_region}b"
   user_data         = data.template_file.az2_mazF5_vm_onboard.rendered
-  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
+#  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
+  iam_instance_profile        = var.iam_instance_profile
   key_name          = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -302,14 +304,14 @@ resource "aws_instance" "az2_maz_bigip" {
 }
 
 # Recycle/revoke eval keys (useful for demo purposes)
-resource "null_resource" "revoke_eval_keys_upon_destroy2" {
+resource "null_resource" "revoke_eval_keys_upon_destroy_maz2" {
   depends_on = [
     aws_route_table_association.az2_maz_ext,
     aws_route_table_association.az2_maz_mgmt,
-    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
-    aws_iam_policy.bigip-failover-extension-iam-policy,
+#    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+#    aws_iam_policy.bigip-failover-extension-iam-policy,
     aws_security_group.maz_sg_external,
-    aws_key_pair.main,
+#    aws_key_pair.main,
     aws_route_table.maz_intRt,
     aws_route_table.maz_MgmtRt,
     aws_ec2_transit_gateway_vpc_attachment.mazTgwAttach,
@@ -344,7 +346,7 @@ data "template_file" "az1_mazCluster_do_json" {
   template = "${file("${path.module}/maz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
-    regkey         = var.maz_bigip_lic1
+    regkey         = var.tenant_values.maz.az1.bigip_lic
     banner_color   = "red"
     Domainname     = var.f5Domainname
     host1          = var.tenant_values.maz.az1.hostname
@@ -375,7 +377,7 @@ data "template_file" "az2_mazCluster_do_json" {
   template = "${file("${path.module}/maz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
-    regkey         = var.maz_bigip_lic2
+    regkey         = var.tenant_values.maz.az2.bigip_lic
     banner_color   = "red"
     Domainname     = var.f5Domainname
     host1          = var.tenant_values.maz.az1.hostname
@@ -474,7 +476,7 @@ resource "null_resource" "az1_mazF5_DO" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az1_maz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_mazCluster_do_json}
+      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az1_maz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${path.module}/${var.az1_mazCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_maz_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
@@ -486,7 +488,7 @@ resource "null_resource" "az2_mazF5_DO" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_maz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_mazCluster_do_json}
+      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_maz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${path.module}/${var.az2_mazCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_maz_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF

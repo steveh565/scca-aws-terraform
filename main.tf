@@ -216,84 +216,29 @@ locals {
 }
 
 
-/*
 module "maz" {
-  source = "./maz"
+  source = "./modules/maz"
+  tenant_values = var.tenant_values
+  iam_instance_profile = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
 }
-*/
 
 module "storage-paz" {
   source = "./modules/storage"
   storage_label = var.paz_cf_label
 }
 
-
-resource "null_resource" "revoke_eval_keys_upon_destroy" {
-  depends_on = [
-    aws_route_table_association.az1_mgmt,
-    aws_route_table_association.az2_mgmt,
-    aws_route_table_association.az1_dmzInt,
-    aws_route_table_association.az2_dmzInt,
-    aws_route_table_association.az1_dmzExt,
-    aws_route_table_association.az2_dmzExt,
-    aws_route_table_association.az1_transit,
-    aws_route_table_association.az2_transit,
-    aws_route_table_association.az1_ext,
-    aws_route_table_association.az2_ext,
-    aws_key_pair.main,
-    aws_route_table.MgmtRt,
-    aws_route_table.PazRt,
-    aws_route_table.TransitRt,
-    aws_route_table.DmzIntRt,
-    aws_route_table.DmzExtRt,
-    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
-    aws_ec2_transit_gateway_route_table.hubtgwRt,
-    aws_ec2_transit_gateway.hubtgw,
-    local_file.az1_pazF5_vm_onboarding_file,
-    local_file.az2_pazF5_vm_onboarding_file,
-    local_file.az2_transitF5_vm_onboarding_file,
-    local_file.az1_dmzF5_vm_onboarding_file,
-    local_file.az1_transitF5_vm_onboarding_file,
-    local_file.az2_dmzF5_vm_onboarding_file,
-
-    aws_instance.az1_bigip,
-    aws_instance.az2_bigip,
-    aws_instance.az1_transit_bigip,
-    aws_instance.az2_transit_bigip,
-    aws_instance.az1_dmz_bigip,
-    aws_instance.az2_dmz_bigip,
-    aws_eip.eip_az1_mgmt,
-    aws_eip.eip_az1_external,
-    aws_eip.eip_az2_mgmt,
-    aws_eip.eip_az2_external,
-    aws_eip.eip_az1_transit_mgmt,
-    aws_eip.eip_az2_transit_mgmt,
-    aws_internet_gateway.gw
-  ]
-  for_each = {
-    bigippaz1 = aws_instance.az1_bigip.public_ip
-    bigippaz2 = aws_instance.az2_bigip.public_ip
-    bigipdmz1 = aws_instance.az1_dmz_bigip.public_ip
-    bigipdmz2 = aws_instance.az2_dmz_bigip.public_ip
-    bigiptransit1 = aws_instance.az1_transit_bigip.public_ip
-    bigiptransit2 = aws_instance.az2_transit_bigip.public_ip
-  }
-  provisioner "remote-exec" {
-    connection {
-      host     = each.value
-      type     = "ssh"
-      user     = var.uname
-      password = var.upassword
-    }
-    when = destroy
-    inline = [
-      "echo y | tmsh -q revoke sys license 2>/dev/null"
-    ]
-    on_failure = continue
-  }
+module "f5SraWebPortal" { 
+  source = "./modules/f5SraWebPortal"
+  bigip_mgmt_public_ip = module.maz.maz_bigip1_addr
+  bigip_vip_private_ip = var.tenant_values.maz.az1.ext_vip
+  bigip2_mgmt_public_ip = module.maz.maz_bigip2_addr
+  bigip2_vip_private_ip = var.tenant_values.maz.az2.ext_vip
+  uname = var.uname
+  upassword  = var.upassword
 }
 
 
+/*
 output "az1_pazF5_Mgmt_Addr"     { value = "${aws_instance.az1_bigip.public_ip}" }
 output "az2_pazF5_Mgmt_Addr"     { value = "${aws_instance.az2_bigip.public_ip}" }
 
@@ -313,3 +258,4 @@ output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}
 
 output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
 output "BigIP_IAM_Profile_ID" { value = "${aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.id}" }
+*/
