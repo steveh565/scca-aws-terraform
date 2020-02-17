@@ -134,18 +134,19 @@ resource "aws_instance" "az1_dmz_bigip" {
 # Recycle/revoke eval keys (useful for demo purposes)
 resource "null_resource" "revoke_eval_keys_upon_destroy_dmz1" {
   depends_on = [
-    aws_route_table_association.az1_dmzExt,
-    aws_route_table_association.az1_mgmt,
+    aws_internet_gateway.gw,
     aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
     aws_iam_policy.bigip-failover-extension-iam-policy,
-    aws_security_group.sg_external,
     aws_key_pair.main,
+    aws_security_group.sg_external,
     aws_route_table.DmzExtRt,
-    # aws_ec2_dmz_gateway_route_table.hubtgwRt,
+    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach, 
+    aws_ec2_transit_gateway.hubtgw,
+    aws_route_table_association.az1_dmzExt,
+    aws_route_table_association.az1_mgmt,
     aws_instance.az1_dmz_bigip,
     aws_eip.eip_az1_dmz_external,
     aws_eip.eip_az1_dmz_mgmt,
-    aws_internet_gateway.gw
   ]
   for_each = {
     bigipdmz1 = aws_instance.az1_dmz_bigip.public_ip

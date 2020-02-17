@@ -133,20 +133,16 @@ resource "aws_instance" "az1_maz_bigip" {
 # Recycle/revoke eval keys (useful for demo purposes)
 resource "null_resource" "revoke_eval_keys_upon_destroy_maz1" {
   depends_on = [
-    aws_route_table_association.az1_maz_ext,
-    aws_route_table_association.az1_maz_mgmt,
-#    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
-#    aws_iam_policy.bigip-failover-extension-iam-policy,
+    aws_internet_gateway.mazGw,
     aws_security_group.maz_sg_external,
-#    aws_key_pair.main,
     aws_route_table.maz_MgmtRt,
-    # aws_ec2_transit_gateway_route_table.hubtgwRt,
     aws_ec2_transit_gateway_vpc_attachment.mazTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
+    aws_route_table_association.az1_maz_ext,
+    aws_route_table_association.az1_maz_mgmt,
     aws_instance.az1_maz_bigip,
     aws_eip.eip_az1_maz_external,
     aws_eip.eip_az1_maz_mgmt,
-    aws_internet_gateway.mazGw
   ]
   for_each = {
     bigipmaz1 = aws_instance.az1_maz_bigip.public_ip
@@ -305,19 +301,15 @@ resource "aws_instance" "az2_maz_bigip" {
 # Recycle/revoke eval keys (useful for demo purposes)
 resource "null_resource" "revoke_eval_keys_upon_destroy_maz2" {
   depends_on = [
-    aws_route_table_association.az2_maz_ext,
-    aws_route_table_association.az2_maz_mgmt,
-#    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
-#    aws_iam_policy.bigip-failover-extension-iam-policy,
+    aws_internet_gateway.mazGw,
     aws_security_group.maz_sg_external,
-#    aws_key_pair.main,
-    aws_route_table.maz_intRt,
     aws_route_table.maz_MgmtRt,
     aws_ec2_transit_gateway_vpc_attachment.mazTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
+    aws_route_table_association.az2_maz_ext,
+    aws_route_table_association.az2_maz_mgmt,
     aws_instance.az2_maz_bigip,
     aws_eip.eip_az2_maz_external,
-    aws_internet_gateway.mazGw,
     aws_eip.eip_az2_maz_mgmt
   ]
   for_each = {

@@ -134,20 +134,19 @@ resource "aws_instance" "az1_transit_bigip" {
 # Recycle/revoke eval keys (useful for demo purposes)
 resource "null_resource" "revoke_eval_keys_upon_destroy_transit1" {
   depends_on = [
-    aws_route_table_association.az1_transit,
-    aws_route_table_association.az2_transit,
+    aws_internet_gateway.gw,
     aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
     aws_iam_policy.bigip-failover-extension-iam-policy,
-    aws_security_group.sg_external,
     aws_key_pair.main,
+    aws_security_group.sg_external,
+    aws_route_table.TransitRt,
     aws_route_table.MgmtRt,
-    # aws_ec2_transit_gateway_route_table.hubtgwRt,
     aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
+    aws_route_table_association.az1_transit,
     aws_instance.az1_transit_bigip,
     aws_eip.eip_az1_transit_external,
     aws_eip.eip_az1_transit_mgmt,
-    aws_internet_gateway.gw
   ]
   for_each = {
     bigiptransit1 = aws_instance.az1_transit_bigip.public_ip
@@ -303,19 +302,19 @@ resource "aws_instance" "az2_transit_bigip" {
 # Recycle/revoke eval keys (useful for demo purposes)
 resource "null_resource" "revoke_eval_keys_upon_destroy_transit2" {
   depends_on = [
+    aws_internet_gateway.gw,
     aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
     aws_iam_policy.bigip-failover-extension-iam-policy,
     aws_key_pair.main,
     aws_security_group.sg_external,
     aws_route_table.TransitRt,
-    aws_internet_gateway.gw,
-    # aws_ec2_transit_gateway_route_table.hubtgwRt,
-    aws_route_table_association.az2_transit,
+    aws_route_table.MgmtRt,
     aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
+    aws_route_table_association.az2_transit,
     aws_instance.az2_transit_bigip,
     aws_eip.eip_az2_transit_external,
-    aws_eip.eip_az2_transit_mgmt
+    aws_eip.eip_az2_transit_mgmt,
   ]
   for_each = {
     bigiptransit2 = aws_instance.az1_transit_bigip.public_ip
@@ -364,7 +363,7 @@ data "template_file" "az1_transitCluster_do_json" {
 
 # Render transit DO declaration
 resource "local_file" "az1_transitCluster_do_file" {
-  content  = "${data.template_file.az1_transitCluster_do_json.rendered}"
+  content  = data.template_file.az1_transitCluster_do_json.rendered
   filename = "${path.module}/${var.az1_transitCluster_do_json}"
 }
 
@@ -433,7 +432,7 @@ data "template_file" "transit_ts_json" {
 
 # Render transit TS declaration
 resource "local_file" "transit_ts_file" {
-  content  = "${data.template_file.transit_ts_json.rendered}"
+  content  = data.template_file.transit_ts_json.rendered
   filename = "${path.module}/${var.transit_ts_json}"
 }
 
@@ -448,7 +447,7 @@ data "template_file" "transit_logs_as3_json" {
 
 # Render transit LogCollection AS3 declaration
 resource "local_file" "transit_logs_as3_file" {
-  content  = "${data.template_file.transit_logs_as3_json.rendered}"
+  content  = data.template_file.transit_logs_as3_json.rendered
   filename = "${path.module}/${var.transit_logs_as3_json}"
 }
 

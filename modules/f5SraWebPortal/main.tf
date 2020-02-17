@@ -1,9 +1,9 @@
 # the values should be passed from tge calling parent module as parameters, but for testing purposes, you can set the values here.
 variable bigip_mgmt_public_ip { default = "" }
 variable bigip_vip_private_ip { default = "" }
-// variable uname { default = "" }
-// variable upassword { default = "" }
-// variable rest_as3_uri { default "" }
+variable uname {}
+variable upassword {}
+variable rest_as3_uri {}
 
 locals {
   #the following tmsh apm commands are required to adjust the IP addresses which are hardcoded for the WebSSH service (target and per-request policy URL branches to allow or block SSH to specific target hosts... because those IP's are hardcoded in the APM policy tarball artifacts)

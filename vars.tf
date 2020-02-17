@@ -33,8 +33,8 @@ variable mgmt_asrc { default = ["0.0.0.0/0"] }
 #Big-IP License Keys (BEST)
 variable paz_lic1          {default = "ULMXM-VYNHO-FSNBE-JTPDK-MUSJYAZ"}
 variable paz_lic2          {default = "PFLCY-ZWRAS-HBQMN-ORXAA-UXACRSL"}
-variable transit_lic1      {default = "IDWGK-VEZBY-JUHML-ATFAU-UDKSSOD"}
-variable transit_lic2      {default = "JKJHD-QHVWK-ASPQB-YVVSU-ZLHYDEN"}
+variable transit_lic1      {default = "RRTHG-XZDFY-JNYUW-UEZCB-CNHSDXD"}
+variable transit_lic2      {default = "LKPTH-FDEGL-KLBOJ-CPZDZ-DYCHHLW"}
 variable dmz_lic1          {default = "KVUFW-PBUBC-JUGZF-LFLNX-KLYDFOS"}
 variable dmz_lic2          {default = "ULFVE-TLULT-XUJKW-IWDYB-NVQABYA"}
 variable tenant_bigip_lic1 {default = "OFPDH-MRYDP-UNRQU-MGQDA-AENUWNH"}
