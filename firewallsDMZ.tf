@@ -504,7 +504,7 @@ resource "null_resource" "dmzF5_CF" {
 }
 
 resource "null_resource" "dmzF5_TS" {
-  depends_on = [null_resource.az1_dmzF5_cluster_DO, null_resource.az2_dmzF5_cluster_DO]
+  depends_on = [null_resource.dmzF5_CF]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash

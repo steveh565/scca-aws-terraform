@@ -26,14 +26,16 @@ variable bigip2_mgmt_public_ip { default = "15.222.169.158" }
 variable bigip2_vip_private_ip { default = "10.10.102.129" }
 
 provider "bigip" {
-  address  = var.bigip_mgmt_public_ip
+#  address  = var.bigip_mgmt_public_ip
+  address  = "15.222.178.72"
   username = var.uname
   password = var.upassword
 }
 
 provider "bigip" {
   alias    = "bigip2"
-  address  = var.bigip2_mgmt_public_ip
+  address  = "15.222.119.166"
+#  address  = var.bigip2_mgmt_public_ip
   username = var.uname
   password = var.upassword
 }

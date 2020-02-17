@@ -91,12 +91,11 @@ resource "aws_eip" "eip_az1_maz_external" {
 
 #Big-IP 1
 resource "aws_instance" "az1_maz_bigip" {
-  depends_on    = [aws_subnet.az1_maz_mgmt, aws_security_group.maz_sg_ext_mgmt, aws_network_interface.az1_maz_mgmt, aws_network_interface.az1_maz_internal, aws_network_interface.az1_maz_external]
+  depends_on    = [aws_eip.eip_az1_maz_mgmt, aws_subnet.az1_maz_mgmt, aws_security_group.maz_sg_ext_mgmt, aws_network_interface.az1_maz_mgmt, aws_network_interface.az1_maz_internal, aws_network_interface.az1_maz_external]
   ami           = var.ami_f5image_name
   instance_type = var.ami_maz_f5instance_type
   availability_zone           = "${var.aws_region}a"
   user_data     = data.template_file.az1_mazF5_vm_onboard.rendered
-#  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   iam_instance_profile        = var.iam_instance_profile
   key_name      = "kp${var.tag_name}"
   root_block_device {
@@ -504,7 +503,7 @@ resource "null_resource" "mazF5_CF" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.maz_cf_json}
+      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${path.module}/${var.maz_cf_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 30
     EOF
@@ -512,11 +511,11 @@ resource "null_resource" "mazF5_CF" {
 }
 
 resource "null_resource" "mazF5_TS" {
-  depends_on = [null_resource.az1_mazF5_DO, null_resource.az2_mazF5_DO]
+  depends_on = [null_resource.mazF5_CF]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_maz_bigip.public_ip}${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @${var.maz_ts_json}
+      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_maz_bigip.public_ip}${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @${path.module}/${var.maz_ts_json}
     EOF
   }
 }
@@ -527,7 +526,7 @@ resource "null_resource" "mazF5_TS_LogCollection" {
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_maz_bigip.public_ip}${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @${var.maz_logs_as3_json}
+      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_maz_bigip.public_ip}${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @${path.module}/${var.maz_logs_as3_json}
     EOF
   }
 }

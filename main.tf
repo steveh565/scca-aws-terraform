@@ -227,18 +227,16 @@ module "storage-paz" {
   storage_label = var.paz_cf_label
 }
 
-module "f5SraWebPortal" { 
-  source = "./modules/f5SraWebPortal"
-  bigip_mgmt_public_ip = module.maz.maz_bigip1_addr
-  bigip_vip_private_ip = var.tenant_values.maz.az1.ext_vip
-  bigip2_mgmt_public_ip = module.maz.maz_bigip2_addr
-  bigip2_vip_private_ip = var.tenant_values.maz.az2.ext_vip
-  uname = var.uname
-  upassword  = var.upassword
+module "storage-dmz" {
+  source = "./modules/storage"
+  storage_label = var.dmz_cf_label
 }
 
+module "storage-transit" {
+  source = "./modules/storage"
+  storage_label = var.transit_cf_label
+}
 
-/*
 output "az1_pazF5_Mgmt_Addr"     { value = "${aws_instance.az1_bigip.public_ip}" }
 output "az2_pazF5_Mgmt_Addr"     { value = "${aws_instance.az2_bigip.public_ip}" }
 
@@ -256,6 +254,8 @@ output "az2_transitF5_Mgmt_Addr"     { value = "${aws_instance.az2_transit_bigip
 output "az1_transitF5_secondary_VIP" { value = "${var.az1_transitF5.transit_vip}" }
 output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}" }
 
+output "az1_mazF5_Mgmt_Addr"  { value = module.maz.maz_bigip1_addr }
+output "az2_mazF5_Mgmt_Addr"  { value = module.maz.maz_bigip2_addr }
+
 output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
 output "BigIP_IAM_Profile_ID" { value = "${aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.id}" }
-*/

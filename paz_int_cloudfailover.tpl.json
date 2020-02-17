@@ -1,6 +1,10 @@
 {
     "class": "Cloud_Failover",
     "environment": "aws",
+    "controls": {
+        "class": "Controls",
+        "logLevel": "silly"
+    },        
     "externalStorage": {
         "scopingTags": {
             "f5_cloud_failover_label": "${cf_label}"
@@ -29,10 +33,6 @@
                 "${cf_nexthop1}",
                 "${cf_nexthop2}"
             ]
-        },
-        "controls": {
-            "class": "Controls",
-            "logLevel": "info"
         }
     }
 }

@@ -31,14 +31,16 @@ variable key_path { default = "~/.ssh/id_rsa.pub" }
 variable mgmt_asrc { default = ["0.0.0.0/0"] }
 
 #Big-IP License Keys (BEST)
-variable paz_lic1          {default = ""}
-variable paz_lic2          {default = ""}
-variable transit_lic1      {default = ""}
-variable transit_lic2      {default = ""}
-variable dmz_lic1          {default = ""}
-variable dmz_lic2          {default = ""}
-variable tenant_bigip_lic1 {default = ""}
-variable tenant_bigip_lic2 {default = ""}
+variable paz_lic1          {default = "ULMXM-VYNHO-FSNBE-JTPDK-MUSJYAZ"}
+variable paz_lic2          {default = "PFLCY-ZWRAS-HBQMN-ORXAA-UXACRSL"}
+variable transit_lic1      {default = "IDWGK-VEZBY-JUHML-ATFAU-UDKSSOD"}
+variable transit_lic2      {default = "JKJHD-QHVWK-ASPQB-YVVSU-ZLHYDEN"}
+variable dmz_lic1          {default = "KVUFW-PBUBC-JUGZF-LFLNX-KLYDFOS"}
+variable dmz_lic2          {default = "ULFVE-TLULT-XUJKW-IWDYB-NVQABYA"}
+variable tenant_bigip_lic1 {default = "OFPDH-MRYDP-UNRQU-MGQDA-AENUWNH"}
+variable tenant_bigip_lic2 {default = "FWFYB-ZCSMB-KLWHY-JXRMO-XRXHHOI"}
+// Use the tenant_vars.auto.tfvars file to store the tenant and bigip specific values instead of above
+// The MAZ values are already stored that way (see variable tenant_values below)
 #variable maz_bigip_lic1    {default = ""}
 #variable maz_bigip_lic1    {}
 #variable maz_bigip_lic2    {}

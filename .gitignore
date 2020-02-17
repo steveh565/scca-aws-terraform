@@ -60,3 +60,4 @@ modules/maz/az2_mazF5_onboard.sh
 modules/maz/mazF5vm01.do.json
 modules/maz/mazF5vm02.do.json
 modules/maz/maz_cf.json
+modules/f5SraWebPortal/bigip_sra_as3.json

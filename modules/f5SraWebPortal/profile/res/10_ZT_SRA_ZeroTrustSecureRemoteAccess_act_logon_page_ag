@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<customization_group name="default_0" type="0">
-  <item language="en">
-    <logon_field_3>Domain
-(default.local)</logon_field_3>
-  </item>
-  <item language="fr"/>
-</customization_group>

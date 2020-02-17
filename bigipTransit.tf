@@ -510,7 +510,7 @@ resource "null_resource" "transitF5_CF" {
 }
 
 resource "null_resource" "transitF5_TS" {
-  depends_on = [null_resource.az1_transitF5_DO, null_resource.az2_transitF5_DO]
+  depends_on = [null_resource.transitF5_CF]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF

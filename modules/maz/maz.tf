@@ -157,3 +157,14 @@ module "storage-maz" {
   source = "../storage"  
   storage_label = var.maz_cf_label
 }
+
+/*
+module "f5SraWebPortal" { 
+  source = "../f5SraWebPortal"
+  bigip_mgmt_public_ip = aws_instance.az1_maz_bigip.public_ip
+  bigip_vip_private_ip = var.tenant_values.maz.az1.ext_vip
+  tenant_values = var.tenant_values
+  uname = var.uname
+  upassword  = var.upassword
+}
+*/
