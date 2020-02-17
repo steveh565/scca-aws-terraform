@@ -1,13 +1,14 @@
 # the values should be passed from tge calling parent module as parameters, but for testing purposes, you can set the values here.
 variable bigip_mgmt_public_ip { default = "" }
 variable bigip_vip_private_ip { default = "" }
+variable ssh_target_ip { default = "" }
 variable uname {}
 variable upassword {}
 variable rest_as3_uri {}
 
 locals {
   #the following tmsh apm commands are required to adjust the IP addresses which are hardcoded for the WebSSH service (target and per-request policy URL branches to allow or block SSH to specific target hosts... because those IP's are hardcoded in the APM policy tarball artifacts)
-  tmshAPMcommand1 = "tmsh modify apm resource portal-access /SRA/WebSSH { application-uri \"https://${var.bigip_vip_private_ip}:4439/ssh/host/10.21.1.50?port=22&header=CLASSIFIED&headerBackground=red\" customization-group /SRA/WebSSH_resource_web_app_customization items modify { item { paths /ssh/host/10.21.1.50 subnet ${var.bigip_vip_private_ip}/32 sso /SRA/SRA_sso }}}"
+  tmshAPMcommand1 = "tmsh modify apm resource portal-access /SRA/WebSSH { application-uri \"https://${var.bigip_vip_private_ip}:4439/ssh/host/${var.ssh_target_ip}?port=22&header=CLASSIFIED&headerBackground=red\" customization-group /SRA/WebSSH_resource_web_app_customization items modify { item { paths /ssh/host/${var.ssh_target_ip} subnet ${var.bigip_vip_private_ip}/32 sso /SRA/SRA_sso }}}"
   tmshAPMcommand2 = "tmsh modify apm policy policy-item /SRA/SecureRemoteAccessPRP_act_url_branching_perrq { rules { { caption /ssh/host/10.* expression \"expr {[mcget {perflow.branching.url}] contains '/ssh/host/10.'}\" next-item /SRA/SecureRemoteAccessPRP_end_allow } { caption fallback next-item /SRA/SecureRemoteAccessPRP_end_allow }}}"
 }
 
@@ -46,6 +47,7 @@ resource "null_resource" "bigip_create_ilx_plugin" {
       user     = var.uname
       host     = var.bigip_mgmt_public_ip
     }
+    on_failure = continue
   }
 }
 
@@ -125,5 +127,6 @@ resource "null_resource" "bigip_upload_apm_policies" {
       user     = var.uname
       host     = var.bigip_mgmt_public_ip
     }
+    on_failure = continue
   }
 }
