@@ -223,17 +223,16 @@ module "maz" {
 }
 
 /* nexting the f5SraWebPortal module is not efficient and prone to problems, especially if you want to apply minor changes
-// module "f5SraWebPortal" { 
-//   source = "./modules/f5SraWebPortal"
-// #   bigip_mgmt_public_ip = aws_instance.az1_maz_bigip.public_ip
-//   bigip_mgmt_public_ip = module.maz.maz_bigip1_addr
-//   bigip_vip_private_ip = var.tenant_values.maz.az1.ext_vip
-//   ssh_target_ip = var.tenant_values.maz.az1.mgmt
-//   rest_as3_uri = var.rest_as3_uri
-//   uname = var.uname
-//   upassword  = var.upassword
-// }
 */
+module "f5SraWebPortal" { 
+  source = "./modules/f5SraWebPortal"
+  bigip_mgmt_public_ip = module.maz.maz_bigip1_addr
+  bigip_vip_private_ip = var.tenant_values.maz.az1.ext_vip
+  ssh_target_ip = var.tenant_values.maz.az1.mgmt
+  rest_as3_uri = var.rest_as3_uri
+  uname = var.uname
+  upassword  = var.upassword
+}
 
 #the storate resource for the MAZ (and tenant?) modules are within those corresponding modules
 module "storage-paz" {

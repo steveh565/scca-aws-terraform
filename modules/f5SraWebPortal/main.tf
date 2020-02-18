@@ -1,6 +1,6 @@
 # the values should be passed from tge calling parent module as parameters, but for testing purposes, you can set the values here.
-variable uname { default = "awsops" }
-variable upassword { default = "Canada12345" }
+variable uname { default = "blablab" }
+variable upassword { default = "blablabla" }
 #there must be an easy way to query aws API to deterime the maz bigip's public management IP address...
 variable bigip_mgmt_public_ip { default = "35.182.123.82" }
 variable bigip_vip_private_ip { default = "10.11.1.111" }
@@ -16,6 +16,13 @@ locals {
 
 // Using  provisioner to upload iLX NodeJS tar file and create iLX workspace and iLX plugin on bigip1 for WebSSH
 resource "null_resource" "bigip_create_ilx_plugin" {
+  # hardcode a wait/sleep to give time for the bigip onboarding process to complete (otherwise "tmsh create ilx" command will fail)
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      sleep 600
+    EOF
+  }  
 
   provisioner "file" {
     source      = "${path.module}/BIG-IP-ILX-WebSSH2-0.2.8.tgz"
@@ -46,10 +53,9 @@ resource "null_resource" "bigip_create_ilx_plugin" {
 }
 
 // publish Zero Trust Secure Remote Access (ZT_SRA) AS3 declaration to BIGIP1
-// config_name is only used to set the identity of as3 resource which is unique for resource.
 // LTM objects, iLX plugins and APM objects are automatically synched across the HA cluster members.
 // In AWS HA across AZ's, each bigip device in the HA cluster has their own unique private VIP addresses.
-// The Cloud Failover extension is configured to remap the EIP's or routes accordingly upon failover events
+// The Cloud Failover extension is configured to remap the EIP's or routes accordingly upon failover events.
 # Render SRA AS3 declaration
 resource "local_file" "bigip_sra_as3_file" {
   content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
@@ -106,6 +112,8 @@ resource "null_resource" "bigip_upload_apm_policies" {
       "tmsh modify ltm profile http /SRA/SRA_Webtop/webtop_http response-chunking default-value",
       "tmsh modify ltm profile http /SRA/SRA_Webtop/webtop_http request-chunking default-value",
       "tmsh create ltm profile rewrite /SRA/sra_rewriteprofile defaults-from rewrite-portal location-specific false split-tunneling false request { insert-xforwarded-for enabled rewrite-headers enabled } response { rewrite-content enabled rewrite-headers enabled }",
+      "modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles delete { /SRA/SRA_Webtop/webtop_http } profiles add { http }",
+      "modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles delete { http } profiles add { /SRA/SRA_Webtop/webtop_http }",
       "tmsh modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles add {/SRA/SecureRemoteAccessAP} profiles add {/SRA/sra_vdi} profiles add {/SRA/sra_cp} profiles add {/SRA/sra_rewriteprofile} per-flow-request-access-policy /SRA/SecureRemoteAccessPRP",
       "tmsh save sys config",
     ]
