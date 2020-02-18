@@ -1,3 +1,4 @@
+# AWS S3 and DynamoDB only required if you wish to store the Terraform state file remotely (for collaboration)
 # Infrastructure
 provider "aws" {
 	region = var.aws_region
