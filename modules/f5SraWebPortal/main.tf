@@ -112,8 +112,9 @@ resource "null_resource" "bigip_upload_apm_policies" {
       "tmsh modify ltm profile http /SRA/SRA_Webtop/webtop_http response-chunking default-value",
       "tmsh modify ltm profile http /SRA/SRA_Webtop/webtop_http request-chunking default-value",
       "tmsh create ltm profile rewrite /SRA/sra_rewriteprofile defaults-from rewrite-portal location-specific false split-tunneling false request { insert-xforwarded-for enabled rewrite-headers enabled } response { rewrite-content enabled rewrite-headers enabled }",
-      "modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles delete { /SRA/SRA_Webtop/webtop_http } profiles add { http }",
-      "modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles delete { http } profiles add { /SRA/SRA_Webtop/webtop_http }",
+      "tmsh modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles delete { /SRA/SRA_Webtop/webtop_http } profiles add { http }",
+      "sleep 5",
+      "tmsh modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles delete { http } profiles add { /SRA/SRA_Webtop/webtop_http }",
       "tmsh modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles add {/SRA/SecureRemoteAccessAP} profiles add {/SRA/sra_vdi} profiles add {/SRA/sra_cp} profiles add {/SRA/sra_rewriteprofile} per-flow-request-access-policy /SRA/SecureRemoteAccessPRP",
       "tmsh save sys config",
     ]
