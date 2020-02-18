@@ -131,42 +131,6 @@ resource "aws_instance" "az1_dmz_bigip" {
   }
 }
 
-# Recycle/revoke eval keys (useful for demo purposes)
-resource "null_resource" "revoke_eval_keys_upon_destroy_dmz1" {
-  depends_on = [
-    aws_internet_gateway.gw,
-    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
-    aws_iam_policy.bigip-failover-extension-iam-policy,
-    aws_key_pair.main,
-    aws_security_group.sg_external,
-    aws_route_table.DmzExtRt,
-    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach, 
-    aws_ec2_transit_gateway.hubtgw,
-    aws_route_table_association.az1_dmzExt,
-    aws_route_table_association.az1_mgmt,
-    aws_instance.az1_dmz_bigip,
-    aws_eip.eip_az1_dmz_external,
-    aws_eip.eip_az1_dmz_mgmt,
-  ]
-  for_each = {
-    bigipdmz1 = aws_instance.az1_dmz_bigip.public_ip
-  }
-  provisioner "remote-exec" {
-    connection {
-      host     = each.value
-      type     = "ssh"
-      user     = var.uname
-      password = var.upassword
-    }
-    when = destroy
-    inline = [
-      "echo y | tmsh -q revoke sys license 2>/dev/null"
-    ]
-    on_failure = continue
-  }
-}
-
-
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_dmz_mgmt" {
   depends_on      = [aws_security_group.sg_ext_mgmt]
@@ -302,19 +266,34 @@ resource "aws_instance" "az2_dmz_bigip" {
 # Recycle/revoke eval keys (useful for demo purposes)
 resource "null_resource" "revoke_eval_keys_upon_destroy_dmz2" {
   depends_on = [
-    aws_route_table_association.az2_dmzExt,
-    aws_route_table_association.az2_mgmt,
+    aws_internet_gateway.gw,
     aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
     aws_iam_policy.bigip-failover-extension-iam-policy,
-    aws_security_group.sg_external,
     aws_key_pair.main,
+    aws_security_group.sg_external,
     aws_route_table.DmzExtRt,
+    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach, 
+    aws_ec2_transit_gateway.hubtgw,
+    aws_instance.az1_dmz_bigip,
     aws_instance.az2_dmz_bigip,
+    aws_eip.eip_az1_dmz_external,
     aws_eip.eip_az2_dmz_external,
+    aws_eip.eip_az1_dmz_mgmt,
     aws_eip.eip_az2_dmz_mgmt,
-    aws_internet_gateway.gw
+    aws_route_table_association.az1_mgmt,
+    aws_route_table_association.az2_mgmt,
+    aws_route_table_association.az1_dmzExt,
+    aws_route_table_association.az2_dmzExt,
+    aws_route_table_association.az1_dmzInt,
+    aws_route_table_association.az2_dmzInt,
+    aws_route_table_association.az1_ext,
+    aws_route_table_association.az2_ext,
+    aws_route_table_association.az1_dmzInt,
+    aws_route_table_association.az2_dmzInt,
+
   ]
   for_each = {
+    bigipdmz1 = aws_instance.az1_dmz_bigip.public_ip
     bigipdmz2 = aws_instance.az2_dmz_bigip.public_ip
   }
   provisioner "remote-exec" {

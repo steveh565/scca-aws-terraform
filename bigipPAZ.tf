@@ -141,41 +141,6 @@ resource "aws_instance" "az1_bigip" {
   }
 }
 
-# Recycle/revoke eval keys (useful for demo purposes)
-resource "null_resource" "revoke_eval_keys_upon_destroy_paz1" {
-  depends_on = [
-    aws_internet_gateway.gw,
-    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
-    aws_iam_policy.bigip-failover-extension-iam-policy,
-    aws_key_pair.main,
-    aws_security_group.sg_external,
-    aws_security_group.sg_ext_mgmt,
-    aws_route_table.PazRt,
-    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach, 
-    aws_ec2_transit_gateway.hubtgw,
-    aws_route_table_association.az1_ext,
-    aws_route_table_association.az1_mgmt,
-    aws_instance.az1_bigip,
-    aws_eip.eip_az1_external,
-    aws_eip.eip_az1_mgmt
-  ]
-  for_each = {
-    bigippaz1 = aws_instance.az1_bigip.public_ip
-  }
-  provisioner "remote-exec" {
-    connection {
-      host     = each.value
-      type     = "ssh"
-      user     = var.uname
-      password = var.upassword
-    }
-    when = destroy
-    inline = [
-      "echo y | tmsh -q revoke sys license 2>/dev/null"
-    ]
-    on_failure = continue
-  }
-}
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_mgmt" {
@@ -318,16 +283,23 @@ resource "null_resource" "revoke_eval_keys_upon_destroy_paz2" {
     aws_iam_policy.bigip-failover-extension-iam-policy,
     aws_key_pair.main,
     aws_security_group.sg_external,
+    aws_security_group.sg_ext_mgmt,
     aws_route_table.PazRt,
     aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
     aws_route_table_association.az1_mgmt,
+    aws_route_table_association.az2_mgmt,
     aws_route_table_association.az1_ext,
+    aws_route_table_association.az2_ext,
+    aws_instance.az1_bigip,
     aws_instance.az2_bigip,
+    aws_eip.eip_az1_external,
     aws_eip.eip_az2_external,
+    aws_eip.eip_az1_mgmt,
     aws_eip.eip_az2_mgmt
   ]
   for_each = {
+    bigippaz1 = aws_instance.az1_bigip.public_ip
     bigippaz2 = aws_instance.az2_bigip.public_ip
   }
   provisioner "remote-exec" {

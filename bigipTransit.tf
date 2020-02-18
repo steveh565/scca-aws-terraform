@@ -131,41 +131,6 @@ resource "aws_instance" "az1_transit_bigip" {
   }
 }
 
-# Recycle/revoke eval keys (useful for demo purposes)
-resource "null_resource" "revoke_eval_keys_upon_destroy_transit1" {
-  depends_on = [
-    aws_internet_gateway.gw,
-    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
-    aws_iam_policy.bigip-failover-extension-iam-policy,
-    aws_key_pair.main,
-    aws_security_group.sg_external,
-    aws_route_table.TransitRt,
-    aws_route_table.MgmtRt,
-    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
-    aws_ec2_transit_gateway.hubtgw,
-    aws_route_table_association.az1_transit,
-    aws_instance.az1_transit_bigip,
-    aws_eip.eip_az1_transit_external,
-    aws_eip.eip_az1_transit_mgmt,
-  ]
-  for_each = {
-    bigiptransit1 = aws_instance.az1_transit_bigip.public_ip
-  }
-  provisioner "remote-exec" {
-    connection {
-      host     = each.value
-      type     = "ssh"
-      user     = var.uname
-      password = var.upassword
-    }
-    when = destroy
-    inline = [
-      "echo y | tmsh -q revoke sys license 2>/dev/null"
-    ]
-    on_failure = continue
-  }
-}
-
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_transit_mgmt" {
@@ -300,7 +265,7 @@ resource "aws_instance" "az2_transit_bigip" {
 }
 
 # Recycle/revoke eval keys (useful for demo purposes)
-resource "null_resource" "revoke_eval_keys_upon_destroy_transit2" {
+resource "null_resource" "revoke_eval_keys_upon_destroy_transit" {
   depends_on = [
     aws_internet_gateway.gw,
     aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
@@ -311,13 +276,26 @@ resource "null_resource" "revoke_eval_keys_upon_destroy_transit2" {
     aws_route_table.MgmtRt,
     aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
     aws_ec2_transit_gateway.hubtgw,
+    aws_route_table_association.az1_transit,
     aws_route_table_association.az2_transit,
+    aws_instance.az1_transit_bigip,
     aws_instance.az2_transit_bigip,
+    aws_eip.eip_az1_transit_external,
     aws_eip.eip_az2_transit_external,
+    aws_eip.eip_az1_transit_mgmt,
     aws_eip.eip_az2_transit_mgmt,
+    aws_route_table_association.az1_dmzExt,
+    aws_route_table_association.az2_dmzExt,
+    aws_route_table_association.az1_dmzInt,
+    aws_route_table_association.az2_dmzInt,
+    aws_route_table_association.az1_ext,
+    aws_route_table_association.az2_ext,
+    aws_route_table_association.az1_dmzInt,
+    aws_route_table_association.az2_dmzInt
   ]
   for_each = {
-    bigiptransit2 = aws_instance.az1_transit_bigip.public_ip
+    bigip1 = aws_instance.az1_transit_bigip.public_ip
+    bigip2 = aws_instance.az2_transit_bigip.public_ip
   }
   provisioner "remote-exec" {
     connection {
