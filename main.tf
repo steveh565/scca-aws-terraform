@@ -222,16 +222,16 @@ module "maz" {
   iam_instance_profile = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
 }
 
-module "f5SraWebPortal" { 
-  source = "./modules/f5SraWebPortal"
-#   bigip_mgmt_public_ip = aws_instance.az1_maz_bigip.public_ip
-  bigip_mgmt_public_ip = module.maz.maz_bigip1_addr
-  bigip_vip_private_ip = var.tenant_values.maz.az1.ext_vip
-  ssh_target_ip = var.tenant_values.maz.az1.mgmt
-  rest_as3_uri = var.rest_as3_uri
-  uname = var.uname
-  upassword  = var.upassword
-}
+// module "f5SraWebPortal" { 
+//   source = "./modules/f5SraWebPortal"
+// #   bigip_mgmt_public_ip = aws_instance.az1_maz_bigip.public_ip
+//   bigip_mgmt_public_ip = module.maz.maz_bigip1_addr
+//   bigip_vip_private_ip = var.tenant_values.maz.az1.ext_vip
+//   ssh_target_ip = var.tenant_values.maz.az1.mgmt
+//   rest_as3_uri = var.rest_as3_uri
+//   uname = var.uname
+//   upassword  = var.upassword
+// }
 
 #should move the following S3 storage creation modules to the init folder (with the tfstate S3 and dynamodb resources)
 module "storage-paz" {

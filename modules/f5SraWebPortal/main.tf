@@ -1,10 +1,11 @@
 # the values should be passed from tge calling parent module as parameters, but for testing purposes, you can set the values here.
-variable bigip_mgmt_public_ip { default = "" }
-variable bigip_vip_private_ip { default = "" }
-variable ssh_target_ip { default = "" }
-variable uname {}
-variable upassword {}
-variable rest_as3_uri {}
+variable uname { default = "awsops" }
+variable upassword { default = "Canada12345" }
+#there must be an easy way to query aws API to deterime the maz bigip's public management IP address...
+variable bigip_mgmt_public_ip { default = "35.182.123.82" }
+variable bigip_vip_private_ip { default = "10.11.1.111" }
+variable ssh_target_ip { default = "10.11.0.11" }
+variable rest_as3_uri {default = "/mgmt/shared/appsvcs/declare"}
 
 locals {
   #the following tmsh apm commands are required to adjust the IP addresses which are hardcoded for the WebSSH service (target and per-request policy URL branches to allow or block SSH to specific target hosts... because those IP's are hardcoded in the APM policy tarball artifacts)
@@ -12,13 +13,6 @@ locals {
   tmshAPMcommand2 = "tmsh modify apm policy policy-item /SRA/SecureRemoteAccessPRP_act_url_branching_perrq { rules { { caption /ssh/host/10.* expression \"expr {[mcget {perflow.branching.url}] contains '/ssh/host/10.'}\" next-item /SRA/SecureRemoteAccessPRP_end_allow } { caption fallback next-item /SRA/SecureRemoteAccessPRP_end_allow }}}"
 }
 
-
-// provider "bigip" {
-// #  address  = var.bigip_mgmt_public_ip
-//   address  = "1.1.1.1"
-//   username = var.uname
-//   password = var.upassword
-// }
 
 // Using  provisioner to upload iLX NodeJS tar file and create iLX workspace and iLX plugin on bigip1 for WebSSH
 resource "null_resource" "bigip_create_ilx_plugin" {
@@ -56,12 +50,6 @@ resource "null_resource" "bigip_create_ilx_plugin" {
 // LTM objects, iLX plugins and APM objects are automatically synched across the HA cluster members.
 // In AWS HA across AZ's, each bigip device in the HA cluster has their own unique private VIP addresses.
 // The Cloud Failover extension is configured to remap the EIP's or routes accordingly upon failover events
-// resource "bigip_as3" "bigip_sra" {
-//   depends_on  = [null_resource.bigip_create_ilx_plugin]
-//   as3_json    = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
-//   config_name = "sra"
-// }
-
 # Render SRA AS3 declaration
 resource "local_file" "bigip_sra_as3_file" {
   content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
@@ -69,7 +57,7 @@ resource "local_file" "bigip_sra_as3_file" {
 }
 
 resource "null_resource" "bigip_sra_as3" {
-  depends_on  = [local_file.bigip_sra_as3_file]
+  depends_on  = [local_file.bigip_sra_as3_file, null_resource.bigip_create_ilx_plugin]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
