@@ -60,7 +60,7 @@ The following Government of Canada ITSG security controls can be met through con
 - Implement Tenant VPC terraform module
 - Clean up GC-CAP VPC creation scripts (terraform)
 
-### Dan's additions to the above list:
+### Dan's additions to the above to do list:
 - Refactor the tenant tf code (to fix the secondary IP assignment bug, fix Cluster DO, CF, etc…)
 - Add "module" call in main.tf to tenant module? Or maybe more efficient/elegant to use a .sh script?
 - Test to confirm that failover behaves as expected (CF extention)
@@ -72,14 +72,15 @@ The following Government of Canada ITSG security controls can be met through con
 - Need to make different TS AS3 json template files, some need to log ASM events, others only LTM and APM, etc...
 
 
-## Dan's updates (branch "dancayercse" in Steve's repo)
+## Dan's updates (new branch called "dancayercse" in Steve's repo)
 - updated the code to install the newer version of the RPM for TS, to allow for use of IAM role instead of having to pass AWS API creds.
 - adjusted the "depends_on" values for resources to avoid clashing (i.e., can't assign secondary IP's if the VE instance is not done deploying/building)
 - Add a new "revoke_eval_keys_upon_destroy*" resource in each "bigip*.tf" file to help reduce our burn rate of eval keys.
 - Refactored the bigip*.tf modules in the root folder and also the one in the MAZ modules folder. DO, CF, TS and "revoke keys upon destroy" all appear to be working now.
 - The MAZ code is now a module in the modules folder and is "called" from the parent "main.tf" file in the root folder.
 - I tested a new strategy for declaring the variables for the MAR BIGIP's, using a variable type = map(object)... see the tenant_vars.auto.tfvars file.
-
+- Applied in the ./init folder to create S3 and DynamoDB resources to store the tf state file.
+- un-commented the "terraform backend S3" code at the top of ./main.tf (to facilitate collaboration between Steve & Dan?).
 
 
 
