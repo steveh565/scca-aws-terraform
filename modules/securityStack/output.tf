@@ -1,0 +1,2 @@
+output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
+output "BigIP_IAM_Profile_ID" { value = "${aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.id}" }
