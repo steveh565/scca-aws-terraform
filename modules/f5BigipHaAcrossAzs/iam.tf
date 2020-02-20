@@ -9,7 +9,7 @@ resource "aws_iam_role" "bigip-failover-extension-iam-role" {
 resource "aws_iam_policy" "bigip-failover-extension-iam-policy" {
   name        = "bigip-failover-extension-iam-policy"
   description = "for bigip cloud failover extension"
-  policy      = file("bigip-failover-extension-iam-policy.json")
+  policy      = file("${path.module}/bigip-failover-extension-iam-policy.json")
 }
 
 resource "aws_iam_policy_attachment" "bigip-failover-extension-iam-policy-attach" {
