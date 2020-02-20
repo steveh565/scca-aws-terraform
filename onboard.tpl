@@ -89,7 +89,7 @@ tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.
 #EOF
 
 # Enable off-box AVR telemetry
-modify analytics global-settings { offbox-protocol tcp offbox-tcp-addresses add { 127.0.0.1 } offbox-tcp-port 6514 use-offbox enabled }
+tmsh modify analytics global-settings { offbox-protocol tcp offbox-tcp-addresses add { 127.0.0.1 } offbox-tcp-port 6514 use-offbox enabled }
 
 #tmsh modify /auth user admin password ${upassword}
 #create /cm device-group failoverGroup devices replace-all-with { transitF5vm01.f5labs.gc.ca { set-sync-leader } transitF5vm02.f5labs.gc.ca } type sync-failover auto-sync enabled save-on-auto-sync false network-failover enabled full-load-on-sync false asm-sync disabled

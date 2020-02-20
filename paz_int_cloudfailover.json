@@ -1,0 +1,38 @@
+{
+    "class": "Cloud_Failover",
+    "environment": "aws",
+    "externalStorage": {
+        "scopingTags": {
+            "f5_cloud_failover_label": "${cf_label}"
+        }
+    },
+    "failoverAddresses": {
+        "scopingTags": {
+            "f5_cloud_failover_label": "${cf_label}"
+        }
+    },
+    "failoverRoutes": {
+        "scopingTags": {
+            "f5_cloud_failover_label": "${cf_label}}"
+        },
+        "scopingAddressRanges": [
+            {
+                "range": "${cf_cidr1}"
+            },
+            {
+                "range": "${cf_cidr2}"
+            }
+        ],
+        "defaultNextHopAddresses": {
+            "discoveryType": "static",
+            "items": [
+                "${az1_nexthop}",
+                "${az2_nexthop}"
+            ]
+        },
+        "controls": {
+            "class": "Controls",
+            "logLevel": "info"
+        }
+    }
+}

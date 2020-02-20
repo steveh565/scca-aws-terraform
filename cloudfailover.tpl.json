@@ -13,11 +13,14 @@
     },
     "failoverRoutes": {
         "scopingTags": {
-            "f5_cloud_failover_label": "{cf_label}}"
+            "f5_cloud_failover_label": "${cf_label}}"
         },
         "scopingAddressRanges": [
             {
-                "range": "${cf_cidr}"
+                "range": "${cf_cidr1}"
+            },
+            {
+                "range": "${cf_cidr2}"
             }
         ],
         "defaultNextHopAddresses": {

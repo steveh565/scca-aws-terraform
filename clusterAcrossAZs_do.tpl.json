@@ -6,7 +6,7 @@
     "label": "Basic onboarding",
     "Common": {
         "class": "Tenant",
-        "hostname": "${local_host}.example.com",
+        "hostname": "${local_host}",
 	    "myLicense": {
             "class": "License",
             "licenseType": "regKey",
@@ -98,7 +98,7 @@
         "failoverGroup": {
             "class": "DeviceGroup",
             "type": "sync-failover",
-            "members": ["${host1}.example.com", "${host2}.example.com"],
+            "members": ["${host1}", "${host2}"],
             "owner": "/Common/failoverGroup/members/0",
             "autoSync": true,
             "saveOnAutoSync": false,
@@ -110,7 +110,7 @@
             "class": "DeviceTrust",
             "localUsername": "${admin_user}",
             "localPassword": "${admin_password}",
-            "remoteHost": "${remote_selfip}",
+            "remoteHost": "/Common/failoverGroup/members/0",
             "remoteUsername": "${admin_user}",
             "remotePassword": "${admin_password}"
         }

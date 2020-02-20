@@ -1,12 +1,8 @@
+# AWS S3 and DynamoDB only required if you wish to store the Terraform state file remotely (for collaboration)
 # Infrastructure
 provider "aws" {
-	region = "${var.aws_region}"
-  
-  #uncomment if you set these variables in vars.tf
-	#Comment out if you wish to use ENV variables for auth tokens
-	access_key = var.SP.access_key
-	secret_key = var.SP.secret_key
-}
+	region = var.aws_region
+  }
 
 resource "aws_s3_bucket" "terraform_state" {
   bucket = lower("${var.tag_name}-${var.tfstate_s3Bucket}")

@@ -1,4 +1,3 @@
-
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az1_transit_mgmt" {
   depends_on      = [aws_security_group.sg_ext_mgmt]
@@ -10,50 +9,66 @@ resource "aws_network_interface" "az1_transit_mgmt" {
 resource "aws_network_interface" "az1_transit_external" {
   depends_on      = [aws_security_group.sg_external]
   subnet_id       = aws_subnet.az1_dmzInt.id
+  #    bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  #    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
   private_ips     = [var.az1_transitF5.dmz_int_self]
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.transit_cf_label
   }
+  lifecycle {
+    ignore_changes = [
+      private_ips,
+    ]
+  }  
 }
 
-
 resource "null_resource" "az1_transit_external_secondary_ips" {
-  depends_on = [aws_network_interface.az1_transit_external]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  depends_on = [aws_network_interface.az1_transit_external, aws_instance.az1_transit_bigip]
+  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
+  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
+
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_transit_external.id} --private-ip-addresses ${var.az1_transitF5.dmz_int_vip}
     EOF
   }
 }
 
-
 resource "aws_network_interface" "az1_transit_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az1_transit.id
+  #    bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  #    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
   private_ips     = [var.az1_transitF5.transit_self]
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.transit_cf_label
   }
+  lifecycle {
+    ignore_changes = [
+      private_ips,
+    ]
+  }  
 }
 
 resource "null_resource" "az1_transit_internal_secondary_ips" {
-  depends_on = [aws_network_interface.az1_transit_internal]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  depends_on = [aws_network_interface.az1_transit_internal, aws_instance.az1_transit_bigip]
+  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
+  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
+
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_transit_internal.id} --private-ip-addresses ${var.az1_transitF5.transit_vip}
     EOF
   }
@@ -68,7 +83,7 @@ resource "aws_eip" "eip_az1_transit_mgmt" {
 }
 
 resource "aws_eip" "eip_az1_transit_external" {
-  depends_on                = [aws_network_interface.az1_transit_external, null_resource.az1_transit_external_secondary_ips, aws_internet_gateway.gw]
+  depends_on                = [aws_network_interface.az1_transit_external, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az1_transit_external.id
   associate_with_private_ip = var.az1_transitF5.dmz_int_self
@@ -76,9 +91,10 @@ resource "aws_eip" "eip_az1_transit_external" {
 
 #Big-IP 1
 resource "aws_instance" "az1_transit_bigip" {
-  depends_on    = [aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_transit_external, aws_network_interface.az1_transit_internal, aws_network_interface.az1_transit_mgmt]
+  depends_on    = [aws_eip.eip_az1_transit_mgmt, aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_transit_external, aws_network_interface.az1_transit_internal, aws_network_interface.az1_transit_mgmt]
   ami           = var.ami_f5image_name
   instance_type = var.ami_transit_f5instance_type
+  availability_zone           = "${var.aws_region}a"
   user_data     = data.template_file.az1_transitF5_vm_onboard.rendered
   iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   key_name      = "kp${var.tag_name}"
@@ -99,70 +115,21 @@ resource "aws_instance" "az1_transit_bigip" {
   }
   provisioner "remote-exec" {
     connection {
-      host     = "${aws_instance.az1_transit_bigip.public_ip}"
+      host     = self.public_ip
       type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
+      user     = var.uname
+      password = var.upassword
     }
-    when = "create"
+    when = create
     inline = [
       "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
-  }
-  provisioner "remote-exec" {
-    connection {
-      host     = "${aws_instance.az1_transit_bigip.public_ip}"
-      type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
-    }
-    when = "destroy"
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = "continue"
   }
 
   tags = {
     Name = "${var.tag_name}-${var.az1_transitF5.hostname}"
   }
 }
-
-
-
-## AZ1 DO Declaration
-data "template_file" "az1_transitCluster_do_json" {
-  template = "${file("${path.module}/transit_clusterAcrossAZs_do.tpl.json")}"
-  vars = {
-    #Uncomment the following line for BYOL
-    regkey         = "${var.transit_lic1}"
-    banner_color   = "red"
-    host1          = "${var.az1_transitF5.hostname}"
-    host2          = "${var.az2_transitF5.hostname}"
-    local_host     = "${var.az1_transitF5.hostname}"
-    local_selfip1  = "${var.az1_transitF5.dmz_int_self}"
-    local_selfip2  = "${var.az1_transitF5.transit_self}"
-    remote_selfip  = "${var.az2_transitF5.mgmt}"
-    mgmt_gw        = "${local.az1_mgmt_gw}"
-    gateway        = "${local.az1_transit_ext_gw}"
-    dns_server     = "${var.dns_server}"
-    ntp_server     = "${var.ntp_server}"
-    timezone       = "${var.timezone}"
-    admin_user     = "${var.uname}"
-    admin_password = "${var.upassword}"
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
-  }
-}
-# Render transit DO declaration
-resource "local_file" "az1_transitCluster_do_file" {
-  content  = "${data.template_file.az1_transitCluster_do_json.rendered}"
-  filename = "${path.module}/${var.az1_transitCluster_do_json}"
-}
-
-
-
 
 
 # Create and attach bigip tmm network interfaces
@@ -176,23 +143,32 @@ resource "aws_network_interface" "az2_transit_mgmt" {
 resource "aws_network_interface" "az2_transit_external" {
   depends_on      = [aws_security_group.sg_external]
   subnet_id       = aws_subnet.az2_dmzInt.id
+  #    bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  #    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
   private_ips     = [var.az2_transitF5.dmz_int_self]
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.transit_cf_label
   }
+  lifecycle {
+    ignore_changes = [
+      private_ips,
+    ]
+  }  
 }
 
 resource "null_resource" "az2_transit_external_secondary_ips" {
-  depends_on = [aws_network_interface.az2_transit_external]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  depends_on = [aws_network_interface.az2_transit_external, aws_instance.az2_transit_bigip]
+  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
+  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
+
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_transit_external.id} --private-ip-addresses ${var.az2_transitF5.dmz_int_vip}
     EOF
   }
@@ -201,23 +177,32 @@ resource "null_resource" "az2_transit_external_secondary_ips" {
 resource "aws_network_interface" "az2_transit_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az2_transit.id
+  #    bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  #    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
   private_ips     = [var.az2_transitF5.transit_self]
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.transit_cf_label
   }
+  lifecycle {
+    ignore_changes = [
+      private_ips,
+    ]
+  }  
 }
 
 resource "null_resource" "az2_transit_internal_secondary_ips" {
-  depends_on = [aws_network_interface.az2_transit_internal]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  depends_on = [aws_network_interface.az2_transit_internal, aws_instance.az2_transit_bigip]
+  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
+  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
+
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_transit_internal.id} --private-ip-addresses ${var.az2_transitF5.transit_vip}
     EOF
   }
@@ -231,16 +216,15 @@ resource "aws_eip" "eip_az2_transit_mgmt" {
 }
 
 resource "aws_eip" "eip_az2_transit_external" {
-  depends_on                = [aws_network_interface.az2_transit_external, null_resource.az2_transit_external_secondary_ips, aws_internet_gateway.gw]
+  depends_on                = [aws_network_interface.az2_transit_external, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az2_transit_external.id
   associate_with_private_ip = var.az2_transitF5.dmz_int_self
 }
 
-
 # BigIP 2
 resource "aws_instance" "az2_transit_bigip" {
-  depends_on        = [aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_transit_external, aws_network_interface.az2_transit_internal, aws_network_interface.az2_transit_mgmt]
+  depends_on        = [aws_eip.eip_az2_transit_mgmt, aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_transit_external, aws_network_interface.az2_transit_internal, aws_network_interface.az2_transit_mgmt]
   ami               = var.ami_f5image_name
   instance_type     = var.ami_transit_f5instance_type
   availability_zone = "${var.aws_region}b"
@@ -264,29 +248,15 @@ resource "aws_instance" "az2_transit_bigip" {
   }
   provisioner "remote-exec" {
     connection {
-      host     = "${aws_instance.az2_transit_bigip.public_ip}"
+      host     = self.public_ip
       type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
+      user     = var.uname
+      password = var.upassword
     }
-    when = "create"
+    when = create
     inline = [
       "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
-  }
-
-  provisioner "remote-exec" {
-    connection {
-      host     = "${aws_instance.az2_transit_bigip.public_ip}"
-      type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
-    }
-    when = "destroy"
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = "continue"
   }
 
   tags = {
@@ -294,36 +264,139 @@ resource "aws_instance" "az2_transit_bigip" {
   }
 }
 
+# Recycle/revoke eval keys (useful for demo purposes)
+resource "null_resource" "revoke_eval_keys_upon_destroy_transit" {
+  depends_on = [
+    aws_internet_gateway.gw,
+    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+    aws_iam_policy.bigip-failover-extension-iam-policy,
+    aws_key_pair.main,
+    aws_security_group.sg_external,
+    aws_route_table.TransitRt,
+    aws_route_table.MgmtRt,
+    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
+    aws_ec2_transit_gateway.hubtgw,
+    aws_route_table_association.az1_transit,
+    aws_route_table_association.az2_transit,
+    aws_instance.az1_transit_bigip,
+    aws_instance.az2_transit_bigip,
+    aws_eip.eip_az1_transit_external,
+    aws_eip.eip_az2_transit_external,
+    aws_eip.eip_az1_transit_mgmt,
+    aws_eip.eip_az2_transit_mgmt,
+    aws_route_table_association.az1_dmzExt,
+    aws_route_table_association.az2_dmzExt,
+    aws_route_table_association.az1_dmzInt,
+    aws_route_table_association.az2_dmzInt,
+    aws_route_table_association.az1_ext,
+    aws_route_table_association.az2_ext,
+    aws_route_table_association.az1_dmzInt,
+    aws_route_table_association.az2_dmzInt
+  ]
+  for_each = {
+    bigip1 = aws_instance.az1_transit_bigip.public_ip
+    bigip2 = aws_instance.az2_transit_bigip.public_ip
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = each.value
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh -q revoke sys license 2>/dev/null"
+    ]
+    on_failure = continue
+  }
+}
+
+
+
+## AZ1 DO Declaration
+data "template_file" "az1_transitCluster_do_json" {
+  template = "${file("${path.module}/transit_clusterAcrossAZs_do.tpl.json")}"
+  vars = {
+    #Uncomment the following line for BYOL
+    regkey         = var.transit_lic1
+    banner_color   = "red"
+    Domainname     = var.f5Domainname
+    host1          = var.az1_transitF5.hostname
+    host2          = var.az2_transitF5.hostname
+    local_host     = var.az1_transitF5.hostname
+    local_selfip1  = var.az1_transitF5.dmz_int_self
+    local_selfip2  = var.az1_transitF5.transit_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = var.az1_transitF5.mgmt
+    mgmt_gw        = local.az1_mgmt_gw
+    gateway        = local.az1_transit_ext_gw
+    dns_server     = var.dns_server
+    ntp_server     = var.ntp_server
+    timezone       = var.timezone
+    admin_user     = var.uname
+    admin_password = var.upassword
+  }
+}
+
+# Render transit DO declaration
+resource "local_file" "az1_transitCluster_do_file" {
+  content  = data.template_file.az1_transitCluster_do_json.rendered
+  filename = "${path.module}/${var.az1_transitCluster_do_json}"
+}
 
 ## AZ2 DO Declaration
 data "template_file" "az2_transitCluster_do_json" {
   template = "${file("${path.module}/transit_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
-    regkey         = "${var.transit_lic2}"
+    regkey         = var.transit_lic2
     banner_color   = "red"
-    host1          = "${var.az2_transitF5.hostname}"
-    host2          = "${var.az1_transitF5.hostname}"
-    local_host     = "${var.az2_transitF5.hostname}"
-    local_selfip1  = "${var.az2_transitF5.dmz_int_self}"
-    local_selfip2  = "${var.az2_transitF5.transit_self}"
-    remote_selfip  = "${var.az1_transitF5.mgmt}"
-    mgmt_gw        = "${local.az2_mgmt_gw}"
-    gateway        = "${local.az2_transit_ext_gw}"
-    dns_server     = "${var.dns_server}"
-    ntp_server     = "${var.ntp_server}"
-    timezone       = "${var.timezone}"
-    admin_user     = "${var.uname}"
-    admin_password = "${var.upassword}"
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
+    Domainname     = var.f5Domainname
+    host1          = var.az1_transitF5.hostname
+    host2          = var.az2_transitF5.hostname
+    local_host     = var.az2_transitF5.hostname
+    local_selfip1  = var.az2_transitF5.dmz_int_self
+    local_selfip2  = var.az2_transitF5.transit_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = var.az1_transitF5.mgmt
+    mgmt_gw        = local.az2_mgmt_gw
+    gateway        = local.az2_transit_ext_gw
+    dns_server     = var.dns_server
+    ntp_server     = var.ntp_server
+    timezone       = var.timezone
+    admin_user     = var.uname
+    admin_password = var.upassword
   }
 }
+
 # Render transit DO declaration
-resource "local_file" "az2_transit_do_file" {
-  content  = "${data.template_file.az2_transitCluster_do_json.rendered}"
+resource "local_file" "az2_transitCluster_do_file" {
+  content  = data.template_file.az2_transitCluster_do_json.rendered
   filename = "${path.module}/${var.az2_transitCluster_do_json}"
+}
+
+# transit CF Declaration
+data "template_file" "transit_cf_json" {
+  template = "${file("${path.module}/transit_cloudfailover.tpl.json")}"
+
+  vars = {
+    cf_label = var.transit_cf_label
+    cf_cidr1 = "100.100.0.0/16"
+    cf_cidr2 = var.az1_security_subnets.aip_dmzTransit_ext
+    cf_cidr3 = var.az1_security_subnets.aip_Transit_int
+    cf_cidr4 = "0.0.0.0/0"
+    cf_nexthop1 = var.az1_transitF5.dmz_int_self
+    cf_nexthop2 = var.az2_transitF5.dmz_int_self
+    cf_nexthop3 = var.az1_transitF5.transit_self
+    cf_nexthop4 = var.az2_transitF5.transit_self
+  }
+}
+
+# Render transit CF Declaration
+resource "local_file" "transit_cf_file" {
+  content  = data.template_file.transit_cf_json.rendered
+  filename = "${path.module}/${var.transit_cf_json}"
 }
 
 # transit TS Declaration
@@ -332,13 +405,12 @@ data "template_file" "transit_ts_json" {
 
   vars = {
     aws_region = var.aws_region
-    access_key = var.SP.access_key
-    secret_key = var.SP.secret_key
   }
 }
+
 # Render transit TS declaration
 resource "local_file" "transit_ts_file" {
-  content  = "${data.template_file.transit_ts_json.rendered}"
+  content  = data.template_file.transit_ts_json.rendered
   filename = "${path.module}/${var.transit_ts_json}"
 }
 
@@ -350,9 +422,10 @@ data "template_file" "transit_logs_as3_json" {
 
   }
 }
+
 # Render transit LogCollection AS3 declaration
 resource "local_file" "transit_logs_as3_file" {
-  content  = "${data.template_file.transit_logs_as3_json.rendered}"
+  content  = data.template_file.transit_logs_as3_json.rendered
   filename = "${path.module}/${var.transit_logs_as3_json}"
 }
 
@@ -362,23 +435,22 @@ data "template_file" "transit_as3_json" {
 
   vars = {
     backendvm_ip   = ""
-    asm_policy_url = "${var.asm_policy_url}"
+    asm_policy_url = var.asm_policy_url
   }
 }
 # Render transit AS3 declaration
 resource "local_file" "transit_as3_file" {
-  content  = "${data.template_file.transit_as3_json.rendered}"
+  content  = data.template_file.transit_as3_json.rendered
   filename = "${path.module}/${var.transit_as3_json}"
 }
 
-
+# Send declarations via REST API's
 resource "null_resource" "az1_transitF5_DO" {
-  depends_on = [aws_instance.az1_transit_bigip]
-  # Running DO REST API
+  depends_on = [aws_instance.az1_transit_bigip, local_file.az1_transitCluster_do_file]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_transit_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_transitCluster_do_json}
+      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az1_transit_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_transitCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_transit_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
@@ -386,21 +458,36 @@ resource "null_resource" "az1_transitF5_DO" {
 }
 
 resource "null_resource" "az2_transitF5_DO" {
-  depends_on = [aws_instance.az2_transit_bigip]
+  depends_on = [aws_instance.az2_transit_bigip, local_file.az2_transitCluster_do_file]
   # Running DO REST API
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_transit_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_transitCluster_do_json}
+      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_transit_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_transitCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_transit_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
 }
 
+resource "null_resource" "transitF5_CF" {
+  depends_on	= [null_resource.az1_transitF5_DO, null_resource.az2_transitF5_DO]
+  for_each = {
+    bigip1 = aws_instance.az1_transit_bigip.public_ip
+    bigip2 = aws_instance.az2_transit_bigip.public_ip
+  }
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.transit_cf_json}
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 120
+    EOF
+  }
+}
 
 resource "null_resource" "transitF5_TS" {
-  depends_on = ["null_resource.az1_transitF5_DO", "null_resource.az2_transitF5_DO"]
+  depends_on = [null_resource.transitF5_CF]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF
@@ -411,7 +498,7 @@ resource "null_resource" "transitF5_TS" {
 }
 
 resource "null_resource" "transitF5_TS_LogCollection" {
-  depends_on = ["null_resource.transitF5_TS"]
+  depends_on = [null_resource.transitF5_TS]
   # Running CF REST API
   provisioner "local-exec" {
     command = <<-EOF

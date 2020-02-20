@@ -47,3 +47,17 @@ maz/az1_mazF5_onboard.sh
 maz/az2_mazF5_onboard.sh
 maz/cf-iam.tf
 tenant/cf-iam.tf
+*.tfvars
+*.log
+.terraform.tfstate.lock.info
+terraform.tfvars
+dmz_cf.json
+paz_cf.json
+transit.as3.json
+transit_cf.json
+modules/maz/az1_mazF5_onboard.sh
+modules/maz/az2_mazF5_onboard.sh
+modules/maz/mazF5vm01.do.json
+modules/maz/mazF5vm02.do.json
+modules/maz/maz_cf.json
+modules/f5SraWebPortal/bigip_sra_as3.json

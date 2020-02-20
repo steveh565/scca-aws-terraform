@@ -17,10 +17,6 @@
         "type": "AWS_CloudWatch",
         "region": "${aws_region}",
         "logGroup": "f5telemetry",
-        "logStream": "default",
-        "username": "${access_key}",
-        "passphrase": {
-            "cipherText": "${secret_key}"
-        }
+        "logStream": "default"
     }
 }

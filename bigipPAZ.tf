@@ -9,67 +9,79 @@ resource "aws_network_interface" "az1_mgmt" {
 resource "aws_network_interface" "az1_external" {
   depends_on      = [aws_security_group.sg_external]
   subnet_id       = aws_subnet.az1_ext.id
+  #    bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  #    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
   private_ips     = [var.az1_pazF5.paz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
-
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.paz_cf_label
   }
+  lifecycle {
+    ignore_changes = [
+      private_ips,
+    ]
+  }  
 }
 
-
 resource "null_resource" "az1_external_secondary_ips" {
-  depends_on = [aws_network_interface.az1_external, aws_eip.eip_vip]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  depends_on = [aws_network_interface.az1_external, aws_instance.az1_bigip]
+  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
+  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
+
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-addresses ${var.az1_pazF5.paz_ext_vip}
-      aws ec2 associate-address --region ${var.aws_region} --allocation-id ${aws_eip.eip_vip.id} --network-interface-id ${aws_network_interface.az1_external.id} --private-ip-address ${var.az1_pazF5.paz_ext_vip}
     EOF
   }
 }
 
-
 resource "aws_network_interface" "az1_internal" {
   depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az1_dmzExt.id
+  #    bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  #    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
   private_ips     = [var.az1_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.paz_cf_label
+  }  
+  lifecycle {
+    ignore_changes = [
+      private_ips,
+    ]
   }  
 }
 
-
 resource "null_resource" "az1_internal_secondary_ips" {
-  depends_on = [aws_network_interface.az1_internal]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  depends_on = [aws_network_interface.az1_internal, aws_instance.az1_bigip]
+  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
+  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
+
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_internal.id} --private-ip-addresses ${var.az1_pazF5.dmz_ext_vip}
     EOF
   }
 }
 
-
 # Create elastic IP and map to "VIP" on external paz nic
 resource "aws_eip" "eip_vip" {
-  depends_on                = [aws_internet_gateway.gw]
+  depends_on                = [aws_network_interface.az1_external, aws_internet_gateway.gw, null_resource.az1_external_secondary_ips]
   vpc                       = true
-  #network_interface         = aws_network_interface.az1_external.id
-  #associate_with_private_ip = var.az1_pazF5.paz_ext_vip
+  network_interface         = aws_network_interface.az1_external.id
+  associate_with_private_ip = var.az1_pazF5.paz_ext_vip
   tags = {
-    f5_cloud_failover_label = "${var.paz_cf_label}"
+    f5_cloud_failover_label = var.paz_cf_label
   }
 }
 
@@ -81,22 +93,20 @@ resource "aws_eip" "eip_az1_mgmt" {
 }
 
 resource "aws_eip" "eip_az1_external" {
-  depends_on                = [aws_network_interface.az1_external, null_resource.az1_external_secondary_ips, aws_internet_gateway.gw]
+  depends_on                = [aws_network_interface.az1_external, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az1_external.id
   associate_with_private_ip = var.az1_pazF5.paz_ext_self
-  tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
-  }
 }
 
 #Big-IP 1
 resource "aws_instance" "az1_bigip" {
-  depends_on                  = [aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_external, aws_network_interface.az1_internal, aws_network_interface.az1_mgmt]
+  depends_on                  = [aws_eip.eip_az1_mgmt, aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_external, aws_network_interface.az1_internal, aws_network_interface.az1_mgmt]
   ami                         = var.ami_f5image_name
   instance_type               = var.ami_paz_f5instance_type
-  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
+  availability_zone           = "${var.aws_region}a"
   user_data                   = data.template_file.az1_pazF5_vm_onboard.rendered
+  iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   key_name                    = "kp${var.tag_name}"
   root_block_device {
     delete_on_termination = true
@@ -115,28 +125,15 @@ resource "aws_instance" "az1_bigip" {
   }
   provisioner "remote-exec" {
     connection {
-      host     = "${aws_instance.az1_bigip.public_ip}"
+      host     = self.public_ip
       type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
+      user     = var.uname
+      password = var.upassword
     }
-    when = "create"
+    when = create
     inline = [
       "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
-  }
-  provisioner "remote-exec" {
-    connection {
-      host     = "${aws_instance.az1_bigip.public_ip}"
-      type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
-    }
-    when = "destroy"
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = "continue"
   }
 
   tags = {
@@ -144,37 +141,6 @@ resource "aws_instance" "az1_bigip" {
   }
 }
 
-
-## AZ1 Cluster DO Declaration
-data "template_file" "az1_pazCluster_do_json" {
-  template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
-  vars = {
-    #Uncomment the following line for BYOL
-    regkey         = "${var.paz_lic1}"
-    banner_color   = "red"
-    host1          = "${var.az1_pazF5.hostname}"
-    host2          = "${var.az2_pazF5.hostname}"
-    local_host     = "${var.az1_pazF5.hostname}"
-    local_selfip1  = "${var.az1_pazF5.paz_ext_self}"
-    local_selfip2  = "${var.az1_pazF5.dmz_ext_self}"
-    remote_selfip  = "${var.az2_pazF5.mgmt}"
-    mgmt_gw        = "${local.az1_mgmt_gw}"
-    gateway        = "${local.az1_paz_gw}"
-    dns_server     = "${var.dns_server}"
-    ntp_server     = "${var.ntp_server}"
-    timezone       = "${var.timezone}"
-    admin_user     = "${var.uname}"
-    admin_password = "${var.upassword}"
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
-  }
-}
-# Render PAZ DO declaration
-resource "local_file" "az1_pazCluster_do_file" {
-  content     = "${data.template_file.az1_pazCluster_do_json.rendered}"
-  filename    = "${path.module}/${var.az1_pazCluster_do_json}"
-}
 
 # Create and attach bigip tmm network interfaces
 resource "aws_network_interface" "az2_mgmt" {
@@ -185,58 +151,72 @@ resource "aws_network_interface" "az2_mgmt" {
 }
 
 resource "aws_network_interface" "az2_external" {
-  depends_on      = [aws_security_group.sg_external, aws_subnet.az2_ext]
+  depends_on      = [aws_security_group.sg_external]
   subnet_id       = aws_subnet.az2_ext.id
+  #    bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  #    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
   private_ips     = [var.az2_pazF5.paz_ext_self]
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.paz_cf_label
   }
+  lifecycle {
+    ignore_changes = [
+      private_ips,
+    ]
+  }  
 }
 
-
 resource "null_resource" "az2_external_secondary_ips" {
-  depends_on = [aws_network_interface.az2_external]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  depends_on = [aws_network_interface.az2_external, aws_instance.az2_bigip]
+  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
+  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
+
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_external.id} --private-ip-addresses ${var.az2_pazF5.paz_ext_vip}
     EOF
   }
 }
 
-
 resource "aws_network_interface" "az2_internal" {
-  depends_on      = [aws_security_group.sg_internal, aws_subnet.az2_dmzExt]
+  depends_on      = [aws_security_group.sg_internal]
   subnet_id       = aws_subnet.az2_dmzExt.id
+  #    bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  #    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
   private_ips     = [var.az2_pazF5.dmz_ext_self]
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
+    f5_cloud_failover_label = var.paz_cf_label
   }
+  lifecycle {
+    ignore_changes = [
+      private_ips,
+    ]
+  }  
 }
 
-
 resource "null_resource" "az2_internal_secondary_ips" {
-  depends_on = [aws_network_interface.az2_internal]
-  # Use the "aws ec2 assign-private-ip-addresses" command to add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674
+  depends_on = [aws_network_interface.az2_internal, aws_instance.az2_bigip]
+  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
+  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
+  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
+  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
+
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      export AWS_SECRET_ACCESS_KEY=${var.SP.secret_key}
-      export AWS_ACCESS_KEY_ID=${var.SP.access_key}
       aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_internal.id} --private-ip-addresses ${var.az2_pazF5.dmz_ext_vip}
     EOF
   }
 }
-
 
 resource "aws_eip" "eip_az2_mgmt" {
   depends_on                = [aws_network_interface.az2_mgmt, aws_internet_gateway.gw]
@@ -246,18 +226,16 @@ resource "aws_eip" "eip_az2_mgmt" {
 }
 
 resource "aws_eip" "eip_az2_external" {
-  depends_on                = [aws_network_interface.az2_external, null_resource.az2_external_secondary_ips, aws_internet_gateway.gw]
+  depends_on                = [aws_network_interface.az2_external, aws_internet_gateway.gw]
   vpc                       = true
   network_interface         = aws_network_interface.az2_external.id
   associate_with_private_ip = var.az2_pazF5.paz_ext_self
-  tags = {
-    f5_cloud_failover_label = "${var.gccap_cf_label}"
-  }
 }
+
 
 # BigIP 2
 resource "aws_instance" "az2_bigip" {
-  depends_on                  = [aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_external, aws_network_interface.az2_internal, aws_network_interface.az2_mgmt]
+  depends_on                  = [aws_eip.eip_az2_mgmt, aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_external, aws_network_interface.az2_internal, aws_network_interface.az2_mgmt]
   ami                         = var.ami_f5image_name
   instance_type               = var.ami_paz_f5instance_type
   availability_zone           = "${var.aws_region}b"
@@ -281,29 +259,15 @@ resource "aws_instance" "az2_bigip" {
   }
   provisioner "remote-exec" {
     connection {
-      host     = "${aws_instance.az2_bigip.public_ip}"
+      host     = self.public_ip
       type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
+      user     = var.uname
+      password = var.upassword
     }
-    when = "create"
+    when = create
     inline = [
       "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
     ]
-  }
-
-  provisioner "remote-exec" {
-    connection {
-      host     = "${aws_instance.az2_bigip.public_ip}"
-      type     = "ssh"
-      user     = "${var.uname}"
-      password = "${var.upassword}"
-    }
-    when = "destroy"
-    inline = [
-      "echo y | tmsh revoke sys license"
-    ]
-    on_failure = "continue"
   }
 
   tags = {
@@ -311,36 +275,129 @@ resource "aws_instance" "az2_bigip" {
   }
 }
 
+# Recycle/revoke eval keys (useful for demo purposes)
+resource "null_resource" "revoke_eval_keys_upon_destroy_paz2" {
+  depends_on = [
+    aws_internet_gateway.gw,
+    aws_iam_policy_attachment.bigip-failover-extension-iam-policy-attach,
+    aws_iam_policy.bigip-failover-extension-iam-policy,
+    aws_key_pair.main,
+    aws_security_group.sg_external,
+    aws_security_group.sg_ext_mgmt,
+    aws_route_table.PazRt,
+    aws_ec2_transit_gateway_vpc_attachment.hubTgwAttach,
+    aws_ec2_transit_gateway.hubtgw,
+    aws_route_table_association.az1_mgmt,
+    aws_route_table_association.az2_mgmt,
+    aws_route_table_association.az1_ext,
+    aws_route_table_association.az2_ext,
+    aws_instance.az1_bigip,
+    aws_instance.az2_bigip,
+    aws_eip.eip_az1_external,
+    aws_eip.eip_az2_external,
+    aws_eip.eip_az1_mgmt,
+    aws_eip.eip_az2_mgmt
+  ]
+  for_each = {
+    bigippaz1 = aws_instance.az1_bigip.public_ip
+    bigippaz2 = aws_instance.az2_bigip.public_ip
+  }
+  provisioner "remote-exec" {
+    connection {
+      host     = each.value
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = destroy
+    inline = [
+      "echo y | tmsh -q revoke sys license 2>/dev/null"
+    ]
+    on_failure = continue
+  }
+}
+
+
+
+## AZ1 Cluster DO Declaration
+data "template_file" "az1_pazCluster_do_json" {
+  template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
+  vars = {
+    #Uncomment the following line for BYOL
+    regkey         = var.paz_lic1
+    banner_color   = "red"
+    Domainname     = var.f5Domainname
+    host1          = var.az1_pazF5.hostname
+    host2          = var.az2_pazF5.hostname
+    local_host     = var.az1_pazF5.hostname
+    local_selfip1  = var.az1_pazF5.paz_ext_self
+    local_selfip2  = var.az1_pazF5.dmz_ext_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = var.az1_pazF5.mgmt
+    mgmt_gw        = local.az1_mgmt_gw
+    gateway        = local.az1_paz_gw
+    dns_server     = var.dns_server
+    ntp_server     = var.ntp_server
+    timezone       = var.timezone
+    admin_user     = var.uname
+    admin_password = var.upassword
+  }
+}
+
+# Render PAZ DO declaration
+resource "local_file" "az1_pazCluster_do_file" {
+  content     = data.template_file.az1_pazCluster_do_json.rendered
+  filename    = "${path.module}/${var.az1_pazCluster_do_json}"
+}
 
 ## AZ2 Cluster DO Declaration
 data "template_file" "az2_pazCluster_do_json" {
   template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
-    regkey         = "${var.paz_lic2}"
+    regkey         = var.paz_lic2
     banner_color   = "red"
-    host1          = "${var.az2_pazF5.hostname}"
-    host2          = "${var.az1_pazF5.hostname}"
-    local_host     = "${var.az2_pazF5.hostname}"
-    local_selfip1  = "${var.az2_pazF5.paz_ext_self}"
-    local_selfip2  = "${var.az2_pazF5.dmz_ext_self}"
-    remote_selfip  = "${var.az1_pazF5.mgmt}"
-    mgmt_gw        = "${local.az2_mgmt_gw}"
-    gateway        = "${local.az2_paz_gw}"
-    dns_server     = "${var.dns_server}"
-    ntp_server     = "${var.ntp_server}"
-    timezone       = "${var.timezone}"
-    admin_user     = "${var.uname}"
-    admin_password = "${var.upassword}"
-
-    #app1_net        = "${local.app1_net}"
-    #app1_net_gw     = "${local.app1_net_gw}"
+    Domainname     = var.f5Domainname
+    host1          = var.az1_pazF5.hostname
+    host2          = var.az2_pazF5.hostname
+    local_host     = var.az2_pazF5.hostname
+    local_selfip1  = var.az2_pazF5.paz_ext_self
+    local_selfip2  = var.az2_pazF5.dmz_ext_self
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = var.az1_pazF5.mgmt
+    mgmt_gw        = local.az2_mgmt_gw
+    gateway        = local.az2_paz_gw
+    dns_server     = var.dns_server
+    ntp_server     = var.ntp_server
+    timezone       = var.timezone
+    admin_user     = var.uname
+    admin_password = var.upassword
   }
 }
+
 # Render PAZ DO declaration
 resource "local_file" "az2_pazCluster_do_file" {
-  content     = "${data.template_file.az2_pazCluster_do_json.rendered}"
+  content     = data.template_file.az2_pazCluster_do_json.rendered
   filename    = "${path.module}/${var.az2_pazCluster_do_json}"
+}
+
+# PAZ CF Declaration
+data "template_file" "paz_cf_json" {
+  template = "${file("${path.module}/paz_int_cloudfailover.tpl.json")}"
+
+  vars = {
+    cf_label = var.paz_cf_label
+    cf_cidr1 = "0.0.0.0/0"
+    cf_cidr2 = var.az1_security_subnets.aip_paz_dmz_ext
+    cf_nexthop1 = var.az1_pazF5.dmz_ext_self
+    cf_nexthop2 = var.az2_pazF5.dmz_ext_self
+  }
+}
+
+# Render PAZ CF Declaration
+resource "local_file" "paz_cf_file" {
+  content  = data.template_file.paz_cf_json.rendered
+  filename = "${path.module}/${var.paz_cf_json}"
 }
 
 # PAZ TS Declaration
@@ -349,13 +406,12 @@ data "template_file" "paz_ts_json" {
 
   vars = {
     aws_region = var.aws_region
-    access_key = var.SP.access_key
-    secret_key = var.SP.secret_key
   }
 }
+
 # Render PAZ TS declaration
 resource "local_file" "paz_ts_file" {
-  content  = "${data.template_file.paz_ts_json.rendered}"
+  content  = data.template_file.paz_ts_json.rendered
   filename = "${path.module}/${var.paz_ts_json}"
 }
 
@@ -367,9 +423,10 @@ data "template_file" "paz_logs_as3_json" {
 
   }
 }
+
 # Render PAZ LogCollection AS3 declaration
 resource "local_file" "paz_logs_as3_file" {
-  content  = "${data.template_file.paz_logs_as3_json.rendered}"
+  content  = data.template_file.paz_logs_as3_json.rendered
   filename = "${path.module}/${var.paz_logs_as3_json}"
 }
 
@@ -379,22 +436,24 @@ data "template_file" "paz_as3_json" {
 
   vars = {
     backendvm_ip   = ""
-    asm_policy_url = "${var.asm_policy_url}"
+    asm_policy_url = var.asm_policy_url
   }
 }
+
 # Render PAZ AS3 declaration
 resource "local_file" "paz_as3_file" {
-  content  = "${data.template_file.paz_as3_json.rendered}"
+  content  = data.template_file.paz_as3_json.rendered
   filename = "${path.module}/${var.tenant1_paz_as3_json}"
 }
 
+
+# Send declarations via REST API's
 resource "null_resource" "az1_pazF5_cluster_DO" {
-  depends_on	= [aws_instance.az1_bigip]
-  # Running DO REST API
+  depends_on	= [aws_instance.az1_bigip, local_file.az1_pazCluster_do_file]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_pazCluster_do_json}
+      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az1_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_pazCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
@@ -402,21 +461,35 @@ resource "null_resource" "az1_pazF5_cluster_DO" {
 }
 
 resource "null_resource" "az2_pazF5_cluster_DO" {
-  depends_on    = [aws_instance.az2_bigip]
-  # Running DO REST API
+  depends_on    = [aws_instance.az2_bigip, local_file.az2_pazCluster_do_file]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
-      curl -k -X ${var.rest_do_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_pazCluster_do_json}
+      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_pazCluster_do_json}
       x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
 }
 
+resource "null_resource" "pazF5_CF" {
+  depends_on	= [null_resource.az1_pazF5_cluster_DO, null_resource.az2_pazF5_cluster_DO]
+  for_each = {
+    bigip1 = aws_instance.az1_bigip.public_ip
+    bigip2 = aws_instance.az2_bigip.public_ip
+  }
+  provisioner "local-exec" {
+    command = <<-EOF
+      #!/bin/bash
+      curl -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.paz_cf_json}
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      sleep 120
+    EOF
+  }
+}
+
 resource "null_resource" "pazF5_TS" {
-  depends_on = ["null_resource.az1_pazF5_cluster_DO", "null_resource.az2_pazF5_cluster_DO"]
-  # Running CF REST API
+  depends_on = [null_resource.pazF5_CF]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -426,8 +499,7 @@ resource "null_resource" "pazF5_TS" {
 }
 
 resource "null_resource" "pazF5_TS_LogCollection" {
-  depends_on = ["null_resource.pazF5_TS"]
-  # Running CF REST API
+  depends_on = [null_resource.pazF5_TS]
   provisioner "local-exec" {
     command = <<-EOF
       #!/bin/bash
@@ -435,4 +507,3 @@ resource "null_resource" "pazF5_TS_LogCollection" {
     EOF
   }
 }
-

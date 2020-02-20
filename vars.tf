@@ -4,7 +4,7 @@ variable tfstate_dynamoLocksDb { default = "tfLocks" }
 
 # AWS Creds
 variable "SP" {
-  type = "map"
+  type = map
   default = {
     access_key = "NULL"
     secret_key = "NULL"
@@ -15,14 +15,14 @@ variable "SP" {
 variable aws_region { default = "ca-central-1" }
 
 
-
-
 # Prefixes
 variable prefix { default = "SHSCA9" }
 variable tag_name { default = "SHSCA9" }
 variable tenant_name { default = "CSD" }
 variable maz_name { default = "MAZ" }
 
+
+variable f5Domainname        { default = "f5labs.gc.ca" }
 
 #SSH public key path
 variable key_path { default = "~/.ssh/id_rsa.pub" }
@@ -31,16 +31,19 @@ variable key_path { default = "~/.ssh/id_rsa.pub" }
 variable mgmt_asrc { default = ["0.0.0.0/0"] }
 
 #Big-IP License Keys (BEST)
-variable paz_lic1          { default = "DFSDQ-HGNLM-CJCSE-GGKWZ-TIYOZYA" }
-variable paz_lic2          { default = "XQTHX-XVNQY-OLBNR-GFFLX-PWFXWXA" }
-variable transit_lic1      { default = "DSEFW-CXTZS-LZHWB-ETHHO-FMLUIZN" }
-variable transit_lic2      { default = "XCFUI-UYLLG-SKQPJ-ZSYIP-GQGWQFA" }
-variable dmz_lic1          { default = "NLPAY-JJMGP-JSWFV-BZXYF-UECPAJX" }
-variable dmz_lic2          { default = "UFJBH-VLEXX-ZETKS-LIFEY-XWDBRTW" }
-variable tenant_bigip_lic1 { default = "KNBZH-VSFMF-JYKHS-THWSZ-WECPLWD" }
-variable tenant_bigip_lic2 { default = "WXWHV-LWFTA-RIQVV-UUJKN-SJFAATX" }
-variable maz_bigip_lic1    { default = "YLPAH-ZTKBN-ZLGHH-QPPEG-NADXYTU" }
-variable maz_bigip_lic2    { default = "YGZGS-GIKDG-QVFQB-NCVNV-EJWUWEF" }
+variable paz_lic1          {default = "ULMXM-VYNHO-FSNBE-JTPDK-MUSJYAZ"}
+variable paz_lic2          {default = "ILOJJ-AROIS-HOSEC-JIQEI-VIHTAYG"}
+variable transit_lic1      {default = "ONHFQ-FYFGP-SYZEG-VGXHJ-HBHVANE"}
+variable transit_lic2      {default = "MEUMG-FJMMK-RZLXD-VMGRW-DJZBFCP"}
+variable dmz_lic1          {default = "KVUFW-PBUBC-JUGZF-LFLNX-KLYDFOS"}
+variable dmz_lic2          {default = "ULFVE-TLULT-XUJKW-IWDYB-NVQABYA"}
+variable tenant_bigip_lic1 {default = "ZECCO-BGFXA-BKKPQ-BGZQK-EANKAAA"}
+variable tenant_bigip_lic2 {default = "ONKOU-PWLNB-BHCCX-CEIFP-BGFCNYG"}
+// Use the tenant_vars.auto.tfvars file to store the tenant and bigip specific values instead of above
+// The MAZ values are already stored that way (see variable tenant_values below)
+#variable maz_bigip_lic1    {default = ""}
+#variable maz_bigip_lic1    {}
+#variable maz_bigip_lic2    {}
 
 # Platform settings variables
 variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
@@ -62,7 +65,8 @@ variable uname { default = "awsops" }
 variable upassword { default = "Canada12345" }
 variable dns_server { default = "8.8.8.8" }
 variable ntp_server { default = "0.us.pool.ntp.org" }
-variable timezone   { default = "UTC" }
+#variable timezone   { default = "UTC" }
+variable timezone   { default = "America/New_York" }
 variable libs_dir   { default = "/config/cloud/aws/node_modules" }
 
 
@@ -106,7 +110,7 @@ variable security_vpc_cidr { default = "10.1.0.0/16" }
 variable security_aip_cidr { default = "100.65.0.0/21" }
 
 variable az1_security_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"    = "10.1.0.0/24"
     "paz_ext" = "10.1.1.0/24"
@@ -123,9 +127,12 @@ variable az1_security_subnets {
 
 variable gccap_cf_label { default = "gccap_az_failover"}
 
-variable paz_cf_label { default = "paz_az_failover" }
+variable paz_cf_label { default = "paz-az-failover" }
+variable dmz_cf_label { default = "dmz-az-failover" }
+variable transit_cf_label { default = "transit-az-failover" }
+
 variable az1_pazF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "pazF5vm01"
     "mgmt"         = "10.1.0.11"
@@ -138,10 +145,8 @@ variable az1_pazF5 {
   }
 }
 
-variable dmz_cf_label { default = "dmz_az_failover" }
-
 variable az1_dmzF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "dmzF5vm01"
     "mgmt"         = "10.1.0.12"
@@ -156,10 +161,8 @@ variable az1_dmzF5 {
   }
 }
 
-variable transit_cf_label { default = "transit_az_failover" }
-
 variable az1_transitF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "transitF5vm01"
     "mgmt"         = "10.1.0.13"
@@ -175,7 +178,7 @@ variable az1_transitF5 {
 }
 
 variable az2_security_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"    = "10.1.10.0/24"
     "paz_ext" = "10.1.11.0/24"
@@ -186,7 +189,7 @@ variable az2_security_subnets {
 }
 
 variable az2_pazF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "pazF5vm02"
     "mgmt"         = "10.1.10.11"
@@ -200,7 +203,7 @@ variable az2_pazF5 {
 }
 
 variable az2_dmzF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "dmzF5vm02"
     "mgmt"         = "10.1.10.12"
@@ -216,7 +219,7 @@ variable az2_dmzF5 {
 }
 
 variable az2_transitF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"     = "transitF5vm02"
     "mgmt"         = "10.1.10.13"
@@ -236,7 +239,7 @@ variable az2_transitF5 {
 variable maz_vpc_cidr { default = "10.11.0.0/16" }
 variable maz_aip_cidr { default = "100.66.71.250/29" }
 variable az1_maz_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"     = "10.11.0.0/24"
     "transit"  = "10.11.1.0/24"
@@ -244,10 +247,10 @@ variable az1_maz_subnets {
   }
 }
 
-variable maz_cf_label { default = "maz_az_failover" }
+variable maz_cf_label { default = "maz-az-failover" }
 
 variable az1_mazF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"      = "mazF5vm01"
     "mgmt"          = "10.11.0.11"
@@ -261,7 +264,7 @@ variable az1_mazF5 {
 }
 
 variable az2_maz_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"     = "10.11.10.0/24"
     "transit"  = "10.11.11.0/24"
@@ -270,7 +273,7 @@ variable az2_maz_subnets {
 }
 
 variable az2_mazF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"      = "mazF5vm02"
     "mgmt"          = "10.11.10.11"
@@ -283,11 +286,28 @@ variable az2_mazF5 {
   }
 }
 
+# MAZ Variables
+# This variables are easier to manipulate when defined with type = map(object)
+# The corresponding values are specified/set in the tenant_vars.auto.tfvars file. 
+variable tenant_values {
+  description = "maz-related parameters"
+  type        = map(object({
+    vpc_cidr = string
+    aip_cidr = string
+    cf_label = string
+    prefix_label = string
+    az1 = map(any)
+    az2 = map(any)
+  }))
+}
+
 # Tenant 1 VPC Network
 variable tenant_vpc_cidr { default = "10.21.0.0/16" }
 variable tenant_aip_cidr { default = "100.66.71.240/29" }
+variable tenant_prefix_label { default = "Tenant0" }
+
 variable az1_tenant_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"     = "10.21.0.0/24"
     "transit"  = "10.21.1.0/24"
@@ -295,9 +315,9 @@ variable az1_tenant_subnets {
   }
 }
 
-variable tenant_cf_label { default = "tenant_az_failover" }
+variable tenant_cf_label { default = "tenant-az-failover" }
 variable az1_tenantF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"      = "edgeF5vm01"
     "mgmt"          = "10.21.0.11"
@@ -307,12 +327,11 @@ variable az1_tenantF5 {
     "tenant_int_vip"  = "10.21.2.111"
     "aip_gre_ext_self"   = "100.66.71.241"
     "aip_gre_ext_float"  = "100.66.71.243"
-
   }
 }
 
 variable az2_tenant_subnets {
-  type = "map"
+  type = map
   default = {
     "mgmt"     = "10.21.10.0/24"
     "transit"  = "10.21.11.0/24"
@@ -321,7 +340,7 @@ variable az2_tenant_subnets {
 }
 
 variable az2_tenantF5 {
-  type = "map"
+  type = map
   default = {
     "hostname"      = "edgeF5vm02"
     "mgmt"          = "10.21.10.11"
@@ -341,7 +360,9 @@ variable az2_tenantF5 {
 ## Please check and update the latest DO URL from https://github.com/F5Networks/f5-declarative-onboarding/releases
 variable DO_onboard_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-declarative-onboarding-1.9.0-1.noarch.rpm" }
 ## Please check and update the latest Telemetry Streaming from https://github.com/F5Networks/f5-telemetry-streaming/tree/master/dist
-variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.8.0-1.noarch.rpm" }
+#variable TS_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-telemetry-1.8.0-1.noarch.rpm" }
+## Ask Steve to add the TSv1.9 RPM asset to his f5tools repo!
+variable TS_URL { default = "https://github.com/F5Networks/f5-telemetry-streaming/releases/download/v1.9.0/f5-telemetry-1.9.0-1.noarch.rpm"}
 ## Please check and update the latest Cloud Failover from https://github.com/f5devcentral/f5-cloud-failover-extension
 variable CF_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-cloud-failover-1.0.0-0.noarch.rpm" }
 ## Please check and update the latest AS3 URL from https://github.com/F5Networks/f5-appsvcs-extension/releases/latest 
@@ -384,6 +405,12 @@ variable tenant_ts_json { default = "tsCloudwatch_ts.json" }
 variable tenant_logs_as3_json { default = "tsLogCollection_as3.json" }
 
 # Cloud-failover extension Vars
+variable paz_cf_json { default = "paz_cf.json" }
+variable dmz_cf_json { default = "dmz_cf.json" }
+variable transit_cf_json { default = "transit_cf.json" }
+variable maz_cf_json { default = "maz_cf.json" }
+variable tenant_cf_json { default = "tenant_cf.json" }
+
 
 # AS3 extension Vars
 variable asm_policy_url { default = "https://raw.githubusercontent.com/steveh565/f5tools/master/asm-policies/asm-policy-linux-medium.xml" }
