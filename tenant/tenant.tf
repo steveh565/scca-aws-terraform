@@ -32,13 +32,11 @@ resource "aws_instance" "az1_bastionHost" {
 	user_data = <<-EOF
 		# Core dependencies
 		sudo apt-get update
-		curl -fsSL https://get.docker.com | sh
-		sudo usermod -aG docker $USER
-		newgrp docker
+		sudo apt-get -y install docker.io
 		#
 		# Bastion Host
-		echo "${var.uname}:${var.upassword}:Y" > /root/createusers.txt
-		docker run --privileged=true --restart unless-stopped -p 2222:22 -p 3389:3389 -v /root/createusers.txt -v /home -dit rattydave/docker-ubuntu-xrdp-mate-custom:19.10
+		sudo docker run -dit --restart unless-stopped --shm-size 1g --name rdp -p 3389:3389 danielguerra/alpine-xfce4-xrdp
+		sudo docker run --privileged=true --restart unless-stopped -p 80:80 -dit vulnerables/web-dvwa:latest
 	EOF
 
 	tags = {
