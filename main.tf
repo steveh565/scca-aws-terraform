@@ -1,274 +1,242 @@
-terraform {
- backend "s3" {
-   bucket         = "shsca9-tfsharedstate"
-   key            = "global/s3/terraform.tfstate"
-   region         = "ca-central-1"
-   dynamodb_table = "shsca9-tflocks"
-   encrypt        = true
- }
-}
-
 # Infrastructure
 provider "aws" {
 	region = var.aws_region
-	
-}
-
-# Setup Onboarding scripts
-data "template_file" "az1_pazF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
-
-  vars = {
-    uname          = var.uname
-    upassword      = var.upassword
-    DO_onboard_URL = var.DO_onboard_URL
-    AS3_URL		     = var.AS3_URL
-    TS_URL		     = var.TS_URL
-    CF_URL		     = var.CF_URL
-    libs_dir	     = var.libs_dir
-    onboard_log	   = var.onboard_log
-
-    mgmt_ip        = var.az1_pazF5.mgmt
-    mgmt_gw        = local.az1_mgmt_gw
-    vpc_dns        = local.security_vpc_dns
-    ext_self       = var.az1_pazF5.paz_ext_self
-    int_self       = var.az1_pazF5.dmz_ext_self
-    gateway        = local.az1_paz_gw
-  }
-}
-
-# Render Onboarding script
-resource "local_file" "az1_pazF5_vm_onboarding_file" {
-  content     = data.template_file.az1_pazF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az1_pazF5_onboard_script}"
 }
 
 
-data "template_file" "az2_pazF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
+# ToDo: Update license keys
+module securityStack {
+  source = "./modules/securityStack"
 
-  vars = {
-    uname          = var.uname
-    upassword      = var.upassword
-    DO_onboard_URL = var.DO_onboard_URL
-    AS3_URL		     = var.AS3_URL
-    TS_URL		     = var.TS_URL
-    CF_URL		     = var.CF_URL
-    libs_dir	     = var.libs_dir
-    onboard_log	   = var.onboard_log
+  prefix = var.prefix
+  tag_name = var.prefix
 
-    mgmt_ip        = var.az2_pazF5.mgmt
-    mgmt_gw        = local.az2_mgmt_gw
-    vpc_dns        = local.security_vpc_dns
-    ext_self       = var.az2_pazF5.paz_ext_self
-    int_self       = var.az2_pazF5.dmz_ext_self
-    gateway        = local.az2_paz_gw
-  }
-}
+  security_vpc_cidr = "10.1.0.0/16"
+  security_aip_cidr = "100.65.0.0/21"
+  security_vpc_transit_aip_cidr = "100.65.5.0/29"
 
-# Render Onboarding script
-resource "local_file" "az2_pazF5_vm_onboarding_file" {
-  content     = data.template_file.az2_pazF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az2_pazF5_onboard_script}"
-}
+  aip_paz_dmz_ext_cidr    = "100.65.1.0/29"
+  aip_dmz_ext_cidr        = "100.65.2.0/29"
+  aip_dmz_int_cidr        = "100.65.3.0/29"
+  aip_dmzTransit_ext_cidr = "100.65.4.0/29"
+  aip_Transit_int_cidr    = "100.65.5.0/29"
 
-
-# Setup Onboarding scripts
-data "template_file" "az1_dmzF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
-
-  vars = {
-    uname          = var.uname
-    upassword      = var.upassword
-    DO_onboard_URL = var.DO_onboard_URL
-    AS3_URL		     = var.AS3_URL
-    TS_URL		     = var.TS_URL
-    CF_URL		     = var.CF_URL
-    libs_dir	     = var.libs_dir
-    onboard_log	   = var.onboard_log
-
-    mgmt_ip        = var.az1_dmzF5.mgmt
-    mgmt_gw        = local.az1_mgmt_gw
-    vpc_dns        = local.security_vpc_dns
-    ext_self       = var.az1_dmzF5.dmz_ext_self
-    int_self       = var.az1_dmzF5.dmz_int_self
-    gateway        = local.az1_dmz_ext_gw
-  }
-}
-
-# Render Onboarding script
-resource "local_file" "az1_dmzF5_vm_onboarding_file" {
-  content     = data.template_file.az1_dmzF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az1_dmzF5_onboard_script}"
-}
-
-
-data "template_file" "az2_dmzF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
-
-  vars = {
-    uname          = var.uname
-    upassword      = var.upassword
-    DO_onboard_URL = var.DO_onboard_URL
-    AS3_URL		     = var.AS3_URL
-    TS_URL		     = var.TS_URL
-    CF_URL		     = var.CF_URL
-    libs_dir	     = var.libs_dir
-    onboard_log	   = var.onboard_log
-
-    mgmt_ip        = var.az2_dmzF5.mgmt
-    mgmt_gw        = local.az2_mgmt_gw
-    vpc_dns        = local.security_vpc_dns
-    ext_self       = var.az2_dmzF5.dmz_ext_self
-    int_self       = var.az2_dmzF5.dmz_int_self
-    gateway        = local.az2_dmz_ext_gw
-  }
-}
-
-# Render Onboarding script
-resource "local_file" "az2_dmzF5_vm_onboarding_file" {
-  content     = data.template_file.az2_dmzF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az2_dmzF5_onboard_script}"
-}
-
-
-# Setup Onboarding scripts
-data "template_file" "az1_transitF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
-
-  vars = {
-    uname          = var.uname
-    upassword      = var.upassword
-    DO_onboard_URL = var.DO_onboard_URL
-    AS3_URL		     = var.AS3_URL
-    TS_URL		     = var.TS_URL
-    CF_URL		     = var.CF_URL
-    libs_dir	     = var.libs_dir
-    onboard_log	   = var.onboard_log
-
-    mgmt_ip        = var.az1_transitF5.mgmt
-    mgmt_gw        = local.az1_mgmt_gw
-    vpc_dns        = local.security_vpc_dns
-    ext_self       = var.az1_transitF5.dmz_int_self
-    int_self       = var.az1_transitF5.transit_self
-    gateway        = local.az1_dmz_int_gw
-  }
-}
-
-# Render Onboarding script
-resource "local_file" "az1_transitF5_vm_onboarding_file" {
-  content     = data.template_file.az1_transitF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az1_transitF5_onboard_script}"
-}
-
-
-data "template_file" "az2_transitF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
-
-  vars = {
-    uname          = var.uname
-    upassword      = var.upassword
-    DO_onboard_URL = var.DO_onboard_URL
-    AS3_URL		     = var.AS3_URL
-    TS_URL		     = var.TS_URL
-    CF_URL		     = var.CF_URL
-    libs_dir	     = var.libs_dir
-    onboard_log	   = var.onboard_log
-
-    mgmt_ip        = var.az2_transitF5.mgmt
-    mgmt_gw        = local.az2_mgmt_gw
-    vpc_dns        = local.security_vpc_dns
-    ext_self       = var.az2_transitF5.dmz_int_self
-    int_self       = var.az2_transitF5.transit_self
-    gateway        = local.az2_dmz_int_gw
-  }
-}
-
-# Render Onboarding script
-resource "local_file" "az2_transitF5_vm_onboarding_file" {
-  content     = data.template_file.az2_transitF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az2_transitF5_onboard_script}"
-}
-
-
-
-
-locals {
-    depends_on   = []
-    az1_mgmt_gw  = "${cidrhost(var.az1_security_subnets.mgmt, 1)}"
-    az2_mgmt_gw  = "${cidrhost(var.az2_security_subnets.mgmt, 1)}"
-    az1_paz_gw   = "${cidrhost(var.az1_security_subnets.paz_ext, 1)}"
-    az2_paz_gw   = "${cidrhost(var.az2_security_subnets.paz_ext, 1)}"
-
-    az1_dmz_ext_gw   = "${cidrhost(var.az1_security_subnets.dmz_ext, 1)}"
-    az2_dmz_ext_gw   = "${cidrhost(var.az2_security_subnets.dmz_ext, 1)}"
-    az1_dmz_int_gw   = "${cidrhost(var.az1_security_subnets.dmz_int, 1)}"
-    az2_dmz_int_gw   = "${cidrhost(var.az2_security_subnets.dmz_int, 1)}"
-
-    az1_transit_ext_gw   = "${cidrhost(var.az1_security_subnets.dmz_int, 1)}"
-    az2_transit_ext_gw   = "${cidrhost(var.az2_security_subnets.dmz_int, 1)}"
-    az1_transit_int_gw   = "${cidrhost(var.az1_security_subnets.transit, 1)}"
-    az2_transit_int_gw   = "${cidrhost(var.az2_security_subnets.transit, 1)}"
-
-    security_vpc_dns     = "${cidrhost(var.security_vpc_cidr, 2)}"
-    tenant_vpc_dns       = "${cidrhost(var.tenant_vpc_cidr, 2)}"
-    maz_vpc_dns          = "${cidrhost(var.maz_vpc_cidr, 2)}"
-}
-
-
-module "maz" {
-  source = "./modules/maz"
-  tenant_values = var.tenant_values
-  iam_instance_profile = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
-}
-
-/* nexting the f5SraWebPortal module is not efficient and prone to problems, especially if you want to apply minor changes
-*/
-module "f5SraWebPortal" { 
-  source = "./modules/f5SraWebPortal"
-  bigip_mgmt_public_ip = module.maz.maz_bigip1_addr
-  bigip_vip_private_ip = var.tenant_values.maz.az1.ext_vip
-  ssh_target_ip = var.tenant_values.maz.az1.mgmt
-  rest_as3_uri = var.rest_as3_uri
+  aip_tenants_cidr        = "100.66.64.0/21"
+  
   uname = var.uname
-  upassword  = var.upassword
+  upassword = var.upassword
+
+  az1_pazF5 = {
+    "instance_type" = "c4.2xlarge"
+    "license"       = "RDFMS-JUYWX-NDBAL-BRHVC-DRARPSA"
+    "hostname"      = "pazF5vm01"
+  }
+
+  az1_dmzF5 = {
+    "instance_type"  = "c4.2xlarge"
+    "license"        = "JJOEF-MCJVG-WBSMM-JBAFJ-TDJDJWT"
+    "hostname"     = "dmzF5vm01"
+  }
+
+  az1_transitF5 = {
+    "instance_type"  = "c4.2xlarge"
+    "license"      = "SOHXX-ITRFN-FLPOI-CLFBQ-YECVFVV"
+    "hostname"     = "transitF5vm01"
+  }
+
+  az2_pazF5  = {
+    "instance_type"  = "c4.2xlarge"
+    "license"      = "LQKGM-IHMRL-ANZGM-QODVX-ZRBQYEV"
+    "hostname"     = "pazF5vm02"
+  }
+
+  az2_dmzF5 = {
+    "instance_type"  = "c4.2xlarge"
+    "license"      = "FQIHY-YPPQS-FTOIQ-UKEYL-GZHAXPF"
+    "hostname"     = "dmzF5vm02"
+  }
+
+  az2_transitF5 = {
+    "instance_type"  = "c4.2xlarge"
+    "license"      = "TYSNK-HHSJZ-USCES-QFFHP-JMJETOP"
+    "hostname"     = "transitF5vm02"
+  }
 }
 
-#the storate resource for the MAZ (and tenant?) modules are within those corresponding modules
-module "storage-paz" {
-  source = "./modules/storage"
-  storage_label = var.paz_cf_label
+# ToDo: Update license keys
+module tenantStack_MAZ {
+  source = "./modules/tenantStack"
+  security_vpc_transit_aip_cidr = "100.65.5.0/29"
+  key_path = var.key_path
+  prefix = var.prefix
+  tenant_prefix = "TENANT0"
+  tenant_name   = "MAZ"
+  tenant_cf_label = "tenant0_az_failover"
+  tenant_vpc_cidr = "10.20.0.0/16"
+  tenant_aip_cidr = "100.66.64.0/29"
+  tenant_gre_cidr = "172.16.1.0/30"
+  tgwId = module.securityStack.Hub_Transit_Gateway_ID
+  f5Domainname = "maz.${var.f5Domainname}"
+  uname = var.uname
+  upassword = var.upassword
+  mgmt_asrc = var.mgmt_asrc
+
+  
+  az1_tenantF5 = {
+    instance_type  = "c4.2xlarge"
+    license      = "PSMMA-PQDCU-MRGKC-HEFYT-MCCDTXA"
+    hostname      = "edgeF5vm01"
+  }
+
+  az2_tenantF5 = {
+    instance_type  = "c4.2xlarge"
+    license      = "OFEWA-NRDAK-NCGDD-UDWSW-PMARVMY"
+    hostname      = "edgeF5vm02"
+  }
+
 }
 
-module "storage-dmz" {
-  source = "./modules/storage"
-  storage_label = var.dmz_cf_label
+# ToDo: Update license keys
+module tenantStack_CSD {
+  source = "./modules/tenantStack"
+  security_vpc_transit_aip_cidr = "100.65.5.0/29"
+  key_path = var.key_path
+  prefix = var.prefix
+  tenant_prefix = "TENANT1"
+  tenant_name   = "CSD"
+  tenant_cf_label = "tenant1_az_failover"
+  tenant_vpc_cidr = "10.21.0.0/16"
+  tenant_aip_cidr = "100.66.64.8/29"
+  tenant_gre_cidr = "172.16.1.4/30"
+  tgwId = module.securityStack.Hub_Transit_Gateway_ID
+  f5Domainname = "csd.${var.f5Domainname}"
+  uname = var.uname
+  upassword = var.upassword
+  mgmt_asrc = var.mgmt_asrc
+
+  
+  az1_tenantF5 = {
+    instance_type  = "c4.2xlarge"
+    license      = "OKGUR-PCIZR-NNMSN-SGIXI-GTVRRVV"
+    hostname      = "edgeF5vm01"
+  }
+
+  az2_tenantF5 = {
+    instance_type  = "c4.2xlarge"
+    license      = "CZOOM-KZJNK-FBMJS-DNVAG-PAPCIFM"
+    hostname      = "edgeF5vm02"
+  }
+  
 }
 
-module "storage-transit" {
-  source = "./modules/storage"
-  storage_label = var.transit_cf_label
+
+
+# Configure Transit Tier with GRE to new tenantStack
+resource "aws_route" "toTenantStack_MAZ" {
+  depends_on                = [module.securityStack]
+  route_table_id            = module.securityStack.TransitRt_ID
+  destination_cidr_block    = module.tenantStack_MAZ.tenant_vpc_cidr
+  transit_gateway_id        = module.securityStack.Hub_Transit_Gateway_ID  
 }
 
-output "az1_pazF5_Mgmt_Addr"     { value = "${aws_instance.az1_bigip.public_ip}" }
-output "az2_pazF5_Mgmt_Addr"     { value = "${aws_instance.az2_bigip.public_ip}" }
+/*
+resource "aws_route" "toSecurityStack_MAZ" {
+  depends_on                = [module.securityStack, module.tenantStack_MAZ, aws_route.toTenantStack_MAZ]
+  route_table_id            = module.tenantStack_MAZ.tenant_TransitRt_ID
+  destination_cidr_block    = "0.0.0.0/0"
+  transit_gateway_id        = module.securityStack.Hub_Transit_Gateway_ID  
+}
+*/
 
-output "PAZ_Ingress_Public_EIP"   { value = "${aws_eip.eip_vip.public_ip}" }
-output "az1_pazF5_self_eip" { value = "${aws_eip.eip_az1_external.public_ip}"}
-output "az2_pazF5_self_eip" { value = "${aws_eip.eip_az2_external.public_ip}"}
+resource "null_resource" "greToTenantStack_MAZ" {
+  depends_on = [module.tenantStack_MAZ]
+  provisioner "remote-exec" {
+    connection {
+      host     = module.securityStack.az1_transitF5_Mgmt_Addr
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = create
+    inline = [
+      "tmsh create net tunnels tunnel greToTenant${module.tenantStack_MAZ.tenant_name} local-address ${module.tenantStack_MAZ.greTunRemAddr} profile gre remote-address ${module.tenantStack_MAZ.greTunLocAddr} traffic-group traffic-group-1",
+      "tmsh create net self greToTenant${module.tenantStack_MAZ.tenant_name}_Float address ${module.tenantStack_MAZ.greNextHop}/30 vlan greToTenant${module.tenantStack_MAZ.tenant_name} traffic-group traffic-group-1"
+    ]
+    on_failure = continue
+  }
+}
 
-output "az1_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az1_dmz_bigip.public_ip}" }
-output "az2_dmzF5_Mgmt_Addr"     { value = "${aws_instance.az2_dmz_bigip.public_ip}" }
-output "az1_dmzF5_secondary_VIP" { value = "${var.az1_dmzF5.dmz_ext_vip}" }
-output "az2_dmzF5_secondary_VIP" { value = "${var.az2_dmzF5.dmz_ext_vip}" }
+# Configure new tenantStack with GRE to Transit Tier
+resource "null_resource" "greToSecurityStack_MAZ" {
+  depends_on = [module.tenantStack_MAZ]
+  provisioner "remote-exec" {
+    connection {
+      host     = module.tenantStack_MAZ.az1_BigIP_mgmtAddr
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = create
+    inline = [
+      "tmsh create net tunnels tunnel greToSecurityStack local-address ${module.tenantStack_MAZ.greTunLocAddr} profile gre remote-address ${module.tenantStack_MAZ.greTunRemAddr} traffic-group traffic-group-1",
+      "tmsh create net self greToSecurityStack_Float address ${module.tenantStack_MAZ.greSelfIp}/30 vlan greToSecurityStack traffic-group traffic-group-1"
+    ]
+    on_failure = continue
+  }
+}
 
-output "az1_transitF5_Mgmt_Addr"     { value = "${aws_instance.az1_transit_bigip.public_ip}" }
-output "az2_transitF5_Mgmt_Addr"     { value = "${aws_instance.az2_transit_bigip.public_ip}" }
-output "az1_transitF5_secondary_VIP" { value = "${var.az1_transitF5.transit_vip}" }
-output "az2_transitF5_secondary_VIP" { value = "${var.az2_transitF5.transit_vip}" }
 
-output "az1_mazF5_Mgmt_Addr"  { value = module.maz.maz_bigip1_addr }
-output "az2_mazF5_Mgmt_Addr"  { value = module.maz.maz_bigip2_addr }
 
-output "Hub_Transit_Gateway_ID"  { value = "${aws_ec2_transit_gateway.hubtgw.id}" }
-output "BigIP_IAM_Profile_ID" { value = "${aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.id}" }
+# Configure Transit Tier with GRE to new tenantStack
+resource "aws_route" "toTenantStack_CSD" {
+  depends_on                = [module.securityStack]
+  route_table_id            = module.securityStack.TransitRt_ID
+  destination_cidr_block    = module.tenantStack_CSD.tenant_vpc_cidr
+  transit_gateway_id        = module.securityStack.Hub_Transit_Gateway_ID  
+}
+
+/*
+resource "aws_route" "toSecurityStack_CSD" {
+  depends_on                = [module.securityStack, module.tenantStack_CSD, aws_route.toTenantStack_CSD]
+  route_table_id            = module.tenantStack_CSD.tenant_TransitRt_ID
+  destination_cidr_block    = "0.0.0.0/0"
+  transit_gateway_id        = module.securityStack.Hub_Transit_Gateway_ID  
+}
+*/
+
+resource "null_resource" "greToTenantStack_CSD" {
+  depends_on = [module.tenantStack_CSD]
+  provisioner "remote-exec" {
+    connection {
+      host     = module.securityStack.az1_transitF5_Mgmt_Addr
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = create
+    inline = [
+      "tmsh create net tunnels tunnel greToTenant${module.tenantStack_CSD.tenant_name} local-address ${module.tenantStack_CSD.greTunRemAddr} profile gre remote-address ${module.tenantStack_CSD.greTunLocAddr} traffic-group traffic-group-1",
+      "tmsh create net self greToTenant${module.tenantStack_CSD.tenant_name}_Float address ${module.tenantStack_CSD.greNextHop}/30 vlan greToTenant${module.tenantStack_CSD.tenant_name} traffic-group traffic-group-1"
+    ]
+    on_failure = continue
+  }
+}
+
+# Configure new tenantStack with GRE to Transit Tier
+resource "null_resource" "greToSecurityStack_CSD" {
+  depends_on = [module.tenantStack_CSD]
+  provisioner "remote-exec" {
+    connection {
+      host     = module.tenantStack_CSD.az1_BigIP_mgmtAddr
+      type     = "ssh"
+      user     = var.uname
+      password = var.upassword
+    }
+    when = create
+    inline = [
+      "tmsh create net tunnels tunnel greToSecurityStack local-address ${module.tenantStack_CSD.greTunLocAddr} profile gre remote-address ${module.tenantStack_CSD.greTunRemAddr} traffic-group traffic-group-1",
+      "tmsh create net self greToSecurityStack_Float address ${module.tenantStack_CSD.greSelfIp}/30 vlan greToSecurityStack traffic-group traffic-group-1"
+    ]
+    on_failure = continue
+  }
+}

@@ -38,7 +38,7 @@ resource "aws_security_group" "sg_external" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	tags = {
 		Name = var.sgExternal
 		f5rg = "${var.tag_name}"
@@ -72,7 +72,7 @@ resource "aws_security_group" "sg_ext_mgmt" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	tags = {
 		Name = var.sgExtMgmt
 		f5rg = "${var.tag_name}"
@@ -96,7 +96,7 @@ resource "aws_security_group" "sg_internal" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	tags = {
 		Name = var.sgInternal
 		f5rg = "${var.tag_name}"

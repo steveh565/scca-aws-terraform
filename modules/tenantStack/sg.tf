@@ -18,19 +18,19 @@ resource "aws_security_group" "sg_external" {
 		protocol = "tcp"
 		from_port = 4353
 		to_port = 4353
-		cidr_blocks = [var.security_vpc_cidr]
+		cidr_blocks = ["10.0.0.0/8"]
 	}
 	ingress { 
 		protocol = "udp"
 		from_port = 1026
 		to_port = 1026
-		cidr_blocks = [var.security_vpc_cidr]
+		cidr_blocks = ["10.0.0.0/8"]
 	}
 	ingress {
 		protocol = "icmp"
 		from_port = -1
 		to_port = -1
-		cidr_blocks = [var.security_vpc_cidr]
+		cidr_blocks = ["10.0.0.0/8"]
 	}
 	egress {
 		protocol = -1
@@ -38,7 +38,7 @@ resource "aws_security_group" "sg_external" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.tenant.id}"
+	vpc_id = aws_vpc.tenant.id
 	tags = {
 		Name = var.sgExternal
 		ResourceGroup = "${var.prefix}"
@@ -64,7 +64,7 @@ resource "aws_security_group" "sg_ext_mgmt" {
 		protocol = "icmp"
 		from_port = -1
 		to_port = -1
-		cidr_blocks = [var.security_vpc_cidr]
+		cidr_blocks = ["10.0.0.0/8"]
 	}
 	egress {
 		protocol = -1
@@ -72,7 +72,7 @@ resource "aws_security_group" "sg_ext_mgmt" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.tenant.id}"
+	vpc_id = aws_vpc.tenant.id
 	tags = {
 		Name = var.sgExtMgmt
 		ResourceGroup = "${var.prefix}"
@@ -96,7 +96,7 @@ resource "aws_security_group" "sg_internal" {
 		to_port = 0
 		cidr_blocks = ["0.0.0.0/0"]
 	}
-	vpc_id = "${aws_vpc.tenant.id}"
+	vpc_id = aws_vpc.tenant.id
 	tags = {
 		Name = var.sgInternal
 		ResourceGroup = "${var.prefix}"

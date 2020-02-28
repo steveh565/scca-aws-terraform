@@ -1,8 +1,8 @@
 # GC-vCAP VPC Networks
 
 resource "aws_vpc" "main" {
-	cidr_block = "${var.security_vpc_cidr}"
-	assign_generated_ipv6_cidr_block = true
+	cidr_block = var.security_vpc_cidr
+	assign_generated_ipv6_cidr_block = false
 	enable_dns_support = true
 	enable_dns_hostnames = true
 	tags = {
@@ -12,7 +12,7 @@ resource "aws_vpc" "main" {
 
 # Create S3 VPC Endpoint
 resource "aws_vpc_endpoint" "s3" {
-  vpc_id       = "${aws_vpc.main.id}"
+  vpc_id       = aws_vpc.main.id
   service_name = "com.amazonaws.${var.aws_region}.s3"
 
   tags = {
@@ -23,12 +23,12 @@ resource "aws_vpc_endpoint" "s3" {
 
 # Create EC2 VPC Endpoint
 resource "aws_vpc_endpoint" "ec2" {
-  vpc_id            = "${aws_vpc.main.id}"
+  vpc_id            = aws_vpc.main.id
   service_name      = "com.amazonaws.${var.aws_region}.ec2"
   vpc_endpoint_type = "Interface"
 
   security_group_ids = [
-    "${aws_security_group.sg_internal.id}",
+    aws_security_group.sg_internal.id,
   ]
 
   private_dns_enabled = true
@@ -36,18 +36,18 @@ resource "aws_vpc_endpoint" "ec2" {
   
   tags = {
 	Name = "vpcEpEc2${var.tag_name}"
-    Environment = "${var.prefix}"
+    Environment = var.prefix
   }
 }
 
 # Create Cloudwatch VPC Endpoint
 resource "aws_vpc_endpoint" "logs" {
-  vpc_id            = "${aws_vpc.main.id}"
+  vpc_id            = aws_vpc.main.id
   service_name      = "com.amazonaws.${var.aws_region}.logs"
   vpc_endpoint_type = "Interface"
 
   security_group_ids = [
-    "${aws_security_group.sg_internal.id}",
+    aws_security_group.sg_internal.id,
   ]
 
   private_dns_enabled = true
@@ -61,9 +61,9 @@ resource "aws_vpc_endpoint" "logs" {
 
 # Management subnet in AZ1
 resource "aws_subnet" "az1_mgmt" {
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}a"
-	cidr_block = var.az1_security_subnets.mgmt
+	cidr_block = local.az1MgmtSnet
 	tags = {
 		Name = "snetAz1Mgmt"
 	}
@@ -71,9 +71,9 @@ resource "aws_subnet" "az1_mgmt" {
 
 # Management subnet in AZ2
 resource "aws_subnet" "az2_mgmt" {
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}b"
-	cidr_block = var.az2_security_subnets.mgmt
+	cidr_block = local.az2MgmtSnet
 	tags = {
 		Name = "snetAz2Mgmt"
 	}
@@ -83,7 +83,7 @@ resource "aws_subnet" "az2_mgmt" {
 resource "aws_subnet" "az1_ext" {
 	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}a"
-	cidr_block = var.az1_security_subnets.paz_ext
+	cidr_block = local.az1PazExtSnet
 	tags = {
 		Name = "snetAz1External"
 	}
@@ -93,7 +93,7 @@ resource "aws_subnet" "az1_ext" {
 resource "aws_subnet" "az2_ext" {
 	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}b"
-	cidr_block = var.az2_security_subnets.paz_ext
+	cidr_block = local.az2PazExtSnet
 	tags = {
 		Name = "snetAz2External"
 	}
@@ -103,7 +103,7 @@ resource "aws_subnet" "az2_ext" {
 resource "aws_subnet" "az1_dmzExt" {
 	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}a"
-	cidr_block = var.az1_security_subnets.dmz_ext
+	cidr_block = local.az1DmzExtSnet
 	tags = {
 		Name = "snetAz1DmzExt"
 	}
@@ -111,9 +111,9 @@ resource "aws_subnet" "az1_dmzExt" {
 
 # DMZ External subnet in AZ2
 resource "aws_subnet" "az2_dmzExt" {
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}b"
-	cidr_block = var.az2_security_subnets.dmz_ext
+	cidr_block = local.az2DmzExtSnet
 	tags = {
 		Name = "snetAz2DmzExt"
 	}
@@ -123,7 +123,7 @@ resource "aws_subnet" "az2_dmzExt" {
 resource "aws_subnet" "az1_dmzInt" {
 	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}a"
-	cidr_block = var.az1_security_subnets.dmz_int
+	cidr_block = local.az1DmzIntSnet
 	tags = {
 		Name = "snetAz2DmzInt"
 	}
@@ -133,7 +133,7 @@ resource "aws_subnet" "az1_dmzInt" {
 resource "aws_subnet" "az2_dmzInt" {
 	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}b"
-	cidr_block = var.az2_security_subnets.dmz_int
+	cidr_block = local.az2DmzIntSnet
 	tags = {
 		Name = "snetAz2DmzInt"
 	}
@@ -143,7 +143,7 @@ resource "aws_subnet" "az2_dmzInt" {
 resource "aws_subnet" "az1_transit" {
 	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}a"
-	cidr_block = var.az1_security_subnets.transit
+	cidr_block = local.az1TransitIntSnet
 	tags = {
 		Name = "snetAz1Transit"
 	}
@@ -153,7 +153,7 @@ resource "aws_subnet" "az1_transit" {
 resource "aws_subnet" "az2_transit" {
 	vpc_id = aws_vpc.main.id
 	availability_zone = "${var.aws_region}b"
-	cidr_block = var.az2_security_subnets.transit
+	cidr_block = local.az2TransitIntSnet
 	tags = {
 		Name = "snetAz2Transit"
 	}
@@ -161,7 +161,7 @@ resource "aws_subnet" "az2_transit" {
 
 # Internet gateway
 resource "aws_internet_gateway" "gw" {
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	tags = {
 		Name = "igw${var.tag_name}"
 	}
@@ -195,7 +195,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "hubTgwAttach" {
 # TGW Route Table
 resource "aws_ec2_transit_gateway_route_table" "hubtgwRt" {
   depends_on         = [aws_ec2_transit_gateway.hubtgw]
-  transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+  transit_gateway_id = aws_ec2_transit_gateway.hubtgw.id
 	tags = {
 		Name = "${var.vpc_tgw_name}-RouteTable"
 	}
@@ -203,67 +203,80 @@ resource "aws_ec2_transit_gateway_route_table" "hubtgwRt" {
 
 # Route tables
 resource "aws_route_table" "PazRt" {
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	route {
 		cidr_block = "0.0.0.0/0"
-		gateway_id = "${aws_internet_gateway.gw.id}"
+		gateway_id = aws_internet_gateway.gw.id
 	}
 	tags = {
 		Name = "PazRT"
 		f5_cloud_failover_label = "${var.gccap_cf_label}"
 	}
+	lifecycle {    
+		ignore_changes = all
+  	} 
 }
 
 resource "aws_route_table" "DmzExtRt" {
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	route {
 		cidr_block = "0.0.0.0/0"
-		gateway_id = "${aws_internet_gateway.gw.id}"
+		gateway_id = aws_internet_gateway.gw.id
 	}
 	tags = {
 		Name = "DmzExtRT"
 		f5_cloud_failover_label = "${var.gccap_cf_label}"
 	}
+	lifecycle {    
+		ignore_changes = all
+  	} 
 }
 
 resource "aws_route_table" "DmzIntRt" {
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	route {
 		cidr_block = "0.0.0.0/0"
-		gateway_id = "${aws_internet_gateway.gw.id}"
+		gateway_id = aws_internet_gateway.gw.id
 	}
 	tags = {
 		Name = "DmzIntRT"
 		f5_cloud_failover_label = "${var.gccap_cf_label}"
 	}
+	lifecycle {    
+		ignore_changes = all
+  	} 
 }
 
 resource "aws_route_table" "TransitRt" {
 	depends_on = [aws_ec2_transit_gateway.hubtgw, aws_internet_gateway.gw]
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	route {
 		cidr_block = "0.0.0.0/0"
-		gateway_id = "${aws_internet_gateway.gw.id}"
+		gateway_id = aws_internet_gateway.gw.id
 	}
-	route {
+/*	route {
 		cidr_block = "${var.tenant_vpc_cidr}"
-		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
-	}
+		transit_gateway_id = aws_ec2_transit_gateway.hubtgw.id
+	}*/
 	route {
-		cidr_block = "${var.maz_vpc_cidr}"
-		transit_gateway_id = "${aws_ec2_transit_gateway.hubtgw.id}"
+		cidr_block = var.aip_tenants_cidr
+		transit_gateway_id = aws_ec2_transit_gateway.hubtgw.id
 	}
 	tags = {
 		Name = "TransitRT"
 		f5_cloud_failover_label = "${var.gccap_cf_label}"
 	}
+	
+	lifecycle {    
+		ignore_changes = all
+  	} 
 }
 
 resource "aws_route_table" "MgmtRt" {
-	vpc_id = "${aws_vpc.main.id}"
+	vpc_id = aws_vpc.main.id
 	route {
 		cidr_block = "0.0.0.0/0"
-		gateway_id = "${aws_internet_gateway.gw.id}"
+		gateway_id = aws_internet_gateway.gw.id
 	}
 	tags = {
 		Name = "MgmtRT"
@@ -272,60 +285,60 @@ resource "aws_route_table" "MgmtRt" {
 
 # Assign route table to management subnet in AZ1
 resource "aws_route_table_association" "az1_mgmt" {
-	subnet_id = "${aws_subnet.az1_mgmt.id}"
-	route_table_id = "${aws_route_table.MgmtRt.id}"
+	subnet_id = aws_subnet.az1_mgmt.id
+	route_table_id = aws_route_table.MgmtRt.id
 }
 
 # Assign route table to management subnet in AZ2
 resource "aws_route_table_association" "az2_mgmt" {
-	subnet_id = "${aws_subnet.az2_mgmt.id}"
-	route_table_id = "${aws_route_table.MgmtRt.id}"
+	subnet_id = aws_subnet.az2_mgmt.id
+	route_table_id = aws_route_table.MgmtRt.id
 }
 
 # Assign route table to PAZ external subnet in AZ1
 resource "aws_route_table_association" "az1_ext" {
-	subnet_id = "${aws_subnet.az1_ext.id}"
-	route_table_id = "${aws_route_table.PazRt.id}"
+	subnet_id = aws_subnet.az1_ext.id
+	route_table_id = aws_route_table.PazRt.id
 }
 
 # Assign route table to PAZ external subnet in AZ2
 resource "aws_route_table_association" "az2_ext" {
-	subnet_id = "${aws_subnet.az2_ext.id}"
-	route_table_id = "${aws_route_table.PazRt.id}"
+	subnet_id = aws_subnet.az2_ext.id
+	route_table_id = aws_route_table.PazRt.id
 }
 
 # Assign route table to DMZ external subnet in AZ1
 resource "aws_route_table_association" "az1_dmzExt" {
-	subnet_id = "${aws_subnet.az1_dmzExt.id}"
-	route_table_id = "${aws_route_table.DmzExtRt.id}"
+	subnet_id = aws_subnet.az1_dmzExt.id
+	route_table_id = aws_route_table.DmzExtRt.id
 }
 
 # Assign route table to DMZ external subnet in AZ2
 resource "aws_route_table_association" "az2_dmzExt" {
-	subnet_id = "${aws_subnet.az2_dmzExt.id}"
-	route_table_id = "${aws_route_table.DmzExtRt.id}"
+	subnet_id = aws_subnet.az2_dmzExt.id
+	route_table_id = aws_route_table.DmzExtRt.id
 }
 
 # Assign route table to DMZ Internal subnet in AZ1
 resource "aws_route_table_association" "az1_dmzInt" {
-	subnet_id = "${aws_subnet.az1_dmzInt.id}"
-	route_table_id = "${aws_route_table.DmzIntRt.id}"
+	subnet_id = aws_subnet.az1_dmzInt.id
+	route_table_id = aws_route_table.DmzIntRt.id
 }
 
 # Assign route table to DMZ Internal subnet in AZ2
 resource "aws_route_table_association" "az2_dmzInt" {
-	subnet_id = "${aws_subnet.az2_dmzInt.id}"
-	route_table_id = "${aws_route_table.DmzIntRt.id}"
+	subnet_id = aws_subnet.az2_dmzInt.id
+	route_table_id = aws_route_table.DmzIntRt.id
 }
 
 # Assign route table to Transit subnet in AZ1
 resource "aws_route_table_association" "az1_transit" {
-	subnet_id = "${aws_subnet.az1_transit.id}"
-	route_table_id = "${aws_route_table.TransitRt.id}"
+	subnet_id = aws_subnet.az1_transit.id
+	route_table_id = aws_route_table.TransitRt.id
 }
 
 # Assign route table to Transit subnet in AZ2
 resource "aws_route_table_association" "az2_transit" {
-	subnet_id = "${aws_subnet.az2_transit.id}"
-	route_table_id = "${aws_route_table.TransitRt.id}"
+	subnet_id = aws_subnet.az2_transit.id
+	route_table_id = aws_route_table.TransitRt.id
 }

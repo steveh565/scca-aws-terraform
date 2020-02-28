@@ -15,11 +15,11 @@ data "aws_ami" "ubuntu" {
 # Instances
 resource "aws_instance" "az1_bastionHost" {
 	depends_on = [aws_subnet.az1_tenant_int]
-	ami = "${data.aws_ami.ubuntu.id}"
+	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
-	key_name = "${aws_key_pair.tenant.id}"
+	key_name = aws_key_pair.tenant.id
 	subnet_id = aws_subnet.az1_tenant_int.id
-	vpc_security_group_ids = ["${aws_security_group.sg_internal.id}"]
+	vpc_security_group_ids = [aws_security_group.sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
 	# user_data = "${file("install.sh")}"
@@ -35,21 +35,21 @@ resource "aws_instance" "az1_bastionHost" {
 	EOF
 
 	tags = {
-		Name = "az1_BastionHost${count.index}"
+		Name = "${var.prefix}-${var.tenant_name}-az1_BastionHost${count.index}"
 		f5sd = "pool_BastionHost"
-		f5rg = "${var.prefix}"
-		tenant = "${var.tenant_name} "
+		f5rg = var.prefix
+		tenant = var.tenant_name
 	}
 	count = 1
 }
 
 resource "aws_instance" "az2_bastionHost" {
 	depends_on = [aws_subnet.az2_tenant_int]
-	ami = "${data.aws_ami.ubuntu.id}"
+	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
-	key_name = "${aws_key_pair.tenant.id}"
+	key_name = aws_key_pair.tenant.id
 	subnet_id = aws_subnet.az2_tenant_int.id
-	vpc_security_group_ids = ["${aws_security_group.sg_internal.id}"]
+	vpc_security_group_ids = [aws_security_group.sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
 	# user_data = "${file("install.sh")}"
@@ -65,10 +65,10 @@ resource "aws_instance" "az2_bastionHost" {
 	EOF
 
 	tags = {
-		Name = "az2_BastionHost${count.index}"
+		Name = "${var.prefix}-${var.tenant_name}-az2_BastionHost${count.index}"
 		f5sd = "pool_BastionHost"
-		f5rg = "${var.prefix}"
-		tenant = "${var.tenant_name} "
+		f5rg = var.prefix
+		tenant = var.tenant_name
 	}
 	count = 1
 }
@@ -76,11 +76,11 @@ resource "aws_instance" "az2_bastionHost" {
 # Instances
 resource "aws_instance" "az1_openCartHost" {
 	depends_on = [aws_subnet.az1_tenant_int]
-	ami = "${data.aws_ami.ubuntu.id}"
+	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
-	key_name = "${aws_key_pair.tenant.id}"
+	key_name = aws_key_pair.tenant.id
 	subnet_id = aws_subnet.az1_tenant_int.id
-	vpc_security_group_ids = ["${aws_security_group.sg_internal.id}"]
+	vpc_security_group_ids = [aws_security_group.sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
 	# user_data = "${file("install.sh")}"
@@ -98,21 +98,21 @@ resource "aws_instance" "az1_openCartHost" {
 	EOF
 
 	tags = {
-		Name = "az1_BastionHost${count.index}"
-		f5sd = "pool_BastionHost"
-		f5rg = "${var.prefix}"
-		tenant = "${var.tenant_name} "
+		Name = "${var.prefix}-${var.tenant_name}-az1_openCartHost${count.index}"
+		f5sd = "pool_opencart"
+		f5rg = var.prefix
+		tenant = var.tenant_name
 	}
 	count = 1
 }
 
 resource "aws_instance" "az2_openCartHost" {
 	depends_on = [aws_subnet.az2_tenant_int]
-	ami = "${data.aws_ami.ubuntu.id}"
+	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
-	key_name = "${aws_key_pair.tenant.id}"
+	key_name = aws_key_pair.tenant.id
 	subnet_id = aws_subnet.az2_tenant_int.id
-	vpc_security_group_ids = ["${aws_security_group.sg_internal.id}"]
+	vpc_security_group_ids = [aws_security_group.sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
 	# user_data = "${file("install.sh")}"
@@ -130,10 +130,10 @@ resource "aws_instance" "az2_openCartHost" {
 	EOF
 
 	tags = {
-		Name = "az2_BastionHost${count.index}"
-		f5sd = "pool_BastionHost"
-		f5rg = "${var.prefix}"
-		tenant = "${var.tenant_name} "
+		Name = "${var.prefix}-${var.tenant_name}-az2_openCartHost${count.index}"
+		f5sd = "pool_opencart"
+		f5rg = var.prefix
+		tenant = var.tenant_name
 	}
 	count = 1
 }
