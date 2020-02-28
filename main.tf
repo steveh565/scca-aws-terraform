@@ -190,11 +190,9 @@ resource "null_resource" "greToSecurityStack_MAZ" {
 # Deploy F5 SRA WebPortal configs to MAZ tenant BigIP
 module "f5SraWebPortal_MAZ" { 
   source = "./modules/f5SraWebPortal"
-  # hack to track dependencies across modules (the file is only created after the bigip onboarding has finished)
-  depends_on_hack = module.tenantStack_MAZ.tenant_az1_bigip_ID
   bigip_mgmt_public_ip = module.tenantStack_MAZ.az1_BigIP_mgmtAddr
   bigip_vip_private_ip = cidrhost(module.tenantStack_MAZ.tenant_vip_cidr, 1)
-  ssh_target_ip = module.tenantStack_MAZ.tenant_az1_bigip_ID  module.maz.maz_bigip1_mgmt_private_addr
+  ssh_target_ip = cidrhost(module.tenantStack_MAZ.az1_mgmt_subnet, 11)
   rest_as3_uri = var.rest_as3_uri
   uname = var.uname
   upassword  = var.upassword
@@ -259,11 +257,9 @@ resource "null_resource" "greToSecurityStack_CSD" {
 # Deploy F5 SRA WebPortal configs to CSD tenant BigIP
 module "f5SraWebPortal_CSD" { 
   source = "./modules/f5SraWebPortal"
-  # hack to track dependencies across modules (the file is only created after the bigip onboarding has finished)
-  depends_on_hack = module.tenantStack_CSD.tenant_az1_bigip_ID
   bigip_mgmt_public_ip = module.tenantStack_CSD.az1_BigIP_mgmtAddr
   bigip_vip_private_ip = cidrhost(module.tenantStack_CSD.tenant_vip_cidr, 1)
-  ssh_target_ip = module.tenantStack_CSD.tenant_az1_bigip_ID  module.maz.maz_bigip1_mgmt_private_addr
+  ssh_target_ip = cidrhost(module.tenantStack_CSD.az1_mgmt_subnet, 11)
   rest_as3_uri = var.rest_as3_uri
   uname = var.uname
   upassword  = var.upassword
