@@ -47,7 +47,7 @@ variable cwLogGroup { default = "f5telemetry" }
 variable tenant_vpc_cidr { description = "String: Tenant VPC CIDR" }
 variable tenant_aip_cidr { description = "String: Tenant Alien-IP CIDR" }
 variable tenant_gre_cidr { description = "String: Tenant GRE Tunnel to Security VPC CIDR" }
-
+variable tenant_vip_cidr { description = "String: Tenant VIP CIDR for Big-IP Virtual Servers" }
 variable tenant_cf_label { description = "String: Globally unique F5 CloudFailover Extension tenant label" }
 variable tgwId { description = "String: SecurityStack Transit Gateway ID" }
 

@@ -1,6 +1,7 @@
 output "VPC_DNS"             { value = "${local.vpc_dns}" }
 
 output "tenant_vpc_cidr"     { value = "${var.tenant_vpc_cidr}" }
+output "tenant_vip_cidr"     { value = var.tenant_vip_cidr }
 
 output "az1_mgmt_subnet"     { value = "${local.az1MgmtSnet}" }
 output "az2_mgmt_subnet"     { value = "${local.az2MgmtSnet}" }

@@ -75,6 +75,7 @@ module tenantStack_MAZ {
   tenant_vpc_cidr = "10.20.0.0/16"
   tenant_aip_cidr = "100.66.64.0/29"
   tenant_gre_cidr = "172.16.1.0/30"
+  tenant_vip_cidr = "100.100.0.0/24"
   tgwId = module.securityStack.Hub_Transit_Gateway_ID
   f5Domainname = "maz.${var.f5Domainname}"
   uname = var.uname
@@ -108,6 +109,7 @@ module tenantStack_CSD {
   tenant_vpc_cidr = "10.21.0.0/16"
   tenant_aip_cidr = "100.66.64.8/29"
   tenant_gre_cidr = "172.16.1.4/30"
+  tenant_vip_cidr = "100.100.1.0/24"
   tgwId = module.securityStack.Hub_Transit_Gateway_ID
   f5Domainname = "csd.${var.f5Domainname}"
   uname = var.uname
@@ -185,6 +187,19 @@ resource "null_resource" "greToSecurityStack_MAZ" {
   }
 }
 
+# Deploy F5 SRA WebPortal configs to MAZ tenant BigIP
+module "f5SraWebPortal_MAZ" { 
+  source = "./modules/f5SraWebPortal"
+  # hack to track dependencies across modules (the file is only created after the bigip onboarding has finished)
+  depends_on_hack = module.tenantStack_MAZ.tenant_az1_bigip_ID
+  bigip_mgmt_public_ip = module.tenantStack_MAZ.az1_BigIP_mgmtAddr
+  bigip_vip_private_ip = cidrhost(module.tenantStack_MAZ.tenant_vip_cidr, 1)
+  ssh_target_ip = module.tenantStack_MAZ.tenant_az1_bigip_ID  module.maz.maz_bigip1_mgmt_private_addr
+  rest_as3_uri = var.rest_as3_uri
+  uname = var.uname
+  upassword  = var.upassword
+}
+
 
 
 # Configure Transit Tier with GRE to new tenantStack
@@ -239,4 +254,17 @@ resource "null_resource" "greToSecurityStack_CSD" {
     ]
     on_failure = continue
   }
+}
+
+# Deploy F5 SRA WebPortal configs to CSD tenant BigIP
+module "f5SraWebPortal_CSD" { 
+  source = "./modules/f5SraWebPortal"
+  # hack to track dependencies across modules (the file is only created after the bigip onboarding has finished)
+  depends_on_hack = module.tenantStack_CSD.tenant_az1_bigip_ID
+  bigip_mgmt_public_ip = module.tenantStack_CSD.az1_BigIP_mgmtAddr
+  bigip_vip_private_ip = cidrhost(module.tenantStack_CSD.tenant_vip_cidr, 1)
+  ssh_target_ip = module.tenantStack_CSD.tenant_az1_bigip_ID  module.maz.maz_bigip1_mgmt_private_addr
+  rest_as3_uri = var.rest_as3_uri
+  uname = var.uname
+  upassword  = var.upassword
 }
