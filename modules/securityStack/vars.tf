@@ -17,8 +17,6 @@ variable key_path { default = "~/.ssh/id_rsa.pub" }
 variable mgmt_asrc { default = ["0.0.0.0/0"] }
 
 # Platform settings variables
-variable az1_f5Hostname      { default = "edgeF5vm01" }
-variable az2_f5Hostname      { default = "edgeF5vm02" }
 variable f5Domainname        { default = "f5labs.gc.ca" }
 
 variable uname      { default = "awsops" }
