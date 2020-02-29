@@ -1,5 +1,5 @@
 #Prefixes
-prefix = "SHSCA1"
+prefix = "DCSCA1"
 maz_name = "MAZ"
 
 #AWS Region

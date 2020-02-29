@@ -28,7 +28,7 @@ variable az1_tenantF5_onboard_script { default = "az1_tenantF5_onboard.sh" }
 variable az2_tenantF5_onboard_script { default = "az2_tenantF5_onboard.sh" }
 variable onboard_log	{ default = "/var/log/startup-script.log" }
 
-variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
+# variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
 variable ami_f5image_type { default = "AllTwoBootLocations" }
 variable ami_image_version { default = "latest" }
 

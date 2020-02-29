@@ -107,7 +107,7 @@ resource "aws_eip" "eip_az1_external" {
 #Big-IP 1
 resource "aws_instance" "az1_paz_bigip" {
   depends_on                  = [aws_eip.eip_az1_mgmt, aws_subnet.az1_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az1_external, aws_network_interface.az1_internal, aws_network_interface.az1_mgmt]
-  ami                         = var.ami_f5image_name
+  ami                         = var.az1_pazF5.ami_f5image_name
   instance_type               = var.az1_pazF5.instance_type
   availability_zone           = "${var.aws_region}a"
   user_data                   = data.template_file.az1_pazF5_vm_onboard.rendered
@@ -134,10 +134,16 @@ resource "aws_instance" "az1_paz_bigip" {
       type     = "ssh"
       user     = var.uname
       password = var.upassword
+      timeout = "15m"
     }
     when = create
+    # inline = [
+    #   "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+    # ]
+    # hack to wait up to 60x10 seconds for bigip onboarding shell script to complete successfully
     inline = [
-      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+      "x=1; while [ $x -le 60 ]; do STATUS=$(grep -c 'Declarative Onboarding is Ready' ${var.onboard_log}); if ( echo $STATUS | grep '1' ); then echo 'Onboard shell script completed successfully.'; break; fi; echo 'Checking if onboard startup shell script successfully completed...'; sleep 20; x=$(( $x + 1 )); done",
+      "if ( [ $x = 60 ] ); then echo 'Error: Timeout waiting for onboard shell script to complete.'; fi",
     ]
   }
 
@@ -243,7 +249,7 @@ resource "aws_eip" "eip_az2_external" {
 # BigIP 2
 resource "aws_instance" "az2_paz_bigip" {
   depends_on                  = [aws_eip.eip_az2_mgmt, aws_subnet.az2_mgmt, aws_security_group.sg_ext_mgmt, aws_network_interface.az2_external, aws_network_interface.az2_internal, aws_network_interface.az2_mgmt]
-  ami                         = var.ami_f5image_name
+  ami                         = var.az2_pazF5.ami_f5image_name
   instance_type               = var.az2_pazF5.instance_type
   availability_zone           = "${var.aws_region}b"
   user_data                   = data.template_file.az2_pazF5_vm_onboard.rendered
@@ -270,10 +276,16 @@ resource "aws_instance" "az2_paz_bigip" {
       type     = "ssh"
       user     = var.uname
       password = var.upassword
+      timeout = "15m"
     }
     when = create
+    # inline = [
+    #   "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+    # ]
+    # hack to wait up to 60x10 seconds for bigip onboarding shell script to complete successfully
     inline = [
-      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+      "x=1; while [ $x -le 60 ]; do STATUS=$(grep -c 'Declarative Onboarding is Ready' ${var.onboard_log}); if ( echo $STATUS | grep '1' ); then echo 'Onboard shell script completed successfully.'; break; fi; echo 'Checking if onboard startup shell script successfully completed...'; sleep 20; x=$(( $x + 1 )); done",
+      "if ( [ $x = 60 ] ); then echo 'Error: Timeout waiting for onboard shell script to complete.'; fi",
     ]
   }
 
@@ -422,7 +434,7 @@ resource "null_resource" "az1_pazF5_DO" {
     command = <<-EOF
       #!/bin/bash
       curl -H 'Content-type: application/json' -k -s -X ${var.rest_do_method} https://${aws_instance.az1_paz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_pazCluster_do_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_paz_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_paz_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 20; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
@@ -443,7 +455,7 @@ resource "null_resource" "az1_pazF5_DO" {
   provisioner "remote-exec" {
     inline = [
       "curl -H 'Content-type: application/json' -k -X ${var.rest_do_method} https://localhost${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.az1_pazCluster_do_json}",
-      "x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://localhost${var.rest_do_uri}/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep \"OK\" ); then break; fi; sleep 10; x=$(( $x + 1 )); done",
+      "x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://localhost${var.rest_do_uri}/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep \"OK\" ); then break; fi; sleep 20; x=$(( $x + 1 )); done",
       "sleep 120",
     ]
     connection {
@@ -462,7 +474,7 @@ resource "null_resource" "az2_pazF5_DO" {
     command = <<-EOF
       #!/bin/bash
       curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_paz_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_pazCluster_do_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_paz_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_paz_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 20; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
@@ -483,7 +495,7 @@ resource "null_resource" "az2_pazF5_DO" {
   provisioner "remote-exec" {
     inline = [
       "curl -H 'Content-type: application/json' -k -X ${var.rest_do_method} https://localhost${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.az2_pazCluster_do_json}",
-      "x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://localhost${var.rest_do_uri}/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep \"OK\" ); then break; fi; sleep 10; x=$(( $x + 1 )); done",
+      "x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://localhost${var.rest_do_uri}/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep \"OK\" ); then break; fi; sleep 20; x=$(( $x + 1 )); done",
       "sleep 120",
     ]
     connection {
@@ -506,7 +518,7 @@ resource "null_resource" "pazF5_CF" {
     command = <<-EOF
       #!/bin/bash
       curl -H 'Content-type: application/json' -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.paz_cf_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
+      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 20; x=$(( $x + 1 )); done
       sleep 120
     EOF
   }
@@ -527,7 +539,7 @@ resource "null_resource" "pazF5_CF" {
   provisioner "remote-exec" {
     inline = [
       "curl -H 'Content-type: application/json' -k -s -X ${var.rest_do_method} https://localhost${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.paz_cf_json}",
-      "x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://localhost${var.rest_cf_uri} -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep 'success' ); then break; fi; sleep 10; x=$(( $x + 1 )); done; sleep 120"
+      "x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://localhost${var.rest_cf_uri} -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep 'success' ); then break; fi; sleep 20; x=$(( $x + 1 )); done; sleep 120"
     ]
 
     connection {

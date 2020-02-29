@@ -3,11 +3,21 @@ provider "aws" {
 	region = var.aws_region
 }
 
+# fetch the appropriate AMI ID for BIGIP (will provide the appropriate AMI ID, which varies by AWS region)
+data "aws_ami" "bigip_ami" {
+  most_recent = true
+  owners = ["aws-marketplace"]
+  filter {
+    name   = "name"
+    values = ["F5 BIGIP-15.0*BYOL-All*2Boot*"]
+  }
+}
 
 # ToDo: Update license keys
 module securityStack {
   source = "./modules/securityStack"
 
+  aws_region = var.aws_region
   prefix = var.prefix
   tag_name = var.prefix
 
@@ -28,38 +38,44 @@ module securityStack {
 
   az1_pazF5 = {
     "instance_type" = "c4.2xlarge"
-    "license"       = "RDFMS-JUYWX-NDBAL-BRHVC-DRARPSA"
+    "license"       = "BETUM-KRMAK-LXBFL-YDMUM-UYGWPDN"
     "hostname"      = "pazF5vm01"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
 
   az1_dmzF5 = {
     "instance_type"  = "c4.2xlarge"
-    "license"        = "JJOEF-MCJVG-WBSMM-JBAFJ-TDJDJWT"
+    "license"        = "PLYBE-ELEZQ-PRWDK-SALXB-WFSKVWP"
     "hostname"     = "dmzF5vm01"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
 
   az1_transitF5 = {
     "instance_type"  = "c4.2xlarge"
-    "license"      = "SOHXX-ITRFN-FLPOI-CLFBQ-YECVFVV"
+    "license"      = "KBCNU-JEVLJ-FIGHF-CTUQY-GBPQPIV"
     "hostname"     = "transitF5vm01"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
 
   az2_pazF5  = {
     "instance_type"  = "c4.2xlarge"
-    "license"      = "LQKGM-IHMRL-ANZGM-QODVX-ZRBQYEV"
+    "license"      = "FPGMT-PKXAQ-PVULQ-PVCXD-JPCQFFM"
     "hostname"     = "pazF5vm02"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
 
   az2_dmzF5 = {
     "instance_type"  = "c4.2xlarge"
-    "license"      = "FQIHY-YPPQS-FTOIQ-UKEYL-GZHAXPF"
+    "license"      = "BGEXH-LPSBX-FWODX-FZAED-KDMOCZV"
     "hostname"     = "dmzF5vm02"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
 
   az2_transitF5 = {
     "instance_type"  = "c4.2xlarge"
-    "license"      = "TYSNK-HHSJZ-USCES-QFFHP-JMJETOP"
+    "license"      = "UQCSC-SDUHF-RRHSN-ZHVTD-IVZLYMY"
     "hostname"     = "transitF5vm02"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
 }
 
@@ -68,6 +84,7 @@ module tenantStack_MAZ {
   source = "./modules/tenantStack"
   security_vpc_transit_aip_cidr = "100.65.5.0/29"
   key_path = var.key_path
+  aws_region = var.aws_region
   prefix = var.prefix
   tenant_prefix = "TENANT0"
   tenant_name   = "MAZ"
@@ -85,14 +102,16 @@ module tenantStack_MAZ {
   
   az1_tenantF5 = {
     instance_type  = "c4.2xlarge"
-    license      = "PSMMA-PQDCU-MRGKC-HEFYT-MCCDTXA"
+    license      = "MLGGB-XJZDG-PWVZU-RHDFA-UERSYAE"
     hostname      = "edgeF5vm01"
-  }
+    ami_f5image_name = data.aws_ami.bigip_ami.id
+    }
 
   az2_tenantF5 = {
     instance_type  = "c4.2xlarge"
-    license      = "OFEWA-NRDAK-NCGDD-UDWSW-PMARVMY"
+    license      = "DVCLX-RLYFD-ZIOKD-BMGZR-MDBJTMN"
     hostname      = "edgeF5vm02"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
 
 }
@@ -102,6 +121,7 @@ module tenantStack_CSD {
   source = "./modules/tenantStack"
   security_vpc_transit_aip_cidr = "100.65.5.0/29"
   key_path = var.key_path
+  aws_region = var.aws_region
   prefix = var.prefix
   tenant_prefix = "TENANT1"
   tenant_name   = "CSD"
@@ -119,14 +139,16 @@ module tenantStack_CSD {
   
   az1_tenantF5 = {
     instance_type  = "c4.2xlarge"
-    license      = "OKGUR-PCIZR-NNMSN-SGIXI-GTVRRVV"
+    license      = "OBMDL-EOGRR-ZOQMP-MEJFO-TBMANSP"
     hostname      = "edgeF5vm01"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
 
   az2_tenantF5 = {
     instance_type  = "c4.2xlarge"
-    license      = "CZOOM-KZJNK-FBMJS-DNVAG-PAPCIFM"
+    license      = "ECKDJ-AWHEI-XFXCL-WFOUC-FKMRLTY"
     hostname      = "edgeF5vm02"
+    ami_f5image_name = data.aws_ami.bigip_ami.id
   }
   
 }

@@ -6,7 +6,7 @@ variable prefix { default = "SHSCA" }
 variable tenant_name { default = "Tenant" }
 variable tag_name { description = "String: Globally unique object Tag value" }
 
-variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
+# variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
 variable ami_f5image_type { default = "AllTwoBootLocations" }
 variable ami_image_version { default = "latest" }
 

@@ -30,7 +30,7 @@ do
     echo "GIVE UP..."
     break
   fi
-  sleep 10
+  sleep 20
 done
 
 sleep 30
@@ -103,7 +103,7 @@ do
     echo "GIVE UP..."
     break
   fi
-  sleep 10
+  sleep 20
 done
 
 sleep 30
@@ -150,28 +150,28 @@ DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/download
 echo -e "\n"$(date) "Install TS Pkg"
 curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
 
-sleep 10
+sleep 20
 
 # Install Declarative Onboarding Pkg
 DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$DO_FN\"}"
 echo -e "\n"$(date) "Install DO Pkg"
 curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
 
-sleep 10
+sleep 20
 
 # Install Cloud-Failover Pkg
 DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$CF_FN\"}"
 echo -e "\n"$(date) "Install CF Pkg"
 curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
 
-sleep 10
+sleep 20
 
 # Install AS3 Pkg
 DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$AS3_FN\"}"
 echo -e "\n"$(date) "Install AS3 Pkg"
 curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
 
-sleep 10
+sleep 20
 
 # Check DO Ready
 CNT=0
@@ -188,7 +188,7 @@ do
     echo "GIVE UP..."
     break
   fi
-  sleep 10
+  sleep 20
 done
 
 # Check CF Ready
@@ -206,7 +206,7 @@ do
     echo "GIVE UP..."
     break
   fi
-  sleep 10
+  sleep 20
 done
 
 # Check AS3 Ready
@@ -224,7 +224,7 @@ do
     echo "GIVE UP..."
     break
   fi
-  sleep 10
+  sleep 20
 done
 
 # Check TS Ready
@@ -242,7 +242,7 @@ do
     echo "GIVE UP..."
     break
   fi
-  sleep 10
+  sleep 20
 done
 
 sleep 60
