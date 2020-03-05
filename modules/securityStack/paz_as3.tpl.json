@@ -5,57 +5,53 @@
   "persist": true,
   "declaration": {
     "class": "ADC",
-    "schemaVersion": "3.13.0",
+    "schemaVersion": "3.17.0",
     "id": "123abc",
-    "label": "Tenant 1",
-    "remark": "HTTPS with predictive-node pool",
-    "Sample_01": {
+    "label": "IngressFlow",
+    "remark": "Ingress HTTPS traffic with policy based routing",
+    "Common": {
+      "Shared": {
+          "class": "Application",
+          "template": "shared",
+          "wildcardAddress": {
+              "class": "Service_Address",
+              "virtualAddress": "0.0.0.0"
+          }
+      }
+    },
+    "Inet2Cloud": {
       "class": "Tenant",
-      "A1": {
+      "Ingress": {
         "class": "Application",
         "template": "https",
         "serviceMain": {
           "class": "Service_HTTPS",
           "virtualPort": 443,
-          "virtualAddresses": [
-	      "0.0.0.0"
-	  ],
+          "virtualAddresses": [{
+	            "use": "/Common/Shared/wildcardAddress"
+          }],
           "securityLogProfiles": [
               {
                 "bigip": "/Common/Log all requests"
               },
               {
-                "bigip": "/Common/telemetry_security_log_profile"
+                "bigip": "/Common/Shared/telemetry_security_log_profile"
               }
           ],
-          "snat": "auto",
-          "pool": "web_pool",
-          "policyWAF": {
-            "use": "My_ASM_Policy"
-          },
+          "policyEndpoint": "ingress_policy",
+          "snat": "none",
           "serverTLS": "webtls",
           "profileTrafficLog": {
-          "bigip": "/Common/telemetry_traffic_log_profile"
-          }
+            "bigip": "/Common/Shared/telemetry_traffic_log_profile"
+          },
+          "allowVlans": [
+            { "bigip":"/Common/external" }
+          ]
         },
-        "My_ASM_Policy": {
+        "Ingress_WAF_Policy": {
           "class": "WAF_Policy",
           "url": "${asm_policy_url}",
           "ignoreChanges": true
-        },
-        "web_pool": {
-          "class": "Pool",
-	  "monitors": [
-            "tcp"
-          ],
-          "members": [
-	    {
-              "servicePort": 80,
-	      "serverAddresses": [
-	          "${backendvm_ip}"
-	      ]
-	    }
-	  ]
         },
         "webtls": {
           "class": "TLS_Server",
@@ -72,7 +68,258 @@
             "ciphertext": "ZjVmNQ==",
             "protected": "eyJhbGciOiJkaXIiLCJlbmMiOiJub25lIn0"
           }
+        },
+        "ingress_https_policy": {
+          "class": "Endpoint_Policy",
+          "rules": [
+            {
+              "name": "tenant_MAZ_SRA_https",
+              "conditions": [{
+                "type": "httpUri",
+                "path": {
+                  "operand": "contains",
+                  "values": ["steveh-aws-maz"]
+                }
+              }],
+              "actions": [
+                {
+                  "type": "waf",
+                  "policy": {
+                    "use": "Ingress_WAF_Policy"
+                  }
+                },
+                {
+                  "type": "forward",
+                  "event": "request",
+                  "select": {
+                    "pool": {
+                      "use": "tenant_MAZ_SRA-Service_pool"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tenant_CSD_SRA_https",
+              "conditions": [{
+                "type": "httpUri",
+                "path": {
+                  "operand": "contains",
+                  "values": ["steveh-aws-csd"]
+                }
+              }],
+              "actions": [
+                {
+                  "type": "waf",
+                  "policy": {
+                    "use": "Ingress_WAF_Policy"
+                  }
+                },
+                {
+                  "type": "forward",
+                  "event": "request",
+                  "select": {
+                    "pool": {
+                      "use": "tenant_CSD_SRA-Service_pool"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "default_disable_WAF",
+              "conditions": [ ],
+              "actions": [
+                {
+                  "type": "waf"
+                }
+              ]
+            }
+          ]
+        },
+        "tenant_MAZ_SRA-Service_pool": {
+          "class": "Pool",
+          "monitors": [
+            "http"
+          ],
+          "members": [{
+            "servicePort": 443,
+            "serverAddresses": [
+              "100.100.0.1"
+            ]
+          }]
+        },
+        "tenant_CSD_SRA-Service_pool": {
+          "class": "Pool",
+          "monitors": [
+            "http"
+          ],
+          "members": [{
+            "servicePort": 443,
+            "serverAddresses": [
+              "100.100.1.1"
+            ]
+          }]
         }
+      }
+    },
+    "Cloud2Inet": {
+      "class": "Tenant",
+      "fwFastL4": {
+          "fwAllowedAddressList": {
+              "class": "Firewall_Address_List",
+              "addresses": [
+                  "10.0.0.0/8",
+                  "100.64.0.0/10"
+              ]
+          },
+          "fwRuleList": {
+              "class": "Firewall_Rule_List",
+              "rules": [
+                  {
+                      "protocol": "tcp",
+                      "name": "tcpAllow",
+                      "loggingEnabled": true,
+                      "destination": {
+                          "portLists": [
+                              {
+                                  "use": "fwAllowedPortList"
+                              }
+                          ]
+                      },
+                      "source": {
+                          "addressLists": [
+                              {
+                                  "use": "fwAllowedAddressList"
+                              }
+                          ]
+                      },
+                      "action": "accept"
+                  },
+                  {
+                      "action": "accept",
+                      "loggingEnabled": true,
+                      "protocol": "udp",
+                      "name": "udpAllow",
+                      "source": {
+                          "addressLists": [
+                              {
+                                  "use": "fwAllowedAddressList"
+                              }
+                          ]
+                      }
+                  },
+                  {
+                      "action": "drop",
+                      "loggingEnabled": true,
+                      "protocol": "any",
+                      "name": "defaultDeny",
+                      "source": {
+                          "addressLists": [
+                              {
+                                  "use": "fwDefaultDenyAddressList"
+                              }
+                          ]
+                      }
+                  }
+              ]
+          },
+          "fwAllowedPortList": {
+              "class": "Firewall_Port_List",
+              "ports": [
+                  22,
+                  53,
+                  80,
+                  443,
+                  3389,
+                  "8080-8081"
+              ]
+          },
+          "fwSecurityLogProfile": {
+              "class": "Security_Log_Profile",
+              "network": {
+                  "publisher": {
+                      "bigip": "/Common/Shared/telemetry_publisher"
+                  },
+                  "storageFormat": {
+                      "fields": [
+                          "action",
+                          "dest-ip",
+                          "dest-port",
+                          "src-ip",
+                          "src-port"
+                      ]
+                  },
+                  "logTranslationFields": true,
+                  "logTcpEvents": true,
+                  "logRuleMatchRejects": true,
+                  "logTcpErrors": true,
+                  "logIpErrors": true,
+                  "logRuleMatchDrops": true,
+                  "logRuleMatchAccepts": true
+              }
+          },
+          "class": "Application",
+          "fwDefaultDenyAddressList": {
+              "class": "Firewall_Address_List",
+              "addresses": [
+                  "0.0.0.0/0"
+              ]
+          },
+          "fwPolicy": {
+              "rules": [
+                  {
+                      "use": "fwRuleList"
+                  }
+              ],
+              "class": "Firewall_Policy"
+          },
+          "ex_L4_Profile": {
+              "class": "L4_Profile"
+          },
+          "template": "l4",
+          "service_pool": {
+              "class": "Pool",
+              "members": [
+                  {
+                      "serverAddresses": [
+                          "${aip_az1PazIntFloatIp}"
+                      ],
+                      "enable": true,
+                      "servicePort": 0
+                  }
+              ],
+              "monitors": [
+                  {
+                      "bigip": "/Common/gateway_icmp"
+                  }
+              ]
+          },
+          "serviceMain": {
+              "translateServerAddress": false,
+              "securityLogProfiles": [
+                  {
+                      "use": "fwSecurityLogProfile"
+                  }
+              ],
+              "virtualAddresses": [{
+                  "use": "/Common/Shared/wildcardAddress"
+              }],
+              "policyFirewallEnforced": {
+                  "use": "fwPolicy"
+              },
+              "translateServerPort": false,
+              "profileL4": {
+                  "use": "ex_L4_Profile"
+              },
+              "virtualPort": 0,
+              "snat": "auto",
+              "class": "Service_L4",
+              "pool": "service_pool",
+              "allowVlans": [
+                { "bigip":"/Common/internal" }
+              ]
+          }
       }
     }
   }

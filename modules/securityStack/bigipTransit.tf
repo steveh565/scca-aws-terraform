@@ -16,7 +16,7 @@ resource "aws_network_interface" "az1_transit_external" {
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.transit_cf_label
+    f5_cloud_failover_label = var.gccap_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -50,7 +50,7 @@ resource "aws_network_interface" "az1_transit_internal" {
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.transit_cf_label
+    f5_cloud_failover_label = var.gccap_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -152,7 +152,7 @@ resource "aws_network_interface" "az2_transit_external" {
   security_groups = [aws_security_group.sg_external.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.transit_cf_label
+    f5_cloud_failover_label = var.gccap_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -186,7 +186,7 @@ resource "aws_network_interface" "az2_transit_internal" {
   security_groups = [aws_security_group.sg_internal.id]
   source_dest_check = false
   tags = {
-    f5_cloud_failover_label = var.transit_cf_label
+    f5_cloud_failover_label = var.gccap_cf_label
   }
   lifecycle {
     ignore_changes = [
@@ -194,23 +194,6 @@ resource "aws_network_interface" "az2_transit_internal" {
     ]
   }  
 }
-
-/*
-resource "null_resource" "az2_transit_internal_secondary_ips" {
-  depends_on = [aws_network_interface.az2_transit_internal, aws_instance.az2_transit_bigip]
-  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
-  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
-  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
-
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_transit_internal.id} --private-ip-addresses ${var.az2_transitF5.transit_vip}
-    EOF
-  }
-}
-*/
 
 resource "aws_eip" "eip_az2_transit_mgmt" {
   depends_on                = [aws_network_interface.az2_transit_mgmt, aws_internet_gateway.gw]
@@ -274,7 +257,7 @@ data "template_file" "az1_transitCluster_do_json" {
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az1_transitF5.license
-    banner_color   = "red"
+    banner_color   = "green"
     Domainname     = var.f5Domainname
     host1          = var.az1_transitF5.hostname
     host2          = var.az2_transitF5.hostname
@@ -310,7 +293,7 @@ data "template_file" "az2_transitCluster_do_json" {
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az2_transitF5.license
-    banner_color   = "red"
+    banner_color   = "green"
     Domainname     = var.f5Domainname
     host1          = var.az1_transitF5.hostname
     host2          = var.az2_transitF5.hostname
@@ -344,15 +327,24 @@ data "template_file" "transit_cf_json" {
   template = "${file("${path.module}/transit_cloudfailover.tpl.json")}"
 
   vars = {
+    cap_cf_label = var.gccap_cf_label
     cf_label = var.transit_cf_label
-    cf_cidr1 = "100.100.0.0/16"
+    
+    cf_cidr1 = var.aip_tenants_vip_cidr
+    cf_cidr1_nextHop1 = local.az1TransitExtSelfIp
+    cf_cidr1_nextHop2 = local.az2TransitExtSelfIp
+    
     cf_cidr2 = local.aipTransitExtSnet
+    cf_cidr2_nextHop1 = local.az1TransitExtSelfIp
+    cf_cidr2_nextHop2 = local.az2TransitExtSelfIp
+    
     cf_cidr3 = local.aipTransitIntSnet
+    cf_cidr3_nextHop1 = local.az1TransitIntSelfIp
+    cf_cidr3_nextHop2 = local.az2TransitIntSelfIp
+    
     cf_cidr4 = "0.0.0.0/0"
-    cf_nexthop1 = local.az1TransitExtSelfIp
-    cf_nexthop2 = local.az2TransitExtSelfIp
-    cf_nexthop3 = local.az1TransitIntSelfIp 
-    cf_nexthop4 = local.az2TransitIntSelfIp
+    cf_cidr4_nextHop1 = local.az1TransitIntSelfIp
+    cf_cidr4_nextHop2 = local.az2TransitIntSelfIp
   }
 }
 
@@ -397,8 +389,7 @@ data "template_file" "transit_as3_json" {
   template = "${file("${path.module}/transit_as3.tpl.json")}"
 
   vars = {
-    backendvm_ip   = ""
-    asm_policy_url = var.asm_policy_url
+    aip_az1DmzIntFloatIp = local.aip_az1DmzIntFloatIp
   }
 }
 # Render transit AS3 declaration
@@ -410,16 +401,6 @@ resource "local_file" "transit_as3_file" {
 # Send declarations via REST API's
 resource "null_resource" "az1_transitF5_DO" {
   depends_on = [aws_instance.az1_transit_bigip, local_file.az1_transitCluster_do_file]
-  /*
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az1_transit_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${path.module}/${var.az1_transitCluster_do_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_transit_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-      sleep 120
-    EOF
-  }
-  */
 
   provisioner "file" {
     source = "${path.module}/${var.az1_transitCluster_do_json}"
@@ -450,17 +431,6 @@ resource "null_resource" "az1_transitF5_DO" {
 
 resource "null_resource" "az2_transitF5_DO" {
   depends_on = [aws_instance.az2_transit_bigip, local_file.az2_transitCluster_do_file]
-  # Running DO REST API
-  /*
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_transit_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${path.module}/${var.az2_transitCluster_do_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_transit_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-      sleep 120
-    EOF
-  }
-  */
 
   provisioner "file" {
     source = "${path.module}/${var.az2_transitCluster_do_json}"
@@ -495,16 +465,6 @@ resource "null_resource" "transitF5_CF" {
     bigip1 = aws_instance.az1_transit_bigip.public_ip
     bigip2 = aws_instance.az2_transit_bigip.public_ip
   }
-  /*
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -H 'Content-type: application/json' -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${var.transit_cf_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-      sleep 120
-    EOF
-  }
-  */
 
   provisioner "file" {
     source = "${path.module}/${var.transit_cf_json}"
@@ -535,15 +495,6 @@ resource "null_resource" "transitF5_CF" {
 
 resource "null_resource" "transitF5_TS" {
   depends_on = [null_resource.transitF5_CF]
-  # Running CF REST API
-  /*
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_transit_bigip.public_ip}${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @${var.transit_ts_json}
-    EOF
-  }
-  */
 
   provisioner "file" {
     source = "${path.module}/${var.transit_ts_json}"
@@ -573,15 +524,6 @@ resource "null_resource" "transitF5_TS" {
 
 resource "null_resource" "transitF5_TS_LogCollection" {
   depends_on = [null_resource.transitF5_TS]
-  # Running CF REST API
-  /*
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_transit_bigip.public_ip}${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @${var.transit_logs_as3_json}
-    EOF
-  }
-  */
 
   provisioner "file" {
     source = "${path.module}/${var.transit_logs_as3_json}"
@@ -608,6 +550,36 @@ resource "null_resource" "transitF5_TS_LogCollection" {
     }
   }
 }
+
+resource "null_resource" "transitF5_AS3_declaration" {
+  depends_on = [null_resource.transitF5_TS_LogCollection]
+
+  provisioner "file" {
+    source = "${path.module}/${var.transit_as3_json}"
+    destination = "/var/tmp/${var.transit_as3_json}"
+
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az1_transit_bigip.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "curl -H 'Content-type: application/json' -k -X ${var.rest_as3_method} https://localhost${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.transit_as3_json}"
+    ]
+
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az1_transit_bigip.public_ip
+    }
+  }
+}
+
 
 # Configure Off-Box Analytics
 resource "null_resource" "transit_offBoxAnalytics" {

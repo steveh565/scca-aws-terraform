@@ -7,7 +7,7 @@
       "class": "ADC",
       "schemaVersion": "3.17.0",
       "id": "firewall",
-      "label": "Internet Access Service",
+      "label": "Tenant workload Internet Access Service",
       "remark": "Firewall policy, rules, IPS profile, SNAT and logging",
       "controls": {
       "trace": true
@@ -29,8 +29,7 @@
                 "class": "Firewall_Address_List",
                 "addresses": [
                     "10.0.0.0/8",
-                    "100.64.0.0/10",
-                    "172.16.0.0/16"
+                    "100.64.0.0/10"
                 ]
             },
             "fwRuleList": {
@@ -143,7 +142,7 @@
                 "members": [
                     {
                         "serverAddresses": [
-                            "${aip_az1DmzIntFloatIp}"
+                            "${greNextHop}"
                         ],
                         "enable": true,
                         "servicePort": 0
@@ -178,6 +177,94 @@
                 "pool": "service_pool",
                 "allowVlans": [
                   { "bigip":"/Common/internal" }
+                ]
+            },
+            "InspectionProfile": {
+                "class": "Protocol_Inspection_Profile",
+                "remark": "IPS Inspection Profile",
+                "collectAVRStats": true,
+                "enableComplianceChecks": true,
+                "enableSignatureChecks": true,
+                "autoAddNewInspections": true,
+                "autoPublish": true,
+                "services": [
+                    {
+                        "type": "dns",
+                        "compliance": [
+                            {
+                                "check": "dns_maximum_reply_length"
+                            },
+                            {
+                                "check": "dns_disallowed_query_type",
+                                "action": "accept",
+                                "log": true
+                            }
+                        ],
+                        "signature": [
+                            {
+                                "check": "dns_dns_query_amplification_attempt",
+                                "action": "reject",
+                                "log": true
+                            }
+                        ]
+                    },
+                    {
+                        "type": "http"
+                    },
+                    {
+                        "type": "imap"
+                    },
+                    {
+                        "type": "pop3"
+                    },
+                    {
+                        "type": "smtp"
+                    },
+                    {
+                        "type": "mqtt"
+                    },
+                    {
+                        "type": "snmp"
+                    },
+                    {
+                        "type": "sip"
+                    },
+                    {
+                        "type": "ssl"
+                    },
+                    {
+                        "type": "telnet"
+                    },
+                    {
+                        "type": "wins"
+                    },
+                    {
+                        "type": "netbios_ssn"
+                    },
+                    {
+                        "type": "netbios_ns"
+                    },
+                    {
+                        "type": "ftp"
+                    },
+                    {
+                        "type": "irc"
+                    },
+                    {
+                        "type": "mysql"
+                    },
+                    {
+                        "type": "radius"
+                    },
+                    {
+                        "type": "ssh"
+                    },
+                    {
+                        "type": "tftp"
+                    },
+                    {
+                        "type": "other"
+                    }
                 ]
             }
         }

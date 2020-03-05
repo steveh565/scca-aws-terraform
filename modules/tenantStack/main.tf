@@ -24,7 +24,7 @@ data "template_file" "az1_tenantF5_vm_onboard" {
 # Render Onboarding script
 resource "local_file" "az1_tenantF5_vm_onboarding_file" {
   content     = data.template_file.az1_tenantF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az1_tenantF5_onboard_script}"
+  filename    = "${path.module}/${var.tenant_name}_${var.az1_tenantF5_onboard_script}"
 }
 
 
@@ -53,7 +53,7 @@ data "template_file" "az2_tenantF5_vm_onboard" {
 # Render Onboarding script
 resource "local_file" "az2_tenantF5_vm_onboarding_file" {
   content     = data.template_file.az2_tenantF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az2_tenantF5_onboard_script}"
+  filename    = "${path.module}/${var.tenant_name}_${var.az2_tenantF5_onboard_script}"
 }
 
 

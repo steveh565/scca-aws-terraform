@@ -33,38 +33,25 @@ resource "aws_vpc_endpoint" "ec2" {
     vpc_id            = aws_vpc.tenant.id
     service_name      = "com.amazonaws.${var.aws_region}.ec2"
     vpc_endpoint_type = "Interface"
-    security_group_ids = [
-        aws_security_group.sg_internal.id
-    ]
+    security_group_ids = [aws_security_group.sg_internal.id]
     private_dns_enabled = true
-
+    subnet_ids = [aws_subnet.az1_tenant_mgmt.id, aws_subnet.az2_tenant_mgmt.id]
     tags = {
         name = "${var.prefix}-${var.tenant_name}-ec2ep"
         ResourceGroup = var.prefix
     }
 }
 
-resource "aws_vpc_endpoint_subnet_association" "az1_ec2_sna" {
-  vpc_endpoint_id = aws_vpc_endpoint.ec2.id
-  subnet_id       = aws_subnet.az1_tenant_ext.id
-}
-
-resource "aws_vpc_endpoint_subnet_association" "az2_ec2_sna" {
-  vpc_endpoint_id = aws_vpc_endpoint.ec2.id
-  subnet_id       = aws_subnet.az2_tenant_ext.id
-}
-
 # Create Cloudwatch VPC Endpoint
+# ToDo: make logs endpoint unique to the tenant VPC??
 resource "aws_vpc_endpoint" "logs" {
     
     vpc_id            = aws_vpc.tenant.id
     service_name      = "com.amazonaws.${var.aws_region}.logs"
     vpc_endpoint_type = "Interface"
-    security_group_ids = [
-        aws_security_group.sg_internal.id,
-    ]
+    security_group_ids = [aws_security_group.sg_internal.id]
     private_dns_enabled = true
-    
+    subnet_ids = [aws_subnet.az1_tenant_mgmt.id, aws_subnet.az2_tenant_mgmt.id]
     tags = {
         name = "${var.prefix}-${var.tenant_name}-LogsEp"
         Environment = var.prefix
@@ -72,15 +59,6 @@ resource "aws_vpc_endpoint" "logs" {
     }
 }
 
-resource "aws_vpc_endpoint_subnet_association" "az1_logs_sna" {
-  vpc_endpoint_id = aws_vpc_endpoint.logs.id
-  subnet_id       = aws_subnet.az1_tenant_ext.id
-}
-
-resource "aws_vpc_endpoint_subnet_association" "az2_logs_sna" {
-  vpc_endpoint_id = aws_vpc_endpoint.logs.id
-  subnet_id       = aws_subnet.az2_tenant_ext.id
-}
 
 # Management subnet in AZ1
 resource "aws_subnet" "az1_tenant_mgmt" {

@@ -61,7 +61,8 @@ tmsh delete /sys management-route default;
 tmsh delete /sys management-ip ${mgmt_ip}/24; 
 tmsh create /sys management-ip ${mgmt_ip}/24; 
 tmsh create /sys management-route default network default gateway ${mgmt_gw};
-tmsh modify /sys dns name-servers replace-all-with { ${vpc_dns} } search replace-all-with { f5.com }
+tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
+tmsh modify /sys dns name-servers replace-all-with { ${vpc_dns} } search replace-all-with { ${dns_domain} }
 #submit cli transaction
 #EOF
 
@@ -84,7 +85,8 @@ tmsh create net self external-self address ${ext_self}/24 vlan external;
 tmsh create net vlan internal interfaces add { 1.2 } mtu 1500;
 tmsh create net self internal-self address ${int_self}/24 vlan internal;
 tmsh create /net route /LOCAL_ONLY/default network default gw ${gateway}; 
-tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
+tmsh create /net route /LOCAL_ONLY/aip_nextHopInt network ${aip_nexthop_cidr} gw ${internal_gw}
+tmsh create /net route /LOCAL_ONLY/aip_tenantVips network ${aip_tenants_vip_cidr} gw ${internal_gw}
 #submit cli transaction
 #EOF
 

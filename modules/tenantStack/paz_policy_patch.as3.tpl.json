@@ -1,0 +1,62 @@
+{
+    "class": "AS3",
+    "action": "patch",
+    "patchBody": [
+        {
+            "op": "add",
+            "path": "/Inet2Cloud/ingress_policy",
+            "value": {
+                "class": "Endpoint_Policy",
+                "rules": [
+                  {
+                    "name": "tenant_${tenant_name}_https",
+                    "conditions": [
+                        {
+                            "type": "httpUri",
+                            "path": {
+                                "operand": "contains",
+                                "values": ["${service_hostname}"]
+                            }
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "type": "waf",
+                            "policy": {
+                                "use": "Ingress_WAF_Policy"
+                            }
+                        },
+                        {
+                            "type": "forward",
+                            "event": "request",
+                            "select": {
+                                "pool": {
+                                    "use": "tenant_${tenant_name}_SRA-Service_pool"
+                                }
+                            }
+                        }
+                    ]
+                  }
+                ]
+            }
+        },
+        {
+            "op": "add",
+            "path": "/Inet2Cloud",
+            "value": {
+                "tenant_MAZ_SRA-Service_pool": {
+                    "class": "Pool",
+                    "monitors": [
+                    "http"
+                    ],
+                    "members": [{
+                    "servicePort": 443,
+                    "serverAddresses": [
+                        "${service_vip_addr}"
+                    ]
+                    }]
+                }
+            }
+        }
+    ]
+}

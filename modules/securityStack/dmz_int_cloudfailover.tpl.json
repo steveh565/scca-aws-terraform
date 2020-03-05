@@ -17,24 +17,49 @@
     },
     "failoverRoutes": {
         "scopingTags": {
-            "f5_cloud_failover_label": "${cf_label}"
+            "f5_cloud_failover_label": "${cap_cf_label}"
         },
         "scopingAddressRanges": [
             {
-                "range": "${cf_cidr1}"
+                "range": "${cf_cidr1}",
+                "nextHopAddresses": {
+                    "discoveryType": "static",
+                    "items": [
+                        "${cf_cidr1_nextHop1}",
+                        "${cf_cidr1_nextHop2}"
+                    ]
+                }
             },
             {
-                "range": "${cf_cidr2}"
+                "range": "${cf_cidr2}",
+                "nextHopAddresses": {
+                    "discoveryType": "static",
+                    "items": [
+                        "${cf_cidr2_nextHop1}",
+                        "${cf_cidr2_nextHop2}"
+                    ]
+                }
+            },
+            {
+                "range": "${cf_cidr3}",
+                "nextHopAddresses": {
+                    "discoveryType": "static",
+                    "items": [
+                        "${cf_cidr3_nextHop1}",
+                        "${cf_cidr3_nextHop2}"
+                    ]
+                }
+            },
+            {
+                "range": "${cf_cidr4}",
+                "nextHopAddresses": {
+                    "discoveryType": "static",
+                    "items": [
+                        "${cf_cidr4_nextHop1}",
+                        "${cf_cidr4_nextHop2}"
+                    ]
+                }
             }
-        ],
-        "defaultNextHopAddresses": {
-            "discoveryType": "static",
-            "items": [
-                "${cf_nexthop1}",
-                "${cf_nexthop2}",
-                "${cf_nexthop3}",
-                "${cf_nexthop4}"
-            ]
-        }
+        ]
     }
 }

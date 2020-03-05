@@ -55,15 +55,12 @@ submit cli transaction
 EOF
 
 echo "set management networking"
-#cat <<-EOF | tmsh -q
-#create cli transaction;
 tmsh delete /sys management-route default;
 tmsh delete /sys management-ip ${mgmt_ip}/24; 
 tmsh create /sys management-ip ${mgmt_ip}/24; 
 tmsh create /sys management-route default network default gateway ${mgmt_gw};
+tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
 tmsh modify /sys dns name-servers replace-all-with { ${vpc_dns} } search replace-all-with { f5.com }
-#submit cli transaction
-#EOF
 
 
 # LOCAL_ONLY
@@ -77,16 +74,11 @@ EOF
 
 # Base Networking
 echo "set TMM base networking"
-#cat <<-EOF | tmsh -q
-#create cli transaction;
 tmsh create net vlan external interfaces add { 1.1 } mtu 1500;
 tmsh create net self external-self address ${ext_self}/24 vlan external;
 tmsh create net vlan internal interfaces add { 1.2 } mtu 1500;
 tmsh create net self internal-self address ${int_self}/24 vlan internal;
 tmsh create /net route /LOCAL_ONLY/default network default gw ${gateway}; 
-tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
-#submit cli transaction
-#EOF
 
 # CHECK TO SEE NETWORK IS READY AGAIN AFTER RECONFIGURING ROUTES
 CNT=0
@@ -244,5 +236,3 @@ do
   fi
   sleep 10
 done
-
-sleep 60

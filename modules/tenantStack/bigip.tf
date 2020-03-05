@@ -82,7 +82,7 @@ resource "null_resource" "az1_tenant_internal_secondary_ips" {
 
 # Create elastic IP and map to "VIP" on external tenant nic
 resource "aws_eip" "eip_az1_tenant_mgmt" {
-  depends_on                = [aws_network_interface.az1_tenant_mgmt]
+  depends_on                = [aws_network_interface.az1_tenant_mgmt, aws_internet_gateway.tenantGw]
   vpc                       = true
   network_interface         = aws_network_interface.az1_tenant_mgmt.id
   associate_with_private_ip = local.az1MgmtIp
@@ -128,7 +128,7 @@ resource "aws_instance" "az1_tenant_bigip" {
     }
     when = create
     inline = [
-      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+      "until grep -q 'TS is Ready' ${var.onboard_log}; do sleep 60; done; sleep 60"
     ]
   }
 
@@ -253,7 +253,7 @@ resource "null_resource" "az2_tenant_internal_secondary_ips" {
 */
 
 resource "aws_eip" "eip_az2_tenant_mgmt" {
-  depends_on                = [aws_network_interface.az2_tenant_mgmt]
+  depends_on                = [aws_network_interface.az2_tenant_mgmt, aws_internet_gateway.tenantGw]
   vpc                       = true
   network_interface         = aws_network_interface.az2_tenant_mgmt.id
   associate_with_private_ip = local.az2MgmtIp
@@ -300,7 +300,7 @@ resource "aws_instance" "az2_tenant_bigip" {
     }
     when = create
     inline = [
-      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+      "until grep -q 'TS is Ready' ${var.onboard_log}; do sleep 60; done; sleep 60"
     ]
   }
 
@@ -349,7 +349,7 @@ data "template_file" "tenant_cf_json" {
   template = file("${path.module}/tenant_cloudfailover.tpl.json")
 
   vars = {
-    cf_label = "${var.tenant_name}-${var.tenant_cf_label}"
+    cf_label = var.tenant_cf_label
     cf_cidr1 = "0.0.0.0/0"
     cf_nexthop1 = local.az1IntSelfIp
     cf_nexthop2 = local.az2IntSelfIp
@@ -392,39 +392,28 @@ resource "local_file" "tenant_logs_as3_file" {
 }
 
 
-/*
+
 # tenant AS3 Declaration
 data "template_file" "tenant_as3_json" {
-  template = file("${path.module}/tenant_as3.tpl.json")}"
+  template = file("${path.module}/tenant_as3.tpl.json")
 
   vars = {
-    backendvm_ip   = aws_instance.bastionHost[0].private_ip
-    asm_policy_url = "${var.asm_policy_url}"
+    #backendvm_ip   = aws_instance.bastionHost[0].private_ip
+    #asm_policy_url = var.asm_policy_url
+    greNextHop = local.greNextHop
   }
 }
 
 # Render tenant AS3 declaration
 resource "local_file" "tenant_as3_file" {
   content = data.template_file.tenant_as3_json.rendered
-  filename = "${path.module}/${var.tenant_as3_json}"
+  filename = "${path.module}/${var.tenant_name}_${var.tenant_as3_json}"
 }
-*/
+
 
 resource "null_resource" "az1_tenantF5_DO" {
   depends_on = [aws_instance.az1_tenant_bigip]
   # Running DO REST API
-
-  /* avoid use of local-exec to run curl... use file and remote-exec to run curl on bigip instead!
-  # -> assumption: the "file" provisioner works on Windows?
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az1_tenant_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az1_tenantCluster_do_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az1_tenant_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-      sleep 120
-    EOF
-  }
-  */
   provisioner "file" {
     source = "${path.module}/${var.tenant_name}_${var.az1_tenantCluster_do_json}"
     destination = "/var/tmp/${var.az1_tenantCluster_do_json}"
@@ -458,17 +447,6 @@ resource "null_resource" "az2_tenantF5_DO" {
   depends_on = [aws_instance.az2_tenant_bigip]
   # Running DO REST API
 
-  /* avoid use of local-exec to run curl... use file and remote-exec to run curl on bigip instead!
-  # -> assumption: the "file" provisioner works on Windows?
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -k -s -X ${var.rest_do_method} https://${aws_instance.az2_tenant_bigip.public_ip}${var.rest_do_uri} -u ${var.uname}:${var.upassword} -d @${var.az2_tenantCluster_do_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${aws_instance.az2_tenant_bigip.public_ip}/mgmt/shared/declarative-onboarding/task -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "OK" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-      sleep 120
-    EOF
-  }
-  */
   provisioner "file" {
     source = "${path.module}/${var.tenant_name}_${var.az2_tenantCluster_do_json}"
     destination = "/var/tmp/${var.az2_tenantCluster_do_json}"
@@ -504,17 +482,6 @@ resource "null_resource" "tenantF5_CF" {
     bigip2 = aws_instance.az2_tenant_bigip.public_ip
   }
 
-  /*
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -H 'Content-type: application/json' -k -s -X ${var.rest_do_method} https://${each.value}${var.rest_cf_uri} -u ${var.uname}:${var.upassword} -d @${local.tenant_cf_json}
-      x=1; while [ $x -le 30 ]; do STATUS=$(curl -k -X GET https://${each.value}/mgmt/shared/cloud-failover/declare -u ${var.uname}:${var.upassword}); if ( echo $STATUS | grep "success" ); then break; fi; sleep 10; x=$(( $x + 1 )); done
-      sleep 120
-    EOF
-  }
-  */
-
   provisioner "file" {
     source = "${path.module}/${local.tenant_cf_json}"
     destination = "/var/tmp/${local.tenant_cf_json}"
@@ -546,15 +513,6 @@ resource "null_resource" "tenantF5_TS" {
   depends_on = [null_resource.az1_tenantF5_DO, null_resource.az2_tenantF5_DO]
   # Running CF REST API
 
-  /* avoid use of local-exec to run curl... use file and remote-exec to run curl on bigip instead!
-  # -> assumption: the "file" provisioner works on Windows?
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_tenant_bigip.public_ip}${var.rest_ts_uri} -u ${var.uname}:${var.upassword} -d @${var.tenant_ts_json}
-    EOF
-  }
-  */
   provisioner "file" {
     source = "${path.module}/${var.tenant_name}_${var.tenant_ts_json}"
     destination = "/var/tmp/${var.tenant_ts_json}"
@@ -584,16 +542,6 @@ resource "null_resource" "tenantF5_TS" {
 resource "null_resource" "tenantF5_TS_LogCollection" {
   depends_on = [null_resource.tenantF5_TS]
 
-  /* avoid use of local-exec to run curl... use file and remote-exec to run curl on bigip instead!
-  # -> assumption: the "file" provisioner works on Windows?
-  # Running CF REST API
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -H 'Content-Type: application/json' -k -X POST https://${aws_instance.az1_tenant_bigip.public_ip}${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @${var.tenant_logs_as3_json}
-    EOF
-  }
-  */
   provisioner "file" {
     source = "${path.module}/${var.tenant_name}_${var.tenant_logs_as3_json}"
     destination = "/var/tmp/${var.tenant_logs_as3_json}"
@@ -620,6 +568,35 @@ resource "null_resource" "tenantF5_TS_LogCollection" {
 
 }
 
+#Tenant AS3 Declaration
+resource "null_resource" "tenantF5_AS3_declaration" {
+  depends_on = [null_resource.tenantF5_TS_LogCollection]
+
+  provisioner "file" {
+    source = "${path.module}/${var.tenant_name}_${var.tenant_as3_json}"
+    destination = "/var/tmp/${var.tenant_as3_json}"
+
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az1_tenant_bigip.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "curl -H 'Content-type: application/json' -k -X ${var.rest_as3_method} https://localhost${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/${var.tenant_as3_json}"
+    ]
+
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = aws_instance.az1_tenant_bigip.public_ip
+    }
+  }
+}
 
 # Configure Off-Box Analytics
 resource "null_resource" "tenant_offBoxAnalytics" {

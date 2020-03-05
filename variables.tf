@@ -3,7 +3,6 @@ variable aws_region { description = "String: AWS Region in which to deploy" }
 
 # Prefixes
 variable prefix { description = "String: Globally unique object name prefix label" }
-variable maz_name { description = "String: Globally unique Management Access Zone identification label" }
 
 #Source IPv4 CIDR block(s) allowed to access management
 variable mgmt_asrc { description = "List: Source IP Access Control List" }

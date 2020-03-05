@@ -1,14 +1,12 @@
 # Input Variables
-variable aws_region { default = "ca-central-1" }
+variable aws_region { description = "String: AWS region to deploy in" }
 
 # Prefixes
 variable prefix { default = "SHSCA" }
 variable tenant_name { default = "Tenant" }
 variable tag_name { description = "String: Globally unique object Tag value" }
 
-variable ami_f5image_name { default = "ami-038e6394d715e5eac" }
-variable ami_f5image_type { default = "AllTwoBootLocations" }
-variable ami_image_version { default = "latest" }
+variable ami_f5image_name { description = "String: A Valid F5 BigIP AMI ID for the target AWS region" }
 
 #SSH public key path
 variable key_path { default = "~/.ssh/id_rsa.pub" }
@@ -44,6 +42,7 @@ variable aip_dmz_int_cidr         { description = "String: Alien-IP CIDR for dmz
 variable aip_dmzTransit_ext_cidr  { description = "String: Alien-IP CIDR for transitF5 DMZ-Int subnet" }
 variable aip_Transit_int_cidr     { description = "String: Alien-IP CIDR for transitF5 Transit-Int subnet" }
 variable aip_tenants_cidr         { description = "String: Alien-IP CIDR SuperScope for all tenants" }
+variable aip_tenants_vip_cidr     { description = "String: Alien-IP CIDR SuperScope for all tenant VIPs" }
 
 variable az1_pazF5 {
   description = "Az1 pazF5 baseConfig params"
@@ -109,8 +108,8 @@ locals {
 
     az1_paz_ext_gw   = "${cidrhost(local.az1PazExtSnet, 1)}"
     az2_paz_ext_gw   = "${cidrhost(local.az2PazExtSnet, 1)}"
-    az1_paz_int_gw   = "${cidrhost(local.az1PazExtSnet, 1)}"
-    az2_paz_int_gw   = "${cidrhost(local.az2PazExtSnet, 1)}"
+    az1_paz_int_gw   = "${cidrhost(local.az1DmzExtSnet, 1)}"
+    az2_paz_int_gw   = "${cidrhost(local.az2DmzExtSnet, 1)}"
 
     az1_dmz_ext_gw   = "${cidrhost(local.az1DmzExtSnet, 1)}"
     az2_dmz_ext_gw   = "${cidrhost(local.az2DmzExtSnet, 1)}"
@@ -194,12 +193,12 @@ variable az1_transitCluster_do_json { default = "transitF5vm01.do.json" }
 variable az2_transitCluster_do_json { default = "transitF5vm02.do.json" }
 
 # Telemetry Streaming externsion Vars
-variable paz_ts_json { default = "tsCloudwatch_ts.json" }
-variable paz_logs_as3_json { default = "tsLogCollection_as3.json" }
-variable dmz_ts_json { default = "tsCloudwatch_ts.json" }
-variable dmz_logs_as3_json { default = "tsLogCollection_as3.json" }
-variable transit_ts_json { default = "tsCloudwatch_ts.json" }
-variable transit_logs_as3_json { default = "tsLogCollection_as3.json" }
+variable paz_ts_json { default = "paz_tsCloudwatch_ts.json" }
+variable paz_logs_as3_json { default = "paz_tsLogCollection_as3.json" }
+variable dmz_ts_json { default = "dmz_tsCloudwatch_ts.json" }
+variable dmz_logs_as3_json { default = "dmz_tsLogCollection_as3.json" }
+variable transit_ts_json { default = "transit_tsCloudwatch_ts.json" }
+variable transit_logs_as3_json { default = "transit_tsLogCollection_as3.json" }
 
 # Cloud-failover extension Vars
 variable paz_cf_json { default = "paz_cf.json" }
@@ -220,10 +219,10 @@ variable transit_as3_json { default = "transit.as3.json" }
 
 # F5 AnO Toolchain API Configuration
 ## Last updated: 1/19/2020
-variable DO_onboard_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-declarative-onboarding-1.9.0-1.noarch.rpm" }
-variable TS_URL { default = "https://github.com/F5Networks/f5-telemetry-streaming/releases/download/v1.9.0/f5-telemetry-1.9.0-1.noarch.rpm"}
-variable CF_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-cloud-failover-1.0.0-0.noarch.rpm" }
-variable AS3_URL { default = "https://github.com/steveh565/f5tools/raw/master/f5-appsvcs-3.16.0-6.noarch.rpm" }
+variable DO_onboard_URL { default = "https://github.com/F5Networks/f5-declarative-onboarding/releases/download/v1.10.0/f5-declarative-onboarding-1.10.0-2.noarch.rpm" }
+variable TS_URL { default = "https://github.com/F5Networks/f5-telemetry-streaming/releases/download/v1.9.0/f5-telemetry-1.9.0-1.noarch.rpm" }
+variable CF_URL { default = "https://github.com/f5devcentral/f5-cloud-failover-extension/releases/download/v1.0.0/f5-cloud-failover-1.0.0-0.noarch.rpm" }
+variable AS3_URL { default = "https://github.com/F5Networks/f5-appsvcs-extension/releases/download/v3.17.1/f5-appsvcs-3.17.1-1.noarch.rpm" }
 
 # F5 AnO REST API Settings
 variable rest_tmsh_uri { default = "/mgmt/tm/util/bash" }
