@@ -27,7 +27,7 @@
                     "snat": "none",
                     "allowVlans": [
                         {
-                            "use": "/Common/external"
+                            "use": "${vlans_enabled}"
                         }
                     ],
                     "profileHTTP": {

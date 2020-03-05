@@ -6,6 +6,7 @@ variable bigip_mgmt_public_ip { default = "35.182.123.82" }
 variable bigip_vip_private_ip { default = "10.11.1.111" }
 variable ssh_target_ip { default = "10.11.0.11" }
 variable rest_as3_uri {default = "/mgmt/shared/appsvcs/declare"}
+variable vlans_enabled { default = "/Common/external"}
 
 locals {
   #the following tmsh apm commands are required to adjust the IP addresses which are hardcoded for the WebSSH service (target and per-request policy URL branches to allow or block SSH to specific target hosts... because those IP's are hardcoded in the APM policy tarball artifacts)
@@ -58,7 +59,7 @@ resource "null_resource" "bigip_create_ilx_plugin" {
 // The Cloud Failover extension is configured to remap the EIP's or routes accordingly upon failover events.
 # Render SRA AS3 declaration
 resource "local_file" "bigip_sra_as3_file" {
-  content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
+  content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, vlans_enabled = var.vlans_enabled })
   filename    = "${path.module}/bigip_sra_as3.json"
 }
 
