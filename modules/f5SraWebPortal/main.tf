@@ -6,6 +6,7 @@ variable bigip_mgmt_public_ip { default = "35.182.123.82" }
 variable bigip_vip_private_ip { default = "10.11.1.111" }
 variable ssh_target_ip { default = "10.11.0.11" }
 variable rest_as3_uri {default = "/mgmt/shared/appsvcs/declare"}
+variable vlans_enabled { default = "/Common/external"}
 
 locals {
   #the following tmsh apm commands are required to adjust the IP addresses which are hardcoded for the WebSSH service (target and per-request policy URL branches to allow or block SSH to specific target hosts... because those IP's are hardcoded in the APM policy tarball artifacts)
@@ -58,7 +59,7 @@ resource "null_resource" "bigip_create_ilx_plugin" {
 // The Cloud Failover extension is configured to remap the EIP's or routes accordingly upon failover events.
 # Render SRA AS3 declaration
 resource "local_file" "bigip_sra_as3_file" {
-  content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip })
+  content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, vlans_enabled = var.vlans_enabled })
   filename    = "${path.module}/bigip_sra_as3.json"
 }
 
@@ -112,9 +113,6 @@ resource "null_resource" "bigip_upload_apm_policies" {
       "tmsh modify ltm profile http /SRA/SRA_Webtop/webtop_http response-chunking default-value",
       "tmsh modify ltm profile http /SRA/SRA_Webtop/webtop_http request-chunking default-value",
       "tmsh create ltm profile rewrite /SRA/sra_rewriteprofile defaults-from rewrite-portal location-specific false split-tunneling false request { insert-xforwarded-for enabled rewrite-headers enabled } response { rewrite-content enabled rewrite-headers enabled }",
-      "tmsh modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles delete { /SRA/SRA_Webtop/webtop_http } profiles add { http }",
-      "sleep 5",
-      "tmsh modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles delete { http } profiles add { /SRA/SRA_Webtop/webtop_http }",
       "tmsh modify ltm virtual /SRA/SRA_Webtop/serviceMain profiles add {/SRA/SecureRemoteAccessAP} profiles add {/SRA/sra_vdi} profiles add {/SRA/sra_cp} profiles add {/SRA/sra_rewriteprofile} per-flow-request-access-policy /SRA/SecureRemoteAccessPRP",
       "tmsh save sys config",
     ]
