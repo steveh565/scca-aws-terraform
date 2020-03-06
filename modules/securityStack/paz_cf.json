@@ -4,39 +4,39 @@
     "controls": {
         "class": "Controls",
         "logLevel": "silly"
-    },
-    "internalStorage": {
+    },        
+    "externalStorage": {
         "scopingTags": {
-            "f5_cloud_failover_label": "${cf_label}"
+            "f5_cloud_failover_label": "paz-az-failover"
         }
     },
     "failoverAddresses": {
         "scopingTags": {
-            "f5_cloud_failover_label": "${cf_label}"
+            "f5_cloud_failover_label": "paz-az-failover"
         }
     },
     "failoverRoutes": {
         "scopingTags": {
-            "f5_cloud_failover_label": "${cf_label}"
+            "f5_cloud_failover_label": "gccap-az-failover"
         },
         "scopingAddressRanges": [
             {
-                "range": "${cf_cidr1}",
+                "range": "100.65.1.0/29",
                 "nextHopAddresses": {
                     "discoveryType": "static",
                     "items": [
-                        "${cf_cidr1_nextHop1}",
-                        "${cf_cidr1_nextHop2}"
+                        "10.1.2.11",
+                        "10.1.12.11"
                     ]
                 }
             },
             {
-                "range": "${cf_cidr2}",
+                "range": "0.0.0.0/0",
                 "nextHopAddresses": {
                     "discoveryType": "static",
                     "items": [
-                        "${cf_cidr2_nextHop1}",
-                        "${cf_cidr2_nextHop2}"
+                        "10.1.2.11",
+                        "10.1.12.11"
                     ]
                 }
             }

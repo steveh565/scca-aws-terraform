@@ -319,8 +319,11 @@ data "template_file" "tenant_cf_json" {
   vars = {
     cf_label = var.tenant_cf_label
     cf_cidr1 = "0.0.0.0/0"
-    cf_nexthop1 = local.az1IntSelfIp
-    cf_nexthop2 = local.az2IntSelfIp
+    cf_cidr1_nextHop1 = local.az1IntSelfIp
+    cf_cidr1_nextHop2 = local.az2IntSelfIp
+    cf_cidr2 = var.tenant_aip_cidr
+    cf_cidr2_nextHop1 = local.az1ExtSelfIp
+    cf_cidr2_nextHop2 = local.az2ExtSelfIp
   }
 }
 

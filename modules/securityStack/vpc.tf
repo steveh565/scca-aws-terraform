@@ -348,10 +348,6 @@ resource "aws_route" "DmzIntRt_aipTenantVipRoute" {
   	}
 }
 
-
-
-
-
 # Transit Route table
 resource "aws_route_table" "TransitRt" {
 	depends_on = [aws_ec2_transit_gateway.hubtgw, aws_internet_gateway.gw]

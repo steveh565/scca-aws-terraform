@@ -8,7 +8,7 @@ resource "aws_s3_bucket" "cfPaz" {
 
   tags = {
     name = "${var.prefix}-PAZ-CF-storage"
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.paz_cf_label
   }
 }
 
@@ -21,7 +21,7 @@ resource "aws_s3_bucket" "cfDmz" {
 
   tags = {
     name = "${var.prefix}-DMZ-CF-storage"
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.dmz_cf_label
   }
 }
 
@@ -34,6 +34,6 @@ resource "aws_s3_bucket" "cfTransit" {
 
   tags = {
     name = "${var.prefix}-Transit-CF-storage"
-    f5_cloud_failover_label = var.gccap_cf_label
+    f5_cloud_failover_label = var.transit_cf_label
   }
 }

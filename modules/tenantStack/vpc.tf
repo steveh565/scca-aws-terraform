@@ -177,7 +177,6 @@ resource "aws_route_table" "tenant_TransitRt" {
 	tags = {
 		Name = "${var.prefix}-${var.tenant_name}-TransitRt"
     	f5_cloud_failover_label = var.tenant_cf_label
-        f5_self_ips             = "${local.az1ExtSelfIp},${local.az2ExtSelfIp}"
         ResourceGroup = var.prefix
 	}
 	lifecycle {    
@@ -237,7 +236,6 @@ resource "aws_route_table" "tenant_intRt" {
 		Name = "${var.prefix}-${var.tenant_name}--intRt"
         ResourceGroup = var.prefix
         f5_cloud_failover_label = var.tenant_cf_label
-        f5_self_ips             = "${local.az1IntSelfIp},${local.az2IntSelfIp}"
 	}
 	lifecycle {    
 		ignore_changes = all

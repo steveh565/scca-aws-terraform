@@ -40,6 +40,10 @@
                     ]
                 }
             }
-        ]
+        ],
+        "defaultNextHopAddresses": {
+            "discoveryType": "static",
+            "items": []
+        }
     }
 }

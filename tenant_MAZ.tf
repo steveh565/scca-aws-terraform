@@ -164,5 +164,5 @@ module "f5SraWebPortal_MAZ" {
   rest_as3_uri = var.rest_as3_uri
   uname = var.uname
   upassword  = var.upassword
-  vlans_enabled = "greToSecurityStack"
+  #vlans_enabled = "/Common/greToSecurityStack"
 }
