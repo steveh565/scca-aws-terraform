@@ -17,13 +17,13 @@ locals {
 
 // Using  provisioner to upload iLX NodeJS tar file and create iLX workspace and iLX plugin on bigip1 for WebSSH
 resource "null_resource" "bigip_create_ilx_plugin" {
-  # hardcode a wait/sleep to give time for the bigip onboarding process to complete (otherwise "tmsh create ilx" command will fail)
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      sleep 600
-    EOF
-  }  
+  // # hardcode a wait/sleep to give time for the bigip onboarding process to complete (otherwise "tmsh create ilx" command will fail)
+  // provisioner "local-exec" {
+  //   command = <<-EOF
+  //     #!/bin/bash
+  //     sleep 600
+  //   EOF
+  // }  
 
   provisioner "file" {
     source      = "${path.module}/BIG-IP-ILX-WebSSH2-0.2.8.tgz"
@@ -67,11 +67,28 @@ resource "local_file" "bigip_sra_as3_file" {
 
 resource "null_resource" "bigip_sra_as3" {
   depends_on  = [local_file.bigip_sra_as3_file, null_resource.bigip_create_ilx_plugin]
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      curl -H 'Content-Type: application/json' -k -X POST https://${var.bigip_mgmt_public_ip}${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @${path.module}/bigip_sra_as3.json
-    EOF
+
+  provisioner "file" {
+    source      = "${path.module}/bigip_sra_as3.json"
+    destination = "/var/tmp/bigip_sra_as3.json"
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = var.bigip_mgmt_public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "curl -H 'Content-Type: application/json' -k -X POST https://localhost${var.rest_as3_uri} -u ${var.uname}:${var.upassword} -d @/var/tmp/bigip_sra_as3.json",
+    ]
+    connection {
+      type     = "ssh"
+      password = var.upassword
+      user     = var.uname
+      host     = var.bigip_mgmt_public_ip
+    }
   }
 }
 
