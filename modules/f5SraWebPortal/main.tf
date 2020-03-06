@@ -1,6 +1,6 @@
 # the values should be passed from tge calling parent module as parameters, but for testing purposes, you can set the values here.
-variable uname { default = "blablab" }
-variable upassword { default = "blablabla" }
+variable uname { description = "Valid username for target BigIP" }
+variable upassword { description = "Valid password for target BigIP" }
 #there must be an easy way to query aws API to deterime the maz bigip's public management IP address...
 variable bigip_mgmt_public_ip { default = "35.182.123.82" }
 variable bigip_vip_private_ip { default = "10.11.1.111" }
