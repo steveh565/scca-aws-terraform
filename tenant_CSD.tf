@@ -164,7 +164,7 @@ module "f5SraWebPortal_CSD" {
   ssh_target_ip = cidrhost(module.tenantStack_CSD.az1_mgmt_subnet, 11)
   uname = var.uname
   upassword  = var.upassword
-  #vlans_enabled = "/Common/greToSecurityStack"
+  vlans_enabled = "/Common/greToSecurityStack"
 
   juiceshop_vip_private_ip = cidrhost(module.tenantStack_CSD.tenant_vip_cidr, 2)
   juiceShop1 = module.tenantStack_CSD.az1_juiceShop
