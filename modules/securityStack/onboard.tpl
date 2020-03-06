@@ -119,7 +119,7 @@ sleep 30
 
 admin_username='${uname}'
 admin_password='${upassword}'
-CREDS="admin:"$admin_password
+CREDS="$admin_username:$admin_password"
 # Telemetry Streaming
 TS_URL='${TS_URL}'
 TS_FN=$(basename "$TS_URL")

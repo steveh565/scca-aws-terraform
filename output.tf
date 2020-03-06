@@ -10,7 +10,7 @@ output "CAP_az1_transitF5_Mgmt_Addr"    { value = module.securityStack.az1_trans
 output "CAP_az2_transitF5_Mgmt_Addr"    { value = module.securityStack.az2_transitF5_Mgmt_Addr }
 
 output "Tenant_MAZ_az1_tenantF5_Mgmt_Addr"    { value = module.tenantStack_MAZ.az1_BigIP_mgmtAddr }
-output "Tenant_MAZ_az2_tenantF5_Mgmt_Addr"    { value = module.tenantStack_MAZ.az1_BigIP_mgmtAddr }
+output "Tenant_MAZ_az2_tenantF5_Mgmt_Addr"    { value = module.tenantStack_MAZ.az2_BigIP_mgmtAddr }
 
 output "Tenant_CSD_az1_tenantF5_Mgmt_Addr"    { value = module.tenantStack_CSD.az1_BigIP_mgmtAddr }
-output "Tenant_CSD_az2_tenantF5_Mgmt_Addr"    { value = module.tenantStack_CSD.az1_BigIP_mgmtAddr }
+output "Tenant_CSD_az2_tenantF5_Mgmt_Addr"    { value = module.tenantStack_CSD.az2_BigIP_mgmtAddr }
