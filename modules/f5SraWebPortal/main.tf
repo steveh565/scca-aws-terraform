@@ -7,6 +7,9 @@ variable bigip_vip_private_ip { default = "10.11.1.111" }
 variable ssh_target_ip { default = "10.11.0.11" }
 variable rest_as3_uri {default = "/mgmt/shared/appsvcs/declare"}
 variable vlans_enabled { default = "/Common/external"}
+variable juiceshop_vip_private_ip { description = "JuiceShop service VIP" }
+variable juiceShop1 { description = "az1 JuiceShop host" }
+variable juiceShop2 { description = "az2 JuiceShop host" }
 
 locals {
   #the following tmsh apm commands are required to adjust the IP addresses which are hardcoded for the WebSSH service (target and per-request policy URL branches to allow or block SSH to specific target hosts... because those IP's are hardcoded in the APM policy tarball artifacts)
@@ -61,7 +64,7 @@ resource "null_resource" "bigip_create_ilx_plugin" {
 // The Cloud Failover extension is configured to remap the EIP's or routes accordingly upon failover events.
 # Render SRA AS3 declaration
 resource "local_file" "bigip_sra_as3_file" {
-  content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, vlans_enabled = var.vlans_enabled })
+  content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, vlans_enabled = var.vlans_enabled, Bigip2VipPrivateIp = var.juiceshop_vip_private_ip, juiceShop1 = var.juiceShop1, juiceShop2 = var.juiceShop2 })
   filename    = "${path.module}/bigip_sra_as3.json"
 }
 
