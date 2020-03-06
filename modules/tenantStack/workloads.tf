@@ -89,7 +89,7 @@ resource "aws_instance" "az1_juiceShopHost" {
 		apt-get -y upgrade
 		apt-get -y install docker.io
 		# docker workload
-		docker run -dit --restart unless-stopped --name juiceShop -p 80:80 bkimminich/juice-shop
+		docker run -dit --restart unless-stopped --name juiceShop -p 80:3000 bkimminich/juice-shop
 	EOF
 
 	tags = {
