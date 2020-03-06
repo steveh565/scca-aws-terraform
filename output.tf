@@ -1,4 +1,4 @@
-output "GCCAP_PAZ_Ingress_Public_EIP"     { value = module.securityStack.PAZ_Ingress_Public_EIP }
+output "CAP_PAZ_Ingress_Public_EIP"     { value = module.securityStack.PAZ_Ingress_Public_EIP }
 
 output "CAP_az1_pazF5_Mgmt_Addr"        { value = module.securityStack.az1_pazF5_Mgmt_Addr }
 output "CAP_az2_pazF5_Mgmt_Addr"        { value = module.securityStack.az2_pazF5_Mgmt_Addr }

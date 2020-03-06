@@ -43,6 +43,7 @@
             "avr": "nominal",
             "ilx": "nominal",
             "asm": "nominal",
+            "apm": "nominal",
             "afm": "nominal"
         },
         "internal": {
