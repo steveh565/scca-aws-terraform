@@ -353,7 +353,7 @@ data "template_file" "tenant_logs_as3_json" {
   template = file("${path.module}/tsLogCollection_as3.tpl.json")
 
   vars = {
-
+    logStream = local.az1_cwLogStream
   }
 }
 # Render tenant LogCollection AS3 declaration

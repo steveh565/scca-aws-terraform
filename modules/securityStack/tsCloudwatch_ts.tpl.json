@@ -17,6 +17,6 @@
         "type": "AWS_CloudWatch",
         "region": "${aws_region}",
         "logGroup": "f5telemetry",
-        "logStream": "default"
+        "logStream": "${logStream}"
     }
 }

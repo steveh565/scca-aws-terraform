@@ -360,6 +360,7 @@ data "template_file" "transit_ts_json" {
 
   vars = {
     aws_region = var.aws_region
+    logStream = local.az1_transit_cwLogStream
   }
 }
 

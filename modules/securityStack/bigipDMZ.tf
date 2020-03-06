@@ -360,6 +360,7 @@ data "template_file" "dmz_ts_json" {
 
   vars = {
     aws_region = var.aws_region
+    logStream = local.az1_dmz_cwLogStream
   }
 }
 
@@ -374,7 +375,7 @@ data "template_file" "dmz_logs_as3_json" {
   template = "${file("${path.module}/tsLogCollection_as3.tpl.json")}"
 
   vars = {
-
+    
   }
 }
 

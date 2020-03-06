@@ -363,6 +363,7 @@ data "template_file" "paz_ts_json" {
 
   vars = {
     aws_region = var.aws_region
+    logStream = local.az1_paz_cwLogStream
   }
 }
 
@@ -377,7 +378,7 @@ data "template_file" "paz_logs_as3_json" {
   template = "${file("${path.module}/tsLogCollection_as3.tpl.json")}"
 
   vars = {
-
+    
   }
 }
 

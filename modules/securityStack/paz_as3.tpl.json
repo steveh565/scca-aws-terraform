@@ -38,7 +38,7 @@
                 "bigip": "/Common/Shared/telemetry_security_log_profile"
               }
           ],
-          "policyEndpoint": "ingress_policy",
+          "policyEndpoint": "ingress_https_policy",
           "snat": "none",
           "serverTLS": "webtls",
           "profileTrafficLog": {

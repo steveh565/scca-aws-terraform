@@ -172,6 +172,14 @@ locals {
     aip_az1TransitIntFloatIp = "${cidrhost(local.aipTransitIntSnet, 3)}"
     aip_az2TransitIntSelfIp  = "${cidrhost(local.aipTransitIntSnet, 2)}"
 
+    # Telemetry Streaming vars
+    az1_paz_cwLogStream   = "${var.prefix}-${var.az1_pazF5.hostname}"
+    az2_paz_cwLogStream   = "${var.prefix}-${var.az2_pazF5.hostname}"
+    az1_dmz_cwLogStream   = "${var.prefix}-${var.az1_dmzF5.hostname}"
+    az2_dmz_cwLogStream   = "${var.prefix}-${var.az2_dmzF5.hostname}"
+    az1_transit_cwLogStream   = "${var.prefix}-${var.az1_transitF5.hostname}"
+    az2_transit_cwLogStream   = "${var.prefix}-${var.az2_transitF5.hostname}"
+
 }
 
 # F5 Onboarding Scripts
