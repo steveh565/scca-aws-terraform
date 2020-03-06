@@ -39,11 +39,11 @@ resource "null_resource" "bigip_create_ilx_plugin" {
   # Upload WebSSH2 NodeJS package and wait for the "listen on" vlan to exist (otherwise, the subsequent AS3 declaration will fail)
   provisioner "remote-exec" {
     inline = [
+      "x=1; while [ $x -le 30 ]; do if (tmsh list /net self | grep -c ${var.vlans_enabled}); then break; fi; echo 'SRAwebPortal: Waiting for ${var.vlans_enabled} to be created...'; sleep 30; x=$(( $x + 1 )); done",
       "tmsh create ilx workspace WebSSH2",
       "cd /var/ilx/workspaces/Common/WebSSH2",
       "tar -zxvf /var/tmp/BIG-IP-ILX-WebSSH2-0.2.8.tgz  >> /var/log/extract-webssh-nodejs-package.log",
-      "tmsh create ilx plugin WebSSH2_plugin from-workspace WebSSH2",
-      "x=1; while [ $x -le 30 ]; do if (tmsh list /net self | grep -c ${var.vlans_enabled}); then break; fi; echo 'Waiting for ${var.vlans_enabled} to be created...'; sleep 10; x=$(( $x + 1 )); done",
+      "tmsh create ilx plugin WebSSH2_plugin from-workspace WebSSH2"
     ]
     connection {
       type     = "ssh"
