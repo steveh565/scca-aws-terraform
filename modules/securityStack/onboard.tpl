@@ -61,7 +61,6 @@ tmsh delete /sys management-route default;
 tmsh delete /sys management-ip ${mgmt_ip}/24; 
 tmsh create /sys management-ip ${mgmt_ip}/24; 
 tmsh create /sys management-route default network default gateway ${mgmt_gw};
-tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
 tmsh modify /sys dns name-servers replace-all-with { ${vpc_dns} } search replace-all-with { ${dns_domain} }
 #submit cli transaction
 #EOF
@@ -75,6 +74,11 @@ create /auth partition LOCAL_ONLY;
 modify /sys folder /LOCAL_ONLY device-group none traffic-group /Common/traffic-group-local-only; 
 submit cli transaction
 EOF
+
+# AWS Hypervisor Routes
+echo "set AWS Hypervisor Routes"
+tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
+tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.253 gateway ${mgmt_gw};
 
 # Base Networking
 echo "set TMM base networking"
@@ -149,31 +153,33 @@ cp ${libs_dir}/*.rpm /var/config/rest/downloads/
 
 # Install Telemetry Streaming Pkg
 DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$TS_FN\"}"
-echo -e "\n"$(date) "Install TS Pkg"
+echo -e "\n"$(date) "Install TS Pkg\n"
 curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
 
 sleep 10
 
 # Install Declarative Onboarding Pkg
 DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$DO_FN\"}"
-echo -e "\n"$(date) "Install DO Pkg"
+echo -e "\n"$(date) "Install DO Pkg\n"
 curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
 
 sleep 10
 
 # Install Cloud-Failover Pkg
 DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$CF_FN\"}"
-echo -e "\n"$(date) "Install CF Pkg"
+echo -e "\n"$(date) "Install CF Pkg\n"
 curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
 
 sleep 10
 
 # Install AS3 Pkg
 DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$AS3_FN\"}"
-echo -e "\n"$(date) "Install AS3 Pkg"
+echo -e "\n"$(date) "Install AS3 Pkg\n"
 curl -u $CREDS -X POST http://localhost:8100/mgmt/shared/iapp/package-management-tasks -d $DATA
 
 sleep 10
+
+echo -e "\n"$(date) "Verifing REST endpoints are available...\n"
 
 # Check DO Ready
 CNT=0

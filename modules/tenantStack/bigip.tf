@@ -63,23 +63,6 @@ resource "aws_network_interface" "az1_tenant_internal" {
   }  
 }
 
-/*
-resource "null_resource" "az1_tenant_internal_secondary_ips" {
-  depends_on = [aws_network_interface.az1_tenant_internal, aws_instance.az1_tenant_bigip]
-  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
-  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
-  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
-
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az1_tenant_internal.id} --private-ip-addresses ${var.az1_tenantF5.tenant_int_vip}
-    EOF
-  }
-}
-*/
-
 # Create elastic IP and map to "VIP" on external tenant nic
 resource "aws_eip" "eip_az1_tenant_mgmt" {
   depends_on                = [aws_network_interface.az1_tenant_mgmt, aws_internet_gateway.tenantGw]
@@ -144,14 +127,15 @@ data "template_file" "az1_tenantCluster_do_json" {
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az1_tenantF5.license
-    banner_color   = "red"
+    banner_color   = "blue"
     Domainname     = var.f5Domainname
     host1          = var.az1_tenantF5.hostname
     host2          = var.az2_tenantF5.hostname
     local_host     = var.az1_tenantF5.hostname
     local_selfip1  = local.az1ExtSelfIp
     local_selfip2  = local.az1IntSelfIp
-    remote_selfip  = local.az2MgmtIp
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = local.az1MgmtIp
     mgmt_gw        = local.az1_mgmt_gw
     gateway        = local.az1_tenant_ext_gw
     dns_server     = local.vpc_dns
@@ -235,23 +219,6 @@ resource "aws_network_interface" "az2_tenant_internal" {
   }  
 }
 
-/*
-resource "null_resource" "az2_tenant_internal_secondary_ips" {
-  depends_on = [aws_network_interface.az2_tenant_internal, aws_instance.az2_tenant_bigip]
-  # Use the "aws ec2 assign-private-ip-addresses" command to correctly add secondary addresses to an existing network interface 
-  #    -> Workaround for bug: https://github.com/terraform-providers/terraform-provider-aws/issues/10674    -> can't trust that the first IP will be set as the primary if you private_ips is set to more than one address...
-  #    -> assumed that due to this bug, the primary and secondary addresses will be reversed
-  #    -> "depends_on bigip" is required because the assign-private-ip-addresses command fails otherwise
-
-  provisioner "local-exec" {
-    command = <<-EOF
-      #!/bin/bash
-      aws ec2 assign-private-ip-addresses --region ${var.aws_region} --network-interface-id ${aws_network_interface.az2_tenant_internal.id} --private-ip-addresses ${var.az2_tenantF5.tenant_int_vip}
-    EOF
-  }
-}
-*/
-
 resource "aws_eip" "eip_az2_tenant_mgmt" {
   depends_on                = [aws_network_interface.az2_tenant_mgmt, aws_internet_gateway.tenantGw]
   vpc                       = true
@@ -316,14 +283,15 @@ data "template_file" "az2_tenantCluster_do_json" {
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az2_tenantF5.license
-    banner_color   = "red"
+    banner_color   = "blue"
     Domainname     = var.f5Domainname
     host1          = var.az1_tenantF5.hostname
     host2          = var.az2_tenantF5.hostname
     local_host     = var.az2_tenantF5.hostname
     local_selfip1  = local.az2ExtSelfIp
     local_selfip2  = local.az2IntSelfIp
-    remote_selfip  = local.az2MgmtIp
+    #remote_selfip must be set to the same value on both bigips in order for HA clustering to work
+    remote_selfip  = local.az1MgmtIp
     mgmt_gw        = local.az2_mgmt_gw
     gateway        = local.az2_tenant_ext_gw
     dns_server     = local.vpc_dns

@@ -218,11 +218,11 @@ data "template_file" "revokeLicenses" {
   template = file("${path.module}/revokeLicenses.tpl")
   vars = {
     az1PazMgmt = aws_instance.az1_paz_bigip.public_ip
-    az2PazMgmt = aws_instance.az1_paz_bigip.public_ip
+    az2PazMgmt = aws_instance.az2_paz_bigip.public_ip
     az1DmzMgmt = aws_instance.az1_dmz_bigip.public_ip
-    az2DmzMgmt = aws_instance.az1_dmz_bigip.public_ip
+    az2DmzMgmt = aws_instance.az2_dmz_bigip.public_ip
     az1TransitMgmt = aws_instance.az1_transit_bigip.public_ip
-    az2TransitMgmt = aws_instance.az1_transit_bigip.public_ip
+    az2TransitMgmt = aws_instance.az2_transit_bigip.public_ip
     sshKey = var.key_path
   }
 }
