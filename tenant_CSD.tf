@@ -162,7 +162,6 @@ module "f5SraWebPortal_CSD" {
   bigip_mgmt_public_ip = module.tenantStack_CSD.az1_BigIP_mgmtAddr
   bigip_vip_private_ip = cidrhost(module.tenantStack_CSD.tenant_vip_cidr, 1)
   ssh_target_ip = cidrhost(module.tenantStack_CSD.az1_mgmt_subnet, 11)
-  rest_as3_uri = var.rest_as3_uri
   uname = var.uname
   upassword  = var.upassword
   #vlans_enabled = "/Common/greToSecurityStack"
