@@ -22,7 +22,6 @@ resource "aws_instance" "az1_bastionHost" {
 	vpc_security_group_ids = [aws_security_group.sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
-	# user_data = "${file("install.sh")}"
 	user_data = <<-EOF
 		# Core dependencies
 		apt-get -y update
@@ -52,7 +51,6 @@ resource "aws_instance" "az2_bastionHost" {
 	vpc_security_group_ids = [aws_security_group.sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
-	# user_data = "${file("install.sh")}"
 	user_data = <<-EOF
 		# Core dependencies
 		apt-get -y update
@@ -82,7 +80,6 @@ resource "aws_instance" "az1_juiceShopHost" {
 	vpc_security_group_ids = [aws_security_group.sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
-	# user_data = "${file("install.sh")}"
 	user_data = <<-EOF
 		# Core dependencies
 		apt-get -y update
@@ -110,7 +107,6 @@ resource "aws_instance" "az2_juiceShopHost" {
 	vpc_security_group_ids = [aws_security_group.sg_internal.id]
 	associate_public_ip_address = true
 	source_dest_check = false
-	# user_data = "${file("install.sh")}"
 	user_data = <<-EOF
 		# Core dependencies
 		apt-get -y update

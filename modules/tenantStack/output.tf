@@ -35,3 +35,9 @@ output "tenant_TransitRt_ID" { value = aws_route_table.tenant_TransitRt.id }
 output "tenant_az1_bigip_ID" { value = aws_instance.az1_tenant_bigip }
 
 output "tenant_tgwAttach_ID" { value = aws_ec2_transit_gateway_vpc_attachment.tenantTgwAttach.id}
+
+output "az1_juiceShop"       { value = aws_instance.az1_juiceShopHost[0].private_ip }
+output "az2_juiceShop"       { value = aws_instance.az2_juiceShopHost[0].private_ip }
+
+output "az1_bastionHost"     { value = aws_instance.az1_bastionHost[0].private_ip }
+output "az2_bastionHost"     { value = aws_instance.az2_bastionHost[0].private_ip }
