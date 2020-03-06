@@ -165,4 +165,8 @@ module "f5SraWebPortal_CSD" {
   uname = var.uname
   upassword  = var.upassword
   #vlans_enabled = "/Common/greToSecurityStack"
+
+  juiceshop_vip_private_ip = cidrhost(module.tenantStack_CSD.tenant_vip_cidr, 2)
+  juiceShop1 = module.tenantStack_CSD.az1_juiceShop
+  juiceShop2 = module.tenantStack_CSD.az2_juiceShop  
 }
