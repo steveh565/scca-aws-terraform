@@ -346,15 +346,17 @@ data "template_file" "tenant_ts_json" {
 resource "local_file" "tenant_ts_file" {
   content  = data.template_file.tenant_ts_json.rendered
   filename = "${path.module}/${var.tenant_name}_${var.tenant_ts_json}"
+  vars = {
+    aws_region = var.aws_region
+    logStream = local.az1_cwLogStream
+  }
 }
 
 # tenant LogCollection AS3 Declaration
 data "template_file" "tenant_logs_as3_json" {
   template = file("${path.module}/tsLogCollection_as3.tpl.json")
 
-  vars = {
-    logStream = local.az1_cwLogStream
-  }
+  
 }
 # Render tenant LogCollection AS3 declaration
 resource "local_file" "tenant_logs_as3_file" {

@@ -10,6 +10,7 @@ variable vlans_enabled { default = "/Common/external"}
 variable juiceshop_vip_private_ip { description = "JuiceShop service VIP" }
 variable juiceShop1 { description = "az1 JuiceShop host" }
 variable juiceShop2 { description = "az2 JuiceShop host" }
+variable tenant_name { description = "unique prefix" }
 
 locals {
   #the following tmsh apm commands are required to adjust the IP addresses which are hardcoded for the WebSSH service (target and per-request policy URL branches to allow or block SSH to specific target hosts... because those IP's are hardcoded in the APM policy tarball artifacts)
@@ -42,7 +43,7 @@ resource "null_resource" "bigip_create_ilx_plugin" {
   # Upload WebSSH2 NodeJS package and wait for the "listen on" vlan to exist (otherwise, the subsequent AS3 declaration will fail)
   provisioner "remote-exec" {
     inline = [
-      "x=1; while [ $x -le 30 ]; do if (tmsh list /net self | grep -c ${var.vlans_enabled}); then break; fi; echo 'SRAwebPortal: Waiting for ${var.vlans_enabled} to be created...'; sleep 30; x=$(( $x + 1 )); done",
+      "x=1; while [ $x -le 30 ]; RESULT=$(tmsh list /net self |grep -c ${var.vlans_enabled}); do if [[ $RESULT > 0 ]]; then break; fi; echo 'SRAwebPortal: Waiting for ${var.vlans_enabled} to be created...'; sleep 60; x=$(( $x + 1 )); done",
       "tmsh create ilx workspace WebSSH2",
       "cd /var/ilx/workspaces/Common/WebSSH2",
       "tar -zxvf /var/tmp/BIG-IP-ILX-WebSSH2-0.2.8.tgz  >> /var/log/extract-webssh-nodejs-package.log",
@@ -65,14 +66,14 @@ resource "null_resource" "bigip_create_ilx_plugin" {
 # Render SRA AS3 declaration
 resource "local_file" "bigip_sra_as3_file" {
   content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, vlans_enabled = var.vlans_enabled, Bigip2VipPrivateIp = var.juiceshop_vip_private_ip, juiceShop1 = var.juiceShop1, juiceShop2 = var.juiceShop2 })
-  filename    = "${path.module}/bigip_sra_as3.json"
+  filename    = "${path.module}/${var.tenant_name}_bigip_sra_as3.json"
 }
 
 resource "null_resource" "bigip_sra_as3" {
   depends_on  = [local_file.bigip_sra_as3_file, null_resource.bigip_create_ilx_plugin]
 
   provisioner "file" {
-    source      = "${path.module}/bigip_sra_as3.json"
+    source      = "${path.module}/${var.tenant_name}_bigip_sra_as3.json"
     destination = "/var/tmp/bigip_sra_as3.json"
     connection {
       type     = "ssh"
