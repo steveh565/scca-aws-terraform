@@ -14,7 +14,7 @@ data "aws_ami" "ubuntu" {
 
 # Instances
 resource "aws_instance" "az1_bastionHost" {
-	depends_on = [aws_subnet.az1_tenant_int]
+	depends_on = [aws_subnet.az1_tenant_int, aws_internet_gateway.tenantGw]
 	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
 	key_name = aws_key_pair.tenant.id
@@ -23,6 +23,23 @@ resource "aws_instance" "az1_bastionHost" {
 	associate_public_ip_address = true
 	source_dest_check = false
 	user_data = <<-EOF
+		#!/bin/bash
+		CNT=0
+		while true
+		do
+		STATUS=$(curl -s -k -I https://github.com | grep HTTP)
+		if [[ $STATUS == *"200"* ]]; then
+			echo "Got 200! VE is Ready!"
+			break
+		elif [ $CNT -le 6 ]; then
+			echo "Status code: $STATUS  Not ready yet..."
+			CNT=$[$CNT+1]
+		else
+			echo "GIVE UP..."
+			break
+		fi
+		sleep 10
+		done
 		# Core dependencies
 		apt-get -y update
 		apt-get -y upgrade
@@ -43,7 +60,7 @@ resource "aws_instance" "az1_bastionHost" {
 }
 
 resource "aws_instance" "az2_bastionHost" {
-	depends_on = [aws_subnet.az2_tenant_int]
+	depends_on = [aws_subnet.az2_tenant_int, aws_internet_gateway.tenantGw]
 	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
 	key_name = aws_key_pair.tenant.id
@@ -52,6 +69,23 @@ resource "aws_instance" "az2_bastionHost" {
 	associate_public_ip_address = true
 	source_dest_check = false
 	user_data = <<-EOF
+		#!/bin/bash
+		CNT=0
+		while true
+		do
+		STATUS=$(curl -s -k -I https://github.com | grep HTTP)
+		if [[ $STATUS == *"200"* ]]; then
+			echo "Got 200! VE is Ready!"
+			break
+		elif [ $CNT -le 6 ]; then
+			echo "Status code: $STATUS  Not ready yet..."
+			CNT=$[$CNT+1]
+		else
+			echo "GIVE UP..."
+			break
+		fi
+		sleep 10
+		done
 		# Core dependencies
 		apt-get -y update
 		apt-get -y upgrade
@@ -72,7 +106,7 @@ resource "aws_instance" "az2_bastionHost" {
 
 # Instances
 resource "aws_instance" "az1_juiceShopHost" {
-	depends_on = [aws_subnet.az1_tenant_int]
+	depends_on = [aws_subnet.az1_tenant_int, aws_internet_gateway.tenantGw]
 	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
 	key_name = aws_key_pair.tenant.id
@@ -81,6 +115,23 @@ resource "aws_instance" "az1_juiceShopHost" {
 	associate_public_ip_address = true
 	source_dest_check = false
 	user_data = <<-EOF
+		#!/bin/bash
+		CNT=0
+		while true
+		do
+		STATUS=$(curl -s -k -I https://github.com | grep HTTP)
+		if [[ $STATUS == *"200"* ]]; then
+			echo "Got 200! VE is Ready!"
+			break
+		elif [ $CNT -le 6 ]; then
+			echo "Status code: $STATUS  Not ready yet..."
+			CNT=$[$CNT+1]
+		else
+			echo "GIVE UP..."
+			break
+		fi
+		sleep 10
+		done
 		# Core dependencies
 		apt-get -y update
 		apt-get -y upgrade
@@ -99,7 +150,7 @@ resource "aws_instance" "az1_juiceShopHost" {
 }
 
 resource "aws_instance" "az2_juiceShopHost" {
-	depends_on = [aws_subnet.az2_tenant_int]
+	depends_on = [aws_subnet.az2_tenant_int, aws_internet_gateway.tenantGw]
 	ami = data.aws_ami.ubuntu.id
 	instance_type = "t2.micro"
 	key_name = aws_key_pair.tenant.id
@@ -108,6 +159,23 @@ resource "aws_instance" "az2_juiceShopHost" {
 	associate_public_ip_address = true
 	source_dest_check = false
 	user_data = <<-EOF
+		#!/bin/bash
+		CNT=0
+		while true
+		do
+		STATUS=$(curl -s -k -I https://github.com | grep HTTP)
+		if [[ $STATUS == *"200"* ]]; then
+			echo "Got 200! VE is Ready!"
+			break
+		elif [ $CNT -le 6 ]; then
+			echo "Status code: $STATUS  Not ready yet..."
+			CNT=$[$CNT+1]
+		else
+			echo "GIVE UP..."
+			break
+		fi
+		sleep 10
+		done
 		# Core dependencies
 		apt-get -y update
 		apt-get -y upgrade

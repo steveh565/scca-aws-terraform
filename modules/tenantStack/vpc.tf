@@ -230,7 +230,8 @@ resource "aws_route_table" "tenant_intRt" {
 	vpc_id = aws_vpc.tenant.id
 	route {
 		cidr_block = "0.0.0.0/0"
-        network_interface_id = aws_network_interface.az1_tenant_internal.id
+		gateway_id = aws_internet_gateway.tenantGw.id
+        #network_interface_id = aws_network_interface.az1_tenant_internal.id
 	}
 	tags = {
 		Name = "${var.prefix}-${var.tenant_name}--intRt"
