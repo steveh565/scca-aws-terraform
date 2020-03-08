@@ -1,9 +1,9 @@
 {
-  "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/latest/as3-schema.json",
-  "class": "AS3",
-  "action": "deploy",
-  "persist": true,
-  "declaration": {
+    "$schema": "https://raw.githubusercontent.com/F5Networks/f5-appsvcs-extension/master/schema/latest/as3-schema.json",
+    "class": "AS3",
+    "action": "deploy",
+    "persist": true,
+    "declaration": {
       "class": "ADC",
       "schemaVersion": "3.17.0",
       "id": "firewall",
@@ -28,8 +28,7 @@
               "fwAllowedAddressList": {
                   "class": "Firewall_Address_List",
                   "addresses": [
-                      "10.0.0.0/8",
-                      "100.64.0.0/10"
+                      "0.0.0.0/0"
                   ]
               },
               "fwRuleList": {
@@ -98,7 +97,7 @@
                   "class": "Security_Log_Profile",
                   "network": {
                       "publisher": {
-                          "bigip": "/Common/Shared/telemetry_publisher"
+                          "bigip": "/Common/local-db-publisher"
                       },
                       "storageFormat": {
                           "fields": [
@@ -122,7 +121,7 @@
               "fwDefaultDenyAddressList": {
                   "class": "Firewall_Address_List",
                   "addresses": [
-                      "0.0.0.0/0"
+                      "172.16.0.0/16"
                   ]
               },
               "fwPolicy": {
@@ -179,98 +178,144 @@
                     { "bigip":"/Common/external" }
                   ],
                   "profileProtocolInspection": {
-                    "use": "InspectionProfile"
+                    "bigip": "/Common/protocol_inspection"
                   }
-              },
-              "InspectionProfile": {
-                "class": "Protocol_Inspection_Profile",
-                "remark": "IPS Inspection Profile",
-                "collectAVRStats": true,
-                "enableComplianceChecks": true,
-                "enableSignatureChecks": true,
-                "autoAddNewInspections": true,
-                "autoPublish": true,
-                "services": [
-                    {                        
-                        "type": "dns",
-                        "compliance": [
-                            {
-                                "check": "dns_maximum_reply_length"
-                            },
-                            {
-                                "check": "dns_disallowed_query_type",
-                                "action": "accept",
-                                "log": true
-                            }
-                        ],
-                        "signature": [
-                            {
-                                "check": "dns_dns_query_amplification_attempt",
-                                "action": "reject",
-                                "log": true
-                            }
-                        ]
+              }
+          },
+          "fwHttpL7": {
+            "fwHttpAllowedAddressList": {
+                "class": "Firewall_Address_List",
+                "addresses": [
+                    "0.0.0.0/0"
+                ]
+            },
+            "fwHttpRuleList": {
+            "class": "Firewall_Rule_List",
+            "rules": [
+                    {
+                        "protocol": "tcp",
+                        "name": "tcpAllow",
+                        "loggingEnabled": true,
+                        "destination": {
+                            "portLists": [
+                                {
+                                    "use": "fwHttpAllowedPortList"
+                                }
+                            ]
+                        },
+                        "source": {
+                            "addressLists": [
+                                {
+                                    "use": "fwHttpAllowedAddressList"
+                                }
+                            ]
+                        },
+                        "action": "accept"
                     },
                     {
-                        "type": "http"
-                    },
-                    {
-                        "type": "imap"
-                    },
-                    {
-                        "type": "pop3"
-                    },
-                    {
-                        "type": "smtp"
-                    },
-                    {
-                        "type": "mqtt"
-                    },
-                    {
-                        "type": "snmp"
-                    },
-                    {
-                        "type": "sip"
-                    },
-                    {
-                        "type": "ssl"
-                    },
-                    {
-                        "type": "telnet"
-                    },
-                    {
-                        "type": "wins"
-                    },
-                    {
-                        "type": "netbios_ssn"
-                    },
-                    {
-                        "type": "netbios_ns"
-                    },
-                    {
-                        "type": "ftp"
-                    },
-                    {
-                        "type": "irc"
-                    },
-                    {
-                        "type": "mysql"
-                    },
-                    {
-                        "type": "radius"
-                    },
-                    {
-                        "type": "ssh"
-                    },
-                    {
-                        "type": "tftp"
-                    },
-                    {
-                        "type": "other"
+                        "action": "drop",
+                        "loggingEnabled": true,
+                        "protocol": "any",
+                        "name": "defaultDeny",
+                        "source": {
+                            "addressLists": [
+                                {
+                                    "use": "fwHttpDefaultDenyAddressList"
+                                }
+                            ]
+                        }
                     }
                 ]
-              }
-          }
+            },
+            "fwHttpAllowedPortList": {
+                "class": "Firewall_Port_List",
+                "ports": [
+                    443
+                ]
+            },
+            "fwHttpSecurityLogProfile": {
+                "class": "Security_Log_Profile",
+                "network": {
+                    "publisher": {
+                        "bigip": "/Common/local-db-publisher"
+                    },
+                    "storageFormat": {
+                        "fields": [
+                            "action",
+                            "dest-ip",
+                            "dest-port",
+                            "src-ip",
+                            "src-port"
+                        ]
+                    },
+                    "logTranslationFields": true,
+                    "logTcpEvents": true,
+                    "logRuleMatchRejects": true,
+                    "logTcpErrors": true,
+                    "logIpErrors": true,
+                    "logRuleMatchDrops": true,
+                    "logRuleMatchAccepts": true
+                }
+            },
+            "class": "Application",
+            "fwHttpDefaultDenyAddressList": {
+                "class": "Firewall_Address_List",
+                "addresses": [
+                    "172.16.0.0/16"
+                ]
+            },
+            "fwHttpPolicy": {
+                "rules": [
+                    {
+                        "use": "fwHttpRuleList"
+                    }
+                ],
+                "class": "Firewall_Policy"
+            },
+            "template": "http",
+            "http_service_pool": {
+                "class": "Pool",
+                "members": [
+                    {
+                        "serverAddresses": [
+                            "${aip_az1TransitExtFloatIp}"
+                        ],
+                        "enable": true,
+                        "servicePort": 0
+                    }
+                ],
+                "monitors": [
+                    {
+                        "bigip": "/Common/gateway_icmp"
+                    }
+                ]
+            },
+            "serviceMain": {
+                "translateServerAddress": false,
+                "securityLogProfiles": [
+                    {
+                        "use": "fwHttpSecurityLogProfile"
+                    }
+                ],
+                "virtualAddresses": [{
+                    "use": "/Common/Shared/wildcardAddress"
+                }],
+                "policyFirewallEnforced": {
+                    "use": "fwHttpPolicy"
+                },
+                "translateServerPort": false,
+                "virtualPort": 443,
+                "snat": "none",
+                "class": "Service_HTTP",
+                "pool": "http_service_pool",
+                "allowVlans": [
+                  { "bigip":"/Common/external" }
+                ],
+                "profileProtocolInspection": {
+                  "bigip": "/Common/protocol_inspection_http"
+                }
+            }
+          }          
       },
       "Cloud2Inet": {
         "class": "Tenant",
@@ -348,7 +393,7 @@
                 "class": "Security_Log_Profile",
                 "network": {
                     "publisher": {
-                        "bigip": "/Common/Shared/telemetry_publisher"
+                        "bigip": "/Common/local-db-publisher"
                     },
                     "storageFormat": {
                         "fields": [
@@ -429,98 +474,10 @@
                   { "bigip":"/Common/internal" }
                 ],
                 "profileProtocolInspection": {
-                    "use": "InspectionProfile"
+                    "bigip": "/Common/protocol_inspection"
                 }
-            },
-            "InspectionProfile": {
-                "class": "Protocol_Inspection_Profile",
-                "remark": "IPS Inspection Profile",
-                "collectAVRStats": true,
-                "enableComplianceChecks": true,
-                "enableSignatureChecks": true,
-                "autoAddNewInspections": true,
-                "autoPublish": true,
-                "services": [
-                    {
-                        "type": "dns",
-                        "compliance": [
-                            {
-                                "check": "dns_maximum_reply_length"
-                            },
-                            {
-                                "check": "dns_disallowed_query_type",
-                                "action": "accept",
-                                "log": true
-                            }
-                        ],
-                        "signature": [
-                            {
-                                "check": "dns_dns_query_amplification_attempt",
-                                "action": "reject",
-                                "log": true
-                            }
-                        ]
-                    },
-                    {
-                        "type": "http"
-                    },
-                    {
-                        "type": "imap"
-                    },
-                    {
-                        "type": "pop3"
-                    },
-                    {
-                        "type": "smtp"
-                    },
-                    {
-                        "type": "mqtt"
-                    },
-                    {
-                        "type": "snmp"
-                    },
-                    {
-                        "type": "sip"
-                    },
-                    {
-                        "type": "ssl"
-                    },
-                    {
-                        "type": "telnet"
-                    },
-                    {
-                        "type": "wins"
-                    },
-                    {
-                        "type": "netbios_ssn"
-                    },
-                    {
-                        "type": "netbios_ns"
-                    },
-                    {
-                        "type": "ftp"
-                    },
-                    {
-                        "type": "irc"
-                    },
-                    {
-                        "type": "mysql"
-                    },
-                    {
-                        "type": "radius"
-                    },
-                    {
-                        "type": "ssh"
-                    },
-                    {
-                        "type": "tftp"
-                    },
-                    {
-                        "type": "other"
-                    }
-                ]
             }
         }
+      }
     }
-  }
 }

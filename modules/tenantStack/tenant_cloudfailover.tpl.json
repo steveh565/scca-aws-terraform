@@ -5,7 +5,7 @@
         "class": "Controls",
         "logLevel": "silly"
     },
-    "internalStorage": {
+    "externalStorage": {
         "scopingTags": {
             "f5_cloud_failover_label": "${cf_label}"
         }
