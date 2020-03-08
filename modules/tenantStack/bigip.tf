@@ -65,7 +65,11 @@ resource "aws_network_interface" "az1_tenant_internal" {
 
 # prepare shell script file that will modify default egress route in AWS route tables.
 resource "local_file" "shell_script_to_change_aws_default_route" {
-  content  = "aws ec2 replace-route --route-table-id ${aws_route_table.tenant_intRt.id} --destination-cidr-block 0.0.0.0/0 --network-interface-id ${aws_network_interface.az1_tenant_internal.id};aws ec2 replace-route --route-table-id ${aws_route_table.tenant_TransitRt.id} --destination-cidr-block 0.0.0.0/0 --transit-gateway-id ${var.tgwId}"
+  content  = <<EOF
+      #!/bin/bash
+      aws ec2 replace-route --route-table-id ${aws_route_table.tenant_intRt.id} --destination-cidr-block 0.0.0.0/0 --network-interface-id ${aws_network_interface.az1_tenant_internal.id}
+      aws ec2 replace-route --route-table-id ${aws_route_table.tenant_TransitRt.id} --destination-cidr-block 0.0.0.0/0 --transit-gateway-id ${var.tgwId}
+    EOF
   filename = "${path.module}/${var.tenant_name}_shell_script_to_change_aws_default_route.sh"
 }
 
