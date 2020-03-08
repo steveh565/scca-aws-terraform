@@ -63,6 +63,12 @@ resource "aws_network_interface" "az1_tenant_internal" {
   }  
 }
 
+# prepare shell script file that will modify default egress route in AWS route tables.
+resource "local_file" "shell_script_to_change_aws_default_route" {
+  content  = "aws ec2 replace-route --route-table-id ${aws_route_table.tenant_intRt.id} --destination-cidr-block 0.0.0.0/0 --network-interface-id ${aws_network_interface.az1_tenant_internal.id};aws ec2 replace-route --route-table-id ${aws_route_table.tenant_TransitRt.id} --destination-cidr-block 0.0.0.0/0 --transit-gateway-id ${var.tgwId}"
+  filename = "${path.module}/${var.tenant_name}_shell_script_to_change_aws_default_route.sh"
+}
+
 # Create elastic IP and map to "VIP" on external tenant nic
 resource "aws_eip" "eip_az1_tenant_mgmt" {
   depends_on                = [aws_network_interface.az1_tenant_mgmt, aws_internet_gateway.tenantGw]
