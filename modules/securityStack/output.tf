@@ -17,3 +17,6 @@ output "az1_transit_int_gw"         { value = local.az1_transit_int_gw }
 output "az2_transit_int_gw"         { value = local.az2_transit_int_gw }
 
 output "TransitRt_ID"               { value = aws_route_table.TransitRt.id }
+
+output "security_vpc_cidr"          { value = var.security_vpc_cidr }
+output "security_vpc_transit_aip_cidr" { value = var.security_vpc_transit_aip_cidr }

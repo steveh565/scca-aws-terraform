@@ -1,24 +1,15 @@
 # ToDo: Update license keys
 module tenantStack_MAZ {
   source = "./modules/tenantStack"
-  security_vpc_transit_aip_cidr = "100.65.5.0/29"
-  key_path = var.key_path
-  prefix = var.prefix
-  tenant_prefix = "TENANT0"
+
+  tenant_id = "0"
   tenant_name   = "MAZ"
   tenant_cf_label = "MAZ_tenant_az_failover"
   tenant_vpc_cidr = "10.20.0.0/16"
   tenant_aip_cidr = "100.66.64.0/29"
   tenant_gre_cidr = "172.16.1.0/30"
   tenant_vip_cidr = "100.100.0.0/24"
-  tgwId = module.securityStack.Hub_Transit_Gateway_ID
-  f5Domainname = "maz.${var.f5Domainname}"
-  uname = var.uname
-  upassword = var.upassword
-  mgmt_asrc = var.mgmt_asrc
-  ami_f5image_name = data.aws_ami.bigip_ami.id
-  aws_region = var.aws_region
-  
+
   az1_tenantF5 = {
     instance_type  = "c4.2xlarge"
     license      = "FULKR-YEBDS-XPZCO-PHOQT-VSSRHNP"
@@ -31,6 +22,17 @@ module tenantStack_MAZ {
     hostname      = "edgeF5vm02"
   }
 
+  security_vpc_transit_aip_cidr = module.securityStack.security_vpc_transit_aip_cidr
+  security_vpc_cidr = module.securityStack.security_vpc_cidr
+  key_path = var.key_path
+  prefix = var.prefix
+  tgwId = module.securityStack.Hub_Transit_Gateway_ID
+  f5Domainname = "MAZ.${var.f5Domainname}"
+  uname = var.uname
+  upassword = var.upassword
+  mgmt_asrc = var.mgmt_asrc
+  ami_f5image_name = data.aws_ami.bigip_ami.id
+  aws_region = var.aws_region
 }
 
 
@@ -108,7 +110,7 @@ resource "null_resource" "greToTenantStack_MAZ" {
     }
     when = create
     inline = [
-      "tmsh create net tunnels tunnel greToTenant${module.tenantStack_MAZ.tenant_name} local-address ${module.tenantStack_MAZ.greTunRemAddr} profile gre remote-address ${module.tenantStack_MAZ.greTunLocAddr} traffic-group traffic-group-1",
+      "tmsh create net tunnels tunnel greToTenant${module.tenantStack_MAZ.tenant_name} local-address ${module.tenantStack_MAZ.greTunRemAddr} profile gre remote-address ${module.tenantStack_MAZ.greTunLocAddr} key ${module.tenantStack_MAZ.tenant_id} traffic-group traffic-group-1",
       "tmsh create net self greToTenant${module.tenantStack_MAZ.tenant_name}_Float address ${module.tenantStack_MAZ.greNextHop}/30 vlan greToTenant${module.tenantStack_MAZ.tenant_name} traffic-group traffic-group-1"
     ]
     on_failure = continue
@@ -127,7 +129,7 @@ resource "null_resource" "greToSecurityStack_MAZ" {
     }
     when = create
     inline = [
-      "tmsh create net tunnels tunnel greToSecurityStack local-address ${module.tenantStack_MAZ.greTunLocAddr} profile gre remote-address ${module.tenantStack_MAZ.greTunRemAddr} traffic-group traffic-group-1",
+      "tmsh create net tunnels tunnel greToSecurityStack local-address ${module.tenantStack_MAZ.greTunLocAddr} profile gre remote-address ${module.tenantStack_MAZ.greTunRemAddr} key ${module.tenantStack_MAZ.tenant_id} traffic-group traffic-group-1",
       "tmsh create net self greToSecurityStack_Float address ${module.tenantStack_MAZ.greSelfIp}/30 vlan greToSecurityStack traffic-group traffic-group-1"
     ]
     on_failure = continue

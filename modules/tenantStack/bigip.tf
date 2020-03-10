@@ -339,6 +339,7 @@ data "template_file" "tenant_ts_json" {
 
   vars = {
     aws_region = var.aws_region
+    logStream = local.az1_cwLogStream
   }
 }
 
@@ -346,10 +347,6 @@ data "template_file" "tenant_ts_json" {
 resource "local_file" "tenant_ts_file" {
   content  = data.template_file.tenant_ts_json.rendered
   filename = "${path.module}/${var.tenant_name}_${var.tenant_ts_json}"
-  vars = {
-    aws_region = var.aws_region
-    logStream = local.az1_cwLogStream
-  }
 }
 
 # tenant LogCollection AS3 Declaration

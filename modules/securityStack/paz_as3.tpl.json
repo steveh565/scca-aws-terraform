@@ -135,9 +135,7 @@
         },
         "tenant_MAZ_SRA-Service_pool": {
           "class": "Pool",
-          "monitors": [
-            "http"
-          ],
+          "monitors": [],
           "members": [{
             "servicePort": 443,
             "serverAddresses": [
@@ -147,9 +145,7 @@
         },
         "tenant_CSD_SRA-Service_pool": {
           "class": "Pool",
-          "monitors": [
-            "http"
-          ],
+          "monitors": [],
           "members": [{
             "servicePort": 443,
             "serverAddresses": [

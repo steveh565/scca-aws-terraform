@@ -3,7 +3,7 @@ variable aws_region { description = "String: AWS region to deploy in" }
 
 # Prefixes
 variable prefix { description = "String: Globally unique Prefix for the enviorment" }
-variable tenant_prefix { description = "String: Globally unique Tenant Prefix for the Tenant environment" }
+variable tenant_id { description = "Integer: Globally unique numerical ID for the Tenant environment" }
 variable tenant_name { description = "String: Globally unique Tenant name" }
 
 # DNS
@@ -37,6 +37,7 @@ variable sgExtMgmt { default = "sgExtMgmt" }
 variable sgInternal { default = "sgInternal" }
 
 # Security VPC information
+variable security_vpc_cidr             { description = "String: SecurityStack VPC CIDR" }
 variable security_vpc_transit_aip_cidr { description = "String: SecurityStack VPC Transit::Internal Alien-IP CIDR" }
 
 # Cloudwatch information

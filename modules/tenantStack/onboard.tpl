@@ -79,6 +79,7 @@ tmsh create net self external-self address ${ext_self}/24 vlan external;
 tmsh create net vlan internal interfaces add { 1.2 } mtu 1500;
 tmsh create net self internal-self address ${int_self}/24 vlan internal;
 tmsh create /net route /LOCAL_ONLY/default network default gw ${gateway}; 
+tmsh create /net route /LOCAL_ONLY/internal network ${int_remote_net} gw ${int_gw}
 
 # CHECK TO SEE NETWORK IS READY AGAIN AFTER RECONFIGURING ROUTES
 CNT=0

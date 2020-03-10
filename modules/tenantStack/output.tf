@@ -29,6 +29,7 @@ output "greSelfIp"           { value = local.greSelfIp }
 output "greNextHop"          { value = local.greNextHop }
 
 output "tenant_name"         { value = var.tenant_name }
+output "tenant_id"           { value = var.tenant_id }
 
 output "tenant_TransitRt_ID" { value = aws_route_table.tenant_TransitRt.id }
 

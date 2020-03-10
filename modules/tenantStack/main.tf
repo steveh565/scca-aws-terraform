@@ -18,6 +18,8 @@ data "template_file" "az1_tenantF5_vm_onboard" {
     ext_self       = local.az1ExtSelfIp
     int_self       = local.az1IntSelfIp
     gateway        = local.az1_tenant_ext_gw
+    int_gw         = local.az1_tenant_int_gw
+    int_remote_net = local.az2IntSnet
   }
 }
 
@@ -47,6 +49,8 @@ data "template_file" "az2_tenantF5_vm_onboard" {
     ext_self       = local.az2ExtSelfIp
     int_self       = local.az2IntSelfIp
     gateway        = local.az2_tenant_ext_gw
+    int_gw         = local.az2_tenant_int_gw
+    int_remote_net = local.az1IntSnet
   }
 }
 

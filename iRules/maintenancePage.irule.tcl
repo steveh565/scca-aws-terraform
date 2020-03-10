@@ -7,7 +7,7 @@ when HTTP_REQUEST {
             </head>\
             <body>\
                 <div align=\"center\">\
-                    <h2> [clock format [clock seconds] -format "%a, %d %h %Y %T GMT"] <br /> [IP::client_addr] => [IP::local_addr] </h2>\
+                    <h2> BigIP: $static::tcl_platform(machine) <br /> [clock format [clock seconds] -format "%a, %d %h %Y %T GMT"] : [IP::client_addr] => [IP::local_addr] </h2>\
                     <div id=\"maintenanceHeader\" align=\"center\">\
                         <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 88 88\">\
                             <circle r=\"44\" cy=\"44\" cx=\"44\" fill=\"#E21D38\"></circle>\

@@ -1,25 +1,16 @@
 # ToDo: Update license keys
 module tenantStack_CSD {
   source = "./modules/tenantStack"
-  security_vpc_transit_aip_cidr = "100.65.5.0/29"
-  key_path = var.key_path
-  prefix = var.prefix
-  tenant_prefix = "TENANT1"
+
+  tenant_id = "1"
   tenant_name   = "CSD"
   tenant_cf_label = "CSD_tenant_az_failover"
   tenant_vpc_cidr = "10.21.0.0/16"
   tenant_aip_cidr = "100.66.64.8/29"
   tenant_gre_cidr = "172.16.1.4/30"
   tenant_vip_cidr = "100.100.1.0/24"
-  tgwId = module.securityStack.Hub_Transit_Gateway_ID
-  f5Domainname = "csd.${var.f5Domainname}"
-  uname = var.uname
-  upassword = var.upassword
-  mgmt_asrc = var.mgmt_asrc
-  ami_f5image_name = data.aws_ami.bigip_ami.id
-  aws_region = var.aws_region
-  
-  az1_tenantF5 = {
+
+az1_tenantF5 = {
     instance_type  = "c4.2xlarge"
     license      = "PWTVO-UNMRP-RNRXP-NLCIU-JLNMNCS"
     hostname      = "edgeF5vm01"
@@ -30,7 +21,18 @@ module tenantStack_CSD {
     license      = "JRHCD-FCEZP-DLQQI-HZIXW-QAEXUXK"
     hostname      = "edgeF5vm02"
   }
-  
+
+  security_vpc_transit_aip_cidr = module.securityStack.security_vpc_transit_aip_cidr
+  security_vpc_cidr = module.securityStack.security_vpc_cidr
+  key_path = var.key_path
+  prefix = var.prefix
+  tgwId = module.securityStack.Hub_Transit_Gateway_ID
+  f5Domainname = "CSD.${var.f5Domainname}"
+  uname = var.uname
+  upassword = var.upassword
+  mgmt_asrc = var.mgmt_asrc
+  ami_f5image_name = data.aws_ami.bigip_ami.id
+  aws_region = var.aws_region
 }
 
 
@@ -48,17 +50,6 @@ resource "aws_ec2_transit_gateway_route" "TgwRt_toTenantStack_CSD" {
   transit_gateway_route_table_id = module.securityStack.hubtgwRt_ID
   transit_gateway_attachment_id  = module.tenantStack_CSD.tenant_tgwAttach_ID
 }
-
-
-/*
-resource "aws_route" "toSecurityStack_CSD" {
-  depends_on                = [module.securityStack, module.tenantStack_CSD, aws_route.toTenantStack_CSD]
-  route_table_id            = module.tenantStack_CSD.tenant_TransitRt_ID
-  destination_cidr_block    = "0.0.0.0/0"
-  transit_gateway_id        = module.securityStack.Hub_Transit_Gateway_ID  
-}
-*/
-
 
 # Configure SecurityStack-TransitF5 with LOCAL_ONLY routes to new tenantStack-F5
 resource "null_resource" "az1_routesToTenantStack_CSD" {
@@ -109,7 +100,7 @@ resource "null_resource" "greToTenantStack_CSD" {
     }
     when = create
     inline = [
-      "tmsh create net tunnels tunnel greToTenant${module.tenantStack_CSD.tenant_name} local-address ${module.tenantStack_CSD.greTunRemAddr} profile gre remote-address ${module.tenantStack_CSD.greTunLocAddr} traffic-group traffic-group-1",
+      "tmsh create net tunnels tunnel greToTenant${module.tenantStack_CSD.tenant_name} local-address ${module.tenantStack_CSD.greTunRemAddr} profile gre remote-address ${module.tenantStack_CSD.greTunLocAddr} key ${module.tenantStack_CSD.tenant_id} traffic-group traffic-group-1",
       "tmsh create net self greToTenant${module.tenantStack_CSD.tenant_name}_Float address ${module.tenantStack_CSD.greNextHop}/30 vlan greToTenant${module.tenantStack_CSD.tenant_name} traffic-group traffic-group-1"
     ]
     on_failure = continue
@@ -128,7 +119,7 @@ resource "null_resource" "greToSecurityStack_CSD" {
     }
     when = create
     inline = [
-      "tmsh create net tunnels tunnel greToSecurityStack local-address ${module.tenantStack_CSD.greTunLocAddr} profile gre remote-address ${module.tenantStack_CSD.greTunRemAddr} traffic-group traffic-group-1",
+      "tmsh create net tunnels tunnel greToSecurityStack local-address ${module.tenantStack_CSD.greTunLocAddr} profile gre remote-address ${module.tenantStack_CSD.greTunRemAddr} key ${module.tenantStack_CSD.tenant_id} traffic-group traffic-group-1",
       "tmsh create net self greToSecurityStack_Float address ${module.tenantStack_CSD.greSelfIp}/30 vlan greToSecurityStack traffic-group traffic-group-1"
     ]
     on_failure = continue

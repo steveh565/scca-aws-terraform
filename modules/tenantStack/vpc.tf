@@ -171,9 +171,17 @@ resource "aws_route_table" "tenant_TransitRt" {
 	}
 	route {
 		cidr_block = "0.0.0.0/0"
-		#transit_gateway_id = var.tgwId
 		gateway_id = aws_internet_gateway.tenantGw.id
-	}	
+		#This route is for VM onboarding and can be safely removed after Onboarding is complete
+	}
+	route {
+		cidr_block = var.security_vpc_cidr
+		transit_gateway_id = var.tgwId
+	}
+	route {
+		cidr_block = var.security_vpc_transit_aip_cidr
+		transit_gateway_id = var.tgwId
+	}
 	tags = {
 		Name = "${var.prefix}-${var.tenant_name}-TransitRt"
     	f5_cloud_failover_label = var.tenant_cf_label
@@ -231,7 +239,7 @@ resource "aws_route_table" "tenant_intRt" {
 	route {
 		cidr_block = "0.0.0.0/0"
 		gateway_id = aws_internet_gateway.tenantGw.id
-        #network_interface_id = aws_network_interface.az1_tenant_internal.id
+        #This route is for VM onboarding and should be updated to point to the ENI of the active F5 unit in the cluster once VM onboarding is complete
 	}
 	tags = {
 		Name = "${var.prefix}-${var.tenant_name}--intRt"
