@@ -114,6 +114,7 @@ resource "aws_instance" "az1_paz_bigip" {
   user_data                   = data.template_file.az1_pazF5_vm_onboard.rendered
   iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   key_name                    = "kp${var.tag_name}"
+  source_dest_check           = false
   root_block_device {
     delete_on_termination = true
   }
@@ -138,7 +139,7 @@ resource "aws_instance" "az1_paz_bigip" {
     }
     when = create
     inline = [
-      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+      "until grep -q 'TS is Ready' ${var.onboard_log}; do sleep 60; done; sleep 60"
     ]
   }
 
@@ -233,6 +234,7 @@ resource "aws_instance" "az2_paz_bigip" {
   user_data                   = data.template_file.az2_pazF5_vm_onboard.rendered
   iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   key_name                    = "kp${var.tag_name}"
+  source_dest_check           = false
   root_block_device {
     delete_on_termination = true
   }
@@ -257,7 +259,7 @@ resource "aws_instance" "az2_paz_bigip" {
     }
     when = create
     inline = [
-      "until [ -f ${var.onboard_log} ]; do sleep 120; done; sleep 120"
+      "until grep -q 'TS is Ready' ${var.onboard_log}; do sleep 60; done; sleep 60"
     ]
   }
 

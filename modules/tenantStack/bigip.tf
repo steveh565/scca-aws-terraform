@@ -87,6 +87,7 @@ resource "aws_instance" "az1_tenant_bigip" {
   user_data     = data.template_file.az1_tenantF5_vm_onboard.rendered
   iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   key_name      = "kp${var.tenant_name}"
+  source_dest_check = false
   root_block_device {
     delete_on_termination = true
   }
@@ -243,6 +244,7 @@ resource "aws_instance" "az2_tenant_bigip" {
   user_data         = data.template_file.az2_tenantF5_vm_onboard.rendered
   iam_instance_profile        = aws_iam_instance_profile.bigip-failover-extension-iam-instance-profile.name
   key_name          = "kp${var.tenant_name}"
+  source_dest_check = false
   root_block_device {
     delete_on_termination = true
   }
