@@ -1,5 +1,5 @@
 #!/bin/bash
-# BIG-IPS ONBOARD SCRIPT
+# BIG-IP ONBOARD SCRIPT
 #
 # get device id for do
 deviceId=$1
@@ -116,7 +116,7 @@ EOF
 cat > /config/ts.json <<EOF
 ${TS_Document}
 EOF
-
+#
 LOG_FILE=${onboard_log}
 if [ ! -e "$LOG_FILE" ]
 then
@@ -133,7 +133,7 @@ echo "timestamp start: $(date)"
 function timer () {
     echo "Time Elapsed: $(( ${1} / 3600 ))h $(( (${1} / 60) % 60 ))m $(( ${1} % 60 ))s"
 }
-
+#
 #check for MCPD subsystem to be ready
 function checkMcpd () {
     CNT=0
@@ -150,6 +150,12 @@ function checkMcpd () {
 }
 checkMcpd
 #
+# Set sys.db vars
+echo "Set sys.db vars"
+cat <<-EOF | tmsh -q
+modify /sys db config.allow.rfc3927 value enable;
+EOF
+#
 # Create REST API User
 echo "Create REST API user"
 cat <<-EOF | tmsh -q
@@ -157,6 +163,24 @@ create cli transaction;
 create /auth user ${api_user} password ${api_pass} shell bash partition-access replace-all-with { all-partitions { role admin } };
 submit cli transaction
 EOF
+#
+# Create LOCAL_ONLY
+echo "Create LOCAL_ONLY partition"
+cat <<-EOF | tmsh -q
+create cli transaction;
+create /auth partition LOCAL_ONLY; 
+modify /sys folder /LOCAL_ONLY device-group none traffic-group /Common/traffic-group-local-only; 
+submit cli transaction
+EOF
+#
+# Create Hypervisor Routes
+echo "Create Hypervisor Routes"
+cat <<-EOF | tmsh -q
+tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.254 gateway ${mgmt_gw};
+tmsh create /sys management-route /LOCAL_ONLY/aws_API_route network 169.254.169.253 gateway ${mgmt_gw};
+submit cli transaction
+EOF
+#
 # CHECK TO SEE NETWORK IS READY
 function checkNetwork () {
     count=0
@@ -177,8 +201,8 @@ function checkNetwork () {
     done
 }
 checkNetwork
-
-# download latest atc tools
+#
+# Download latest atc tools
 toolsList=$(cat -<<EOF
 {
   "tools": [
@@ -238,6 +262,7 @@ function getAtc () {
     done
 }
 getAtc
+#
 function getWebSSH () {
     echo "Fetching WebSSH ILX Plugin from: $webssh_src"
     result=$(/usr/bin/curl -Lsk  $webssh_src -o /var/tmp/$webssh_file)
@@ -514,12 +539,13 @@ echo "Set sys.db vars"
 cat <<-EOF | tmsh -q
 modify /sys db config.allow.rfc3927 value enable;
 EOF
-
+#
+# https://github.com/F5Networks/f5-declarative-onboarding/issues/129 (fixed)
 # Replace MGMT-DHCP with static config
 echo "Disable DHCP for MGMT interface"
 bigstart stop dhclient;
 tmsh modify sys global-settings mgmt-dhcp disabled;
-
+#
 echo "Configure MGMT interface";
 if [ "$deviceId" -eq 1 ]; then
 cat <<-EOF | tmsh -q
@@ -546,13 +572,13 @@ EOF
 else 
 echo "Config MGMT Interface ERROR: Unknown DeviceId $deviceId";
 fi
-
-#make sure all settings persist
+#
+#persist configs
 tmsh save /sys config
-
+#
 #verify network connectivity after mgmt interface reconfig
 checkNetwork
-
+#
 # run DO
 count=0
 while [ $count -le 4 ]
@@ -586,10 +612,10 @@ while [ $count -le 4 ]
         break
     fi
 done
-
+#
 #check MCPD after running DO
 checkMcpd
-
+#
 function runTS () {
     # make task
     taskOut=$(curl -s -u $CREDS -H "Content-Type: Application/json" -H 'Expect:' -X POST http://localhost:8100$tsUrl -d @/config/ts.json)
@@ -598,7 +624,7 @@ function runTS () {
     taskResult=$(echo $taskOut |jq -r .message)
     echo "Task status: $taskResult"
 }
-
+#
 #  run TS
 count=0
 while [ $count -le 4 ]

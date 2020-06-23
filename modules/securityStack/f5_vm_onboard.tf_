@@ -20,13 +20,13 @@ data "template_file" "ScScADC-F5VM_F5-vm_onboard" {
         AS3_Document        = "${data.template_file.ScScADC-F5VM01_F5-as3_ts_json.rendered}"
         TS_Document         = "${data.template_file.ScScADC-F5VM01_F5-ts_json.rendered}"
 
-        api_user       = "azops"
+        api_user       = "awsops"
         api_pass       = "Canada12345"
         mgmt_ip1       = "100.96.185.200"
         mgmt_ip2       = "100.96.185.201"
         mgmt_gw        = "100.96.185.193"
         mgmt_dns       = "168.63.129.16"
-        dns_domain     = "csd.local"
+        dns_domain     = "csd.aws"
 
         webssh_vip     = "${cidrhost(azurerm_subnet.ScPcCNR-VDC_Core-External_F5-snet.address_prefix, 10)}"
         f5vm01_mgmt_ip = azurerm_network_interface.ScScADC-F5VM01_F5-nic1.private_ip_addresses[0]
