@@ -30,7 +30,7 @@ resource "null_resource" "bigip_create_ilx_plugin" {
   // }  
 
   provisioner "file" {
-    source      = "${path.module}/BIG-IP-ILX-WebSSH2-0.2.8.tgz"
+    source      = "${path.module}/files/BIG-IP-ILX-WebSSH2-0.2.8.tgz"
     destination = "/var/tmp/BIG-IP-ILX-WebSSH2-0.2.8.tgz"
     connection {
       type     = "ssh"
@@ -65,8 +65,8 @@ resource "null_resource" "bigip_create_ilx_plugin" {
 // The Cloud Failover extension is configured to remap the EIP's or routes accordingly upon failover events.
 # Render SRA AS3 declaration
 resource "local_file" "bigip_sra_as3_file" {
-  content     = templatefile("${path.module}/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, vlans_enabled = var.vlans_enabled, Bigip2VipPrivateIp = var.juiceshop_vip_private_ip, juiceShop1 = var.juiceShop1, juiceShop2 = var.juiceShop2 })
-  filename    = "${path.module}/${var.tenant_name}_bigip_sra_as3.json"
+  content     = templatefile("${path.module}/templates/bigip_sra.tpl.json", { Bigip1VipPrivateIp = var.bigip_vip_private_ip, vlans_enabled = var.vlans_enabled, Bigip2VipPrivateIp = var.juiceshop_vip_private_ip, juiceShop1 = var.juiceShop1, juiceShop2 = var.juiceShop2 })
+  filename    = "${path.module}/files/${var.tenant_name}_bigip_sra_as3.json"
 }
 
 resource "null_resource" "bigip_sra_as3" {
@@ -102,7 +102,7 @@ resource "null_resource" "bigip_upload_apm_policies" {
 #  depends_on = [bigip_as3.bigip_sra]
   depends_on = [null_resource.bigip_sra_as3]
   provisioner "file" {
-    source      = "${path.module}/profile_SecureRemoteAccessAP.conf.tar"
+    source      = "${path.module}/files/profile_SecureRemoteAccessAP.conf.tar"
     destination = "/var/tmp/profile_SecureRemoteAccess.conf.tar"
     connection {
       type     = "ssh"
@@ -113,7 +113,7 @@ resource "null_resource" "bigip_upload_apm_policies" {
   }
 
   provisioner "file" {
-    source      = "${path.module}/policy_SecureRemoteAccessPRP.conf.tar"
+    source      = "${path.module}/files/policy_SecureRemoteAccessPRP.conf.tar"
     destination = "/var/tmp/policy_SecureRemoteAccessPRP.conf.tar"
     connection {
       type     = "ssh"
