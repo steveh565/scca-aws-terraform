@@ -124,7 +124,7 @@ resource "aws_instance" "az1_tenant_bigip" {
 
 ## AZ1 DO Declaration
 data "template_file" "az1_tenantCluster_do_json" {
-  template = file("${path.module}/tenant_clusterAcrossAZs_do.tpl.json")
+  template = file("${path.module}/templates/tenant_clusterAcrossAZs_do.tpl.json")
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az1_tenantF5.license
@@ -153,7 +153,7 @@ data "template_file" "az1_tenantCluster_do_json" {
 # Render tenant DO declaration
 resource "local_file" "az1_tenantCluster_do_file" {
   content  = data.template_file.az1_tenantCluster_do_json.rendered
-  filename = "${path.module}/${var.tenant_name}_${var.az1_tenantCluster_do_json}"
+  filename = "${path.module}/files/${var.tenant_name}_${var.az1_tenantCluster_do_json}"
 }
 
 
@@ -281,7 +281,7 @@ resource "aws_instance" "az2_tenant_bigip" {
 
 ## AZ2 DO Declaration
 data "template_file" "az2_tenantCluster_do_json" {
-  template = file("${path.module}/tenant_clusterAcrossAZs_do.tpl.json")
+  template = file("${path.module}/templates/tenant_clusterAcrossAZs_do.tpl.json")
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az2_tenantF5.license
@@ -311,12 +311,12 @@ data "template_file" "az2_tenantCluster_do_json" {
 # Render tenant DO declaration
 resource "local_file" "az2_tenantCluster_do_file" {
   content  = data.template_file.az2_tenantCluster_do_json.rendered
-  filename = "${path.module}/${var.tenant_name}_${var.az2_tenantCluster_do_json}"
+  filename = "${path.module}/files/${var.tenant_name}_${var.az2_tenantCluster_do_json}"
 }
 
 # Tenant CF Declaration
 data "template_file" "tenant_cf_json" {
-  template = file("${path.module}/tenant_cloudfailover.tpl.json")
+  template = file("${path.module}/templates/tenant_cloudfailover.tpl.json")
 
   vars = {
     cf_label = var.tenant_cf_label
@@ -332,12 +332,12 @@ data "template_file" "tenant_cf_json" {
 # Render DMZ CF Declaration
 resource "local_file" "tenant_cf_file" {
   content  = data.template_file.tenant_cf_json.rendered
-  filename = "${path.module}/${local.tenant_cf_json}"
+  filename = "${path.module}/files/${local.tenant_cf_json}"
 }
 
 # tenant TS Declaration
 data "template_file" "tenant_ts_json" {
-  template = file("${path.module}/tsCloudwatch_ts.tpl.json")
+  template = file("${path.module}/templates/tsCloudwatch_ts.tpl.json")
 
   vars = {
     aws_region = var.aws_region
@@ -348,26 +348,26 @@ data "template_file" "tenant_ts_json" {
 # Render tenant TS declaration
 resource "local_file" "tenant_ts_file" {
   content  = data.template_file.tenant_ts_json.rendered
-  filename = "${path.module}/${var.tenant_name}_${var.tenant_ts_json}"
+  filename = "${path.module}/files/${var.tenant_name}_${var.tenant_ts_json}"
 }
 
 # tenant LogCollection AS3 Declaration
 data "template_file" "tenant_logs_as3_json" {
-  template = file("${path.module}/tsLogCollection_as3.tpl.json")
+  template = file("${path.module}/templates/tsLogCollection_as3.tpl.json")
 
   
 }
 # Render tenant LogCollection AS3 declaration
 resource "local_file" "tenant_logs_as3_file" {
   content = data.template_file.tenant_logs_as3_json.rendered
-  filename = "${path.module}/${var.tenant_name}_${var.tenant_logs_as3_json}"
+  filename = "${path.module}/files/${var.tenant_name}_${var.tenant_logs_as3_json}"
 }
 
 
 
 # tenant AS3 Declaration
 data "template_file" "tenant_as3_json" {
-  template = file("${path.module}/tenant_as3.tpl.json")
+  template = file("${path.module}/templates/tenant_as3.tpl.json")
 
   vars = {
     #backendvm_ip   = aws_instance.bastionHost[0].private_ip
@@ -379,7 +379,7 @@ data "template_file" "tenant_as3_json" {
 # Render tenant AS3 declaration
 resource "local_file" "tenant_as3_file" {
   content = data.template_file.tenant_as3_json.rendered
-  filename = "${path.module}/${var.tenant_name}_${var.tenant_as3_json}"
+  filename = "${path.module}/files/${var.tenant_name}_${var.tenant_as3_json}"
 }
 
 
