@@ -255,7 +255,7 @@ resource "aws_instance" "az2_transit_bigip" {
 
 ## AZ1 DO Declaration
 data "template_file" "az1_transitCluster_do_json" {
-  template = "${file("${path.module}/transit_clusterAcrossAZs_do.tpl.json")}"
+  template = "${file("${path.module}/templates/transit_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az1_transitF5.license
@@ -286,12 +286,12 @@ data "template_file" "az1_transitCluster_do_json" {
 # Render transit DO declaration
 resource "local_file" "az1_transitCluster_do_file" {
   content  = data.template_file.az1_transitCluster_do_json.rendered
-  filename = "${path.module}/${var.az1_transitCluster_do_json}"
+  filename = "${path.module}/files/${var.az1_transitCluster_do_json}"
 }
 
 ## AZ2 DO Declaration
 data "template_file" "az2_transitCluster_do_json" {
-  template = "${file("${path.module}/transit_clusterAcrossAZs_do.tpl.json")}"
+  template = "${file("${path.module}/templates/transit_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az2_transitF5.license
@@ -321,12 +321,12 @@ data "template_file" "az2_transitCluster_do_json" {
 # Render transit DO declaration
 resource "local_file" "az2_transitCluster_do_file" {
   content  = data.template_file.az2_transitCluster_do_json.rendered
-  filename = "${path.module}/${var.az2_transitCluster_do_json}"
+  filename = "${path.module}/files/${var.az2_transitCluster_do_json}"
 }
 
 # transit CF Declaration
 data "template_file" "transit_cf_json" {
-  template = "${file("${path.module}/transit_cloudfailover.tpl.json")}"
+  template = "${file("${path.module}/templates/transit_cloudfailover.tpl.json")}"
 
   vars = {
     cap_cf_label = var.gccap_cf_label
@@ -353,12 +353,12 @@ data "template_file" "transit_cf_json" {
 # Render transit CF Declaration
 resource "local_file" "transit_cf_file" {
   content  = data.template_file.transit_cf_json.rendered
-  filename = "${path.module}/${var.transit_cf_json}"
+  filename = "${path.module}/files/${var.transit_cf_json}"
 }
 
 # transit TS Declaration
 data "template_file" "transit_ts_json" {
-  template = "${file("${path.module}/tsCloudwatch_ts.tpl.json")}"
+  template = "${file("${path.module}/templates/tsCloudwatch_ts.tpl.json")}"
 
   vars = {
     aws_region = var.aws_region
@@ -369,12 +369,12 @@ data "template_file" "transit_ts_json" {
 # Render transit TS declaration
 resource "local_file" "transit_ts_file" {
   content  = data.template_file.transit_ts_json.rendered
-  filename = "${path.module}/${var.transit_ts_json}"
+  filename = "${path.module}/files/${var.transit_ts_json}"
 }
 
 # transit LogCollection AS3 Declaration
 data "template_file" "transit_logs_as3_json" {
-  template = "${file("${path.module}/tsLogCollection_as3.tpl.json")}"
+  template = "${file("${path.module}/templates/tsLogCollection_as3.tpl.json")}"
 
   vars = {
 
@@ -384,12 +384,12 @@ data "template_file" "transit_logs_as3_json" {
 # Render transit LogCollection AS3 declaration
 resource "local_file" "transit_logs_as3_file" {
   content  = data.template_file.transit_logs_as3_json.rendered
-  filename = "${path.module}/${var.transit_logs_as3_json}"
+  filename = "${path.module}/files/${var.transit_logs_as3_json}"
 }
 
 # transit AS3 Declaration
 data "template_file" "transit_as3_json" {
-  template = "${file("${path.module}/transit_as3.tpl.json")}"
+  template = "${file("${path.module}/templates/transit_as3.tpl.json")}"
 
   vars = {
     aip_az1DmzIntFloatIp = local.aip_az1DmzIntFloatIp
@@ -398,7 +398,7 @@ data "template_file" "transit_as3_json" {
 # Render transit AS3 declaration
 resource "local_file" "transit_as3_file" {
   content  = data.template_file.transit_as3_json.rendered
-  filename = "${path.module}/${var.transit_as3_json}"
+  filename = "${path.module}/files/${var.transit_as3_json}"
 }
 
 # Send declarations via REST API's

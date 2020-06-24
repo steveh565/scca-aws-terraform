@@ -256,7 +256,7 @@ resource "aws_instance" "az2_dmz_bigip" {
 
 ## AZ1 DO Declaration
 data "template_file" "az1_dmzCluster_do_json" {
-  template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
+  template = "${file("${path.module}/templates/dmz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az1_dmzF5.license
@@ -291,7 +291,7 @@ resource "local_file" "az1_dmzCluster_do_file" {
 
 ## AZ2 Cluster DO Declaration
 data "template_file" "az2_dmzCluster_do_json" {
-  template = "${file("${path.module}/dmz_clusterAcrossAZs_do.tpl.json")}"
+  template = "${file("${path.module}/templates/dmz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az2_dmzF5.license
@@ -321,12 +321,12 @@ data "template_file" "az2_dmzCluster_do_json" {
 # Render DMZ DO declaration
 resource "local_file" "az2_dmzCluster_do_file" {
   content  = data.template_file.az2_dmzCluster_do_json.rendered
-  filename = "${path.module}/${var.az2_dmzCluster_do_json}"
+  filename = "${path.module}/files/${var.az2_dmzCluster_do_json}"
 }
 
 # DMZ CF Declaration
 data "template_file" "dmz_cf_json" {
-  template = "${file("${path.module}/dmz_int_cloudfailover.tpl.json")}"
+  template = "${file("${path.module}/templates/dmz_int_cloudfailover.tpl.json")}"
 
   vars = {
     cap_cf_label = var.gccap_cf_label
@@ -353,12 +353,12 @@ data "template_file" "dmz_cf_json" {
 # Render DMZ CF Declaration
 resource "local_file" "dmz_cf_file" {
   content  = data.template_file.dmz_cf_json.rendered
-  filename = "${path.module}/${var.dmz_cf_json}"
+  filename = "${path.module}/files/${var.dmz_cf_json}"
 }
 
 # DMZ TS Declaration
 data "template_file" "dmz_ts_json" {
-  template = "${file("${path.module}/tsCloudwatch_ts.tpl.json")}"
+  template = "${file("${path.module}/templates/tsCloudwatch_ts.tpl.json")}"
 
   vars = {
     aws_region = var.aws_region
@@ -369,12 +369,12 @@ data "template_file" "dmz_ts_json" {
 # Render DMZ TS declaration
 resource "local_file" "dmz_ts_file" {
   content  = data.template_file.dmz_ts_json.rendered
-  filename = "${path.module}/${var.dmz_ts_json}"
+  filename = "${path.module}/files/${var.dmz_ts_json}"
 }
 
 # DMZ LogCollection AS3 Declaration
 data "template_file" "dmz_logs_as3_json" {
-  template = "${file("${path.module}/tsLogCollection_as3.tpl.json")}"
+  template = "${file("${path.module}/templates/tsLogCollection_as3.tpl.json")}"
 
   vars = {
     
@@ -384,12 +384,12 @@ data "template_file" "dmz_logs_as3_json" {
 # Render DMZ LogCollection AS3 declaration
 resource "local_file" "dmz_logs_as3_file" {
   content  = data.template_file.dmz_logs_as3_json.rendered
-  filename = "${path.module}/${var.dmz_logs_as3_json}"
+  filename = "${path.module}/files/${var.dmz_logs_as3_json}"
 }
 
 # DMZ AS3 Declaration
 data "template_file" "dmz_as3_json" {
-  template = "${file("${path.module}/dmz_as3.tpl.json")}"
+  template = "${file("${path.module}/templates/dmz_as3.tpl.json")}"
 
   vars = {
     aip_az1TransitExtFloatIp   = local.aip_az1TransitExtFloatIp
@@ -400,7 +400,7 @@ data "template_file" "dmz_as3_json" {
 # Render dmz AS3 declaration
 resource "local_file" "dmz_as3_file" {
   content  = data.template_file.dmz_as3_json.rendered
-  filename = "${path.module}/${var.dmz_as3_json}"
+  filename = "${path.module}/files/${var.dmz_as3_json}"
 }
 
 

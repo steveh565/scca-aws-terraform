@@ -1,6 +1,6 @@
 # Setup Onboarding scripts
 data "template_file" "az1_pazF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
+  template = "${file("${path.module}/templates/onboard.tpl")}"
 
   vars = {
     uname          = var.uname
@@ -30,12 +30,12 @@ data "template_file" "az1_pazF5_vm_onboard" {
 # Render Onboarding script
 resource "local_file" "az1_pazF5_vm_onboarding_file" {
   content     = data.template_file.az1_pazF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az1_pazF5_onboard_script}"
+  filename    = "${path.module}/files/${var.az1_pazF5_onboard_script}"
 }
 
 
 data "template_file" "az2_pazF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
+  template = "${file("${path.module}/templates/onboard.tpl")}"
 
   vars = {
     uname          = var.uname
@@ -65,13 +65,13 @@ data "template_file" "az2_pazF5_vm_onboard" {
 # Render Onboarding script
 resource "local_file" "az2_pazF5_vm_onboarding_file" {
   content     = data.template_file.az2_pazF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az2_pazF5_onboard_script}"
+  filename    = "${path.module}/files/${var.az2_pazF5_onboard_script}"
 }
 
 
 # Setup Onboarding scripts
 data "template_file" "az1_dmzF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
+  template = "${file("${path.module}/templates/onboard.tpl")}"
 
   vars = {
     uname          = var.uname
@@ -101,12 +101,12 @@ data "template_file" "az1_dmzF5_vm_onboard" {
 # Render Onboarding script
 resource "local_file" "az1_dmzF5_vm_onboarding_file" {
   content     = data.template_file.az1_dmzF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az1_dmzF5_onboard_script}"
+  filename    = "${path.module}/files/${var.az1_dmzF5_onboard_script}"
 }
 
 
 data "template_file" "az2_dmzF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
+  template = "${file("${path.module}/templates/onboard.tpl")}"
 
   vars = {
     uname          = var.uname
@@ -136,13 +136,13 @@ data "template_file" "az2_dmzF5_vm_onboard" {
 # Render Onboarding script
 resource "local_file" "az2_dmzF5_vm_onboarding_file" {
   content     = data.template_file.az2_dmzF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az2_dmzF5_onboard_script}"
+  filename    = "${path.module}/files/${var.az2_dmzF5_onboard_script}"
 }
 
 
 # Setup Onboarding scripts
 data "template_file" "az1_transitF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
+  template = "${file("${path.module}/templates/onboard.tpl")}"
 
   vars = {
     uname          = var.uname
@@ -173,12 +173,12 @@ data "template_file" "az1_transitF5_vm_onboard" {
 # Render Onboarding script
 resource "local_file" "az1_transitF5_vm_onboarding_file" {
   content     = data.template_file.az1_transitF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az1_transitF5_onboard_script}"
+  filename    = "${path.module}/files/${var.az1_transitF5_onboard_script}"
 }
 
 
 data "template_file" "az2_transitF5_vm_onboard" {
-  template = "${file("${path.module}/onboard.tpl")}"
+  template = "${file("${path.module}/templates/onboard.tpl")}"
 
   vars = {
     uname          = var.uname
@@ -209,13 +209,13 @@ data "template_file" "az2_transitF5_vm_onboard" {
 # Render Onboarding script
 resource "local_file" "az2_transitF5_vm_onboarding_file" {
   content     = data.template_file.az2_transitF5_vm_onboard.rendered
-  filename    = "${path.module}/${var.az2_transitF5_onboard_script}"
+  filename    = "${path.module}/files/${var.az2_transitF5_onboard_script}"
 }
 
 
 # revokeLicenses scripts
 data "template_file" "revokeLicenses" {
-  template = file("${path.module}/revokeLicenses.tpl")
+  template = file("${path.module}/templates/revokeLicenses.tpl")
   vars = {
     az1PazMgmt = aws_instance.az1_paz_bigip.public_ip
     az2PazMgmt = aws_instance.az2_paz_bigip.public_ip
@@ -229,5 +229,5 @@ data "template_file" "revokeLicenses" {
 
 resource "local_file" "revokeLicenses_file" {
   content     = data.template_file.revokeLicenses.rendered
-  filename    = "${path.module}/revokeLicenses.sh"
+  filename    = "${path.module}/files/revokeLicenses.sh"
 }

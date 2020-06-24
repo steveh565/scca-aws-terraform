@@ -270,7 +270,7 @@ resource "aws_instance" "az2_paz_bigip" {
 
 ## AZ1 Cluster DO Declaration
 data "template_file" "az1_pazCluster_do_json" {
-  template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
+  template = "${file("${path.module}/templates/paz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az1_pazF5.license
@@ -303,7 +303,7 @@ resource "local_file" "az1_pazCluster_do_file" {
 
 ## AZ2 Cluster DO Declaration
 data "template_file" "az2_pazCluster_do_json" {
-  template = "${file("${path.module}/paz_clusterAcrossAZs_do.tpl.json")}"
+  template = "${file("${path.module}/templates/paz_clusterAcrossAZs_do.tpl.json")}"
   vars = {
     #Uncomment the following line for BYOL
     regkey         = var.az2_pazF5.license
@@ -331,12 +331,12 @@ data "template_file" "az2_pazCluster_do_json" {
 # Render PAZ DO declaration
 resource "local_file" "az2_pazCluster_do_file" {
   content     = data.template_file.az2_pazCluster_do_json.rendered
-  filename    = "${path.module}/${var.az2_pazCluster_do_json}"
+  filename    = "${path.module}/files/${var.az2_pazCluster_do_json}"
 }
 
 # PAZ CF Declaration
 data "template_file" "paz_cf_json" {
-  template = "${file("${path.module}/paz_int_cloudfailover.tpl.json")}"
+  template = "${file("${path.module}/templates/paz_int_cloudfailover.tpl.json")}"
 
   vars = {
     cap_cf_label = var.gccap_cf_label
@@ -356,12 +356,12 @@ data "template_file" "paz_cf_json" {
 # Render PAZ CF Declaration
 resource "local_file" "paz_cf_file" {
   content  = data.template_file.paz_cf_json.rendered
-  filename = "${path.module}/${var.paz_cf_json}"
+  filename = "${path.module}/files/${var.paz_cf_json}"
 }
 
 # PAZ TS Declaration
 data "template_file" "paz_ts_json" {
-  template = "${file("${path.module}/tsCloudwatch_ts.tpl.json")}"
+  template = "${file("${path.module}/templates/tsCloudwatch_ts.tpl.json")}"
 
   vars = {
     aws_region = var.aws_region
@@ -372,12 +372,12 @@ data "template_file" "paz_ts_json" {
 # Render PAZ TS declaration
 resource "local_file" "paz_ts_file" {
   content  = data.template_file.paz_ts_json.rendered
-  filename = "${path.module}/${var.paz_ts_json}"
+  filename = "${path.module}/files/${var.paz_ts_json}"
 }
 
 # PAZ LogCollection AS3 Declaration
 data "template_file" "paz_logs_as3_json" {
-  template = "${file("${path.module}/tsLogCollection_as3.tpl.json")}"
+  template = "${file("${path.module}/templates/tsLogCollection_as3.tpl.json")}"
 
   vars = {
     
@@ -387,12 +387,12 @@ data "template_file" "paz_logs_as3_json" {
 # Render PAZ LogCollection AS3 declaration
 resource "local_file" "paz_logs_as3_file" {
   content  = data.template_file.paz_logs_as3_json.rendered
-  filename = "${path.module}/${var.paz_logs_as3_json}"
+  filename = "${path.module}/files/${var.paz_logs_as3_json}"
 }
 
 # PAZ AS3 Declaration
 data "template_file" "paz_as3_json" {
-  template = "${file("${path.module}/paz_as3.tpl.json")}"
+  template = "${file("${path.module}/templates/paz_as3.tpl.json")}"
 
   vars = {
     aip_az1PazIntFloatIp = local.aip_az1PazIntFloatIp
@@ -403,7 +403,7 @@ data "template_file" "paz_as3_json" {
 # Render PAZ AS3 declaration
 resource "local_file" "paz_as3_file" {
   content  = data.template_file.paz_as3_json.rendered
-  filename = "${path.module}/${var.paz_as3_json}"
+  filename = "${path.module}/files/${var.paz_as3_json}"
 }
 
 
