@@ -29,7 +29,7 @@ resource "aws_instance" "az1_bastionHost" {
 		do
 		STATUS=$(curl -s -k -I https://github.com | grep HTTP)
 		if [[ $STATUS == *"200"* ]]; then
-			echo "Got 200! VE is Ready!"
+			echo "Got 200! VM is Ready!"
 			break
 		elif [ $CNT -le 6 ]; then
 			echo "Status code: $STATUS  Not ready yet..."
@@ -75,7 +75,7 @@ resource "aws_instance" "az2_bastionHost" {
 		do
 		STATUS=$(curl -s -k -I https://github.com | grep HTTP)
 		if [[ $STATUS == *"200"* ]]; then
-			echo "Got 200! VE is Ready!"
+			echo "Got 200! VM is Ready!"
 			break
 		elif [ $CNT -le 6 ]; then
 			echo "Status code: $STATUS  Not ready yet..."
@@ -121,7 +121,7 @@ resource "aws_instance" "az1_juiceShopHost" {
 		do
 		STATUS=$(curl -s -k -I https://github.com | grep HTTP)
 		if [[ $STATUS == *"200"* ]]; then
-			echo "Got 200! VE is Ready!"
+			echo "Got 200! VM is Ready!"
 			break
 		elif [ $CNT -le 6 ]; then
 			echo "Status code: $STATUS  Not ready yet..."
@@ -142,7 +142,7 @@ resource "aws_instance" "az1_juiceShopHost" {
 
 	tags = {
 		Name = "${var.prefix}-${var.tenant_name}-az1_juiceShopHost${count.index}"
-		f5sd = "pool_opencart"
+		f5sd = "pool_juiceshop"
 		f5rg = var.prefix
 		tenant = var.tenant_name
 	}
@@ -165,7 +165,7 @@ resource "aws_instance" "az2_juiceShopHost" {
 		do
 		STATUS=$(curl -s -k -I https://github.com | grep HTTP)
 		if [[ $STATUS == *"200"* ]]; then
-			echo "Got 200! VE is Ready!"
+			echo "Got 200! VM is Ready!"
 			break
 		elif [ $CNT -le 6 ]; then
 			echo "Status code: $STATUS  Not ready yet..."
@@ -186,7 +186,7 @@ resource "aws_instance" "az2_juiceShopHost" {
 
 	tags = {
 		Name = "${var.prefix}-${var.tenant_name}-az2_juiceShopHost${count.index}"
-		f5sd = "pool_opencart"
+		f5sd = "pool_juiceshop"
 		f5rg = var.prefix
 		tenant = var.tenant_name
 	}
